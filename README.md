@@ -1,4 +1,6 @@
-﻿#Unofficial Google+API Lib for .NET
+﻿#SunokoLibrary.Web.GooglePlus 2.0
+
+##Unofficial Google+API Lib for .NET
 
 このライブラリはGoogle+の非公式APIを.NETアプリから使用するためのライブラリです。PortableClassLibraryとして作られており、.NET4.5/WP8/Windows Store Appで動かせるように作っています。  
 
@@ -17,7 +19,8 @@ Copyright (c) 2007 James Newton-King
 licensed under MIT License (MIT)  
 
 ## Unofficial Google+APIの呼び出しで一部拝借しています。
-* [GooglePlusLibrary.NET] https://github.com/gplusnasite/GooglePlusLibrary.NET
+* [GooglePlusLibrary.NET](https://github.com/gplusnasite/GooglePlusLibrary.NET)  
+Copyright (c) 2011-2013 Mori Satoshi, All Rights Reserved.
 
 ------------------------
  ビルド方法
