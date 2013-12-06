@@ -6,11 +6,11 @@ using System.Text;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class AttachedAlbum : AttachedContent
+    public class AttachedAlbum : AttachedBase
     {
+        public override ContentType Type { get { return ContentType.Album; } }
         public AlbumData Album { get; private set; }
         public AttachedImage[] Pictures { get; private set; }
-        public override ContentType Type { get { return ContentType.Album; } }
 
         protected override void ParseTemplate(JArray json)
         {

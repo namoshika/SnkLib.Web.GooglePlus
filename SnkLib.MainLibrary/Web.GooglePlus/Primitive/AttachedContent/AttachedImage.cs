@@ -8,6 +8,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class AttachedImage : AttachedLink
     {
+        public override ContentType Type { get { return ContentType.Image; } }
         public ImageData Image { get; private set; }
         public AlbumData Album { get; private set; }
 

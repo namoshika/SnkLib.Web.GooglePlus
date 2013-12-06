@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class AttachedLink : AttachedContent
+    public class AttachedLink : AttachedBase
     {
         public override ContentType Type { get { return ContentType.Link; } }
         public string Title { get; protected set; }

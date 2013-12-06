@@ -500,8 +500,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
 
             //添付されたコンテンツの判定
+            //IAttachable atchCnt = null;
             IAttachable atchCnt = apiResponse[97].Type == JTokenType.Array && ((JArray)apiResponse[97]).Count > 0
-                ? AttachedContent.Create((JArray)apiResponse[97], client.PlusBaseUrl) : null;
+                ? AttachedBase.Create((JArray)apiResponse[97], client.PlusBaseUrl) : null;
             //再共有投稿の場合はデータの並びが一部異なるため、処理を分ける
             string html, text;
             IAttachable attachedContent;
