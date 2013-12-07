@@ -42,12 +42,11 @@ namespace SunokoLibrary.Web.GooglePlus
         public ServiceType ServiceType { get { return CheckFlag(_data.ServiceType, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         //public PlusOneInfo PlusOne { get { return CheckFlag(_data.AttachedContent, "PostStatus", _data.PostStatus | PostStatusType.First, PostStatusType.First); } }
 
-        public IObservable<CommentInfo> GetComments(bool isInfinityEnum)
+        public IObservable<CommentInfo> GetComments(bool allowGetActivity, bool isInfinityEnum)
         {
             var obs = Observable
-                .If(() => (_data.GetActivityDate ?? DateTime.MinValue) < Client.Activity.BeganTimeToBind,
-                    Observable.Defer(() => UpdateGetActivityAsync(false, ActivityUpdateApiFlag.GetActivity).ToObservable()),
-                    Observable.Return(Unit.Default))
+                .Defer(() => UpdateGetActivityAsync(
+                    false, allowGetActivity ? ActivityUpdateApiFlag.GetActivity : ActivityUpdateApiFlag.GetActivities).ToObservable())
                 .SelectMany(unit => _comments);
             if (isInfinityEnum)
                 obs = obs.Concat(Client.Activity.GetStream().OfType<CommentInfo>().Where(inf => inf.ParentActivity.Id == Id));

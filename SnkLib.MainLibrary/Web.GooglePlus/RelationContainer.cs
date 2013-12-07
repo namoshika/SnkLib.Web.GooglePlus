@@ -282,7 +282,7 @@ namespace SunokoLibrary.Web.GooglePlus
             set
             {
                 _protectedMembers = value;
-                _membersHashSet = new HashSet<string>(value);
+                _membersHashSet = new HashSet<string>(value ?? new string[]{ });
             }
         }
 
