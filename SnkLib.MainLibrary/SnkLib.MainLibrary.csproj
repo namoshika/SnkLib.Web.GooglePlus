@@ -61,7 +61,7 @@
     <Compile Include="Web.GooglePlus\Notification\NotificationSignal.cs" />
     <Compile Include="Web.GooglePlus\PhotoContent\AlbumInfo.cs" />
     <Compile Include="Web.GooglePlus\PhotoContent\ImageInfo.cs" />
-    <Compile Include="Web.GooglePlus\PhotoContent\ImageTagInfo.cs" />
+    <Compile Include="Web.GooglePlus\Primitive\Data\ImageTagData.cs" />
     <Compile Include="Web.GooglePlus\PlatformClient.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Data\ActivityData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Data\AlbumData.cs" />

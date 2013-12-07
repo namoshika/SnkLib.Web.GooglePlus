@@ -9,7 +9,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public class ImageData : DataBase
     {
         public ImageData(bool isUpdatedLightBox, string id, string name = null, int? width = null, int? height = null,
-            string imageUrl = null, DateTime? createDate = null, ImageTagInfo[] attachedTags = null,
+            string imageUrl = null, DateTime? createDate = null, ImageTagData[] attachedTags = null,
             ProfileData owner = null, ActivityData isolateActivity = null)
         {
             IsUpdatedLightBox = isUpdatedLightBox;
@@ -31,7 +31,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public int? Width { get; private set; }
         public int? Height { get; private set; }
         public DateTime? CreateDate { get; private set; }
-        public ImageTagInfo[] AttachedTags { get; private set; }
+        public ImageTagData[] AttachedTags { get; private set; }
         public ActivityData IsolateActivity { get; private set; }
         public ProfileData Owner { get; private set; }
         public DateTime LastUpdateLightBoxDate { get; private set; }

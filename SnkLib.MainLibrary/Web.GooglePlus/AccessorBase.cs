@@ -32,6 +32,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 .Concat(new[] { Tuple.Create((PlatformClient)null, other.ToArray()) })
                 .ToArray();
         }
+        [System.Diagnostics.DebuggerStepThrough]
         public static TResult CheckFlag<TResult>(TResult target, string checkTargetName, Func<bool> checkProc, string errorMessage)
         {
             if (checkProc() == false)

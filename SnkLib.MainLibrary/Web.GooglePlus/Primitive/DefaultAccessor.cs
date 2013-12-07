@@ -305,7 +305,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         var ownerJson = item[10];
                         var tagContentJson = item[7][0];
                         if ((int)item[9] == 1)
-                            return (ImageTagInfo)new ImageMensionTagInfo(
+                            return (ImageTagData)new ImageMensionTagInfo(
                                 (int)item[1], (int)item[2], (int)item[3], (int)item[4],
                                 new ProfileData(
                                     ProfileUpdateApiFlag.Base, id: (string)tagContentJson[0], name: (string)tagContentJson[3],
@@ -316,7 +316,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)ownerJson[8]),
                                     status: AccountStatus.Active));
                         else
-                            return (ImageTagInfo)new ImageTextTagInfo(
+                            return (ImageTagData)new ImageTextTagInfo(
                                 (int)item[1], (int)item[2], (int)item[3], (int)item[4], (string)tagContentJson[3],
                                 new ProfileData(
                                     ProfileUpdateApiFlag.Base, id: (string)ownerJson[0], name: (string)ownerJson[3],
@@ -585,7 +585,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var picasaUrl = new Uri((string)apiResponse[0]);
             var createDate = ((JValue)apiResponse[15]).Value != null ? new Nullable<DateTime>(ApiWrapper.GetDateTime((ulong)apiResponse[15])) : null;
             var owner = new ProfileData(ProfileUpdateApiFlag.Base, id: (string)apiResponse[7][0], name: (string)apiResponse[7][3], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)apiResponse[7][4]));
-            var tags = new List<ImageTagInfo>();
+            var tags = new List<ImageTagData>();
             foreach (var item in apiResponse[6])
             {
                 var locationJson = item[3];

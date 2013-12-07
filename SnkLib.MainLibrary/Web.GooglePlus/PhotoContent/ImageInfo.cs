@@ -32,7 +32,7 @@ namespace SunokoLibrary.Web.GooglePlus
         public ProfileInfo Owner { get { return Client.Relation.InternalGetAndUpdateProfile(CheckFlag(_data.Owner, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない")); } }
         public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない").Value; } }
         public ActivityInfo IsolateActivity { get { return CheckFlag(_isolateActivity, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
-        public ImageTagInfo[] Tags { get { return CheckFlag(_data.AttachedTags, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
+        public ImageTagData[] Tags { get { return CheckFlag(_data.AttachedTags, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
 
         public async Task UpdateLightBoxAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
