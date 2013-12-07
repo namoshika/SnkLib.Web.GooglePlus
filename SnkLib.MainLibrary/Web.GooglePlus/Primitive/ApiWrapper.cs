@@ -1178,7 +1178,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public enum BlockActionType { Remove, Add, }
     public enum SearchTarget { All = 1, Profile = 2, Activity = 3, Sparks = 4, Hangout = 5 }
     public enum SearchRange { Full = 1, YourCircle = 2, Me = 5 }
-    public enum ContentType { Album, Image, Link, YouTube, Reshare }
+    public enum ContentType { Album, Image, Link, InteractiveLink, YouTube, Reshare }
 
     class OutsideException : Exception
     { public OutsideException(Exception innerException) : base(null, innerException) { } }
