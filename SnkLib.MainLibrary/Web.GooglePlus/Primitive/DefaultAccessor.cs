@@ -448,8 +448,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         tmpJsonB = apiResponse[47];
                         var nickName = (string)tmpJsonB.ElementAtOrDefault(1) ?? string.Empty;
 
-                        List<UrlInfo>[] urlLists =
-                            new[] { new List<UrlInfo>(), new List<UrlInfo>(), new List<UrlInfo>() };
+                        List<UrlInfo>[] urlLists = new[] { new List<UrlInfo>(), new List<UrlInfo>(), new List<UrlInfo>() };
                         for (var i = 0; i < urlLists.Length; i++)
                             foreach (var urlList in apiResponse[51 + i][0])
                                 urlLists[i].Add(new UrlInfo(urlList));

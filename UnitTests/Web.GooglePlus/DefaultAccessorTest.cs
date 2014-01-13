@@ -66,7 +66,7 @@ namespace UnitTests.Web.GooglePlus
             Assert.AreEqual("test_occupation", result.Occupation);
             Assert.AreEqual("test_catch-phrase", result.GreetingText);
             Assert.AreEqual("nick", result.NickName);
-            Assert.AreEqual("https://lh4.googleusercontent.com/-TQ_A2CTpXVs/AAAAAAAAAAI/AAAAAAAAAAA/INNFU2-ceaU/photo.jpg", result.IconImageUrl);
+            Assert.AreEqual("https://lh4.googleusercontent.com/-TQ_A2CTpXVs/AAAAAAAAAAI/AAAAAAAAAAA/INNFU2-ceaU/$SIZE_SEGMENT/photo.jpg", result.IconImageUrl);
             Assert.AreEqual(RelationType.Widowed, result.Relationship);
             Assert.AreEqual(GenderType.Other, result.GenderType);
             Assert.AreEqual(true, result.LookingFor.Dating);
@@ -156,7 +156,7 @@ namespace UnitTests.Web.GooglePlus
             Assert.AreEqual("114365312488191371601", result.Id);
             Assert.AreEqual("Hiroki Saito", result.Name);
             Assert.AreEqual("ゾウさんが好きです。でもパンダも良い", result.GreetingText);
-            Assert.AreEqual("https://lh6.googleusercontent.com/-0zOCgk_an80/AAAAAAAAAAI/AAAAAAAAASI/q_HCz9fhnCA/photo.jpg", result.IconImageUrl);
+            Assert.AreEqual("https://lh6.googleusercontent.com/-0zOCgk_an80/AAAAAAAAAAI/AAAAAAAAASI/q_HCz9fhnCA/$SIZE_SEGMENT/photo.jpg", result.IconImageUrl);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDataAboutMeTest()
