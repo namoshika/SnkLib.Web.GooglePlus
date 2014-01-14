@@ -36,7 +36,7 @@ namespace SunokoLibrary.Web.GooglePlus
         public Uri PostUrl { get { return CheckFlag(_data.PostUrl, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public DateTime PostDate { get { return CheckFlag(_data.PostDate, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
         public DateTime EditDate { get { return CheckFlag(_data.EditDate, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
-        public PostStatusType PostStatus { get { return CheckFlag(_data.PostStatus, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
+        public PostStatusType PostStatus { get { return CheckFlag(_data.PostStatus, "LoadedApiTypes", () => _data.LoadedApiTypes > ActivityUpdateApiFlag.Unloaded, "ActivityUpdateApiFlag.Unloadedである").Value; } }
         public ProfileInfo PostUser { get { return CheckFlag(_postUser, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public IAttachable AttachedContent { get { return CheckFlag(_data.AttachedContent, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public ServiceType ServiceType { get { return CheckFlag(_data.ServiceType, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }

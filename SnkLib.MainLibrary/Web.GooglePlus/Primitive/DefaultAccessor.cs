@@ -623,7 +623,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     return (object)new CommentData(cid, aid, null, DateTime.MinValue, DateTime.MinValue, null, PostStatusType.Removed);
                                 }
                                 else
-                                    return (object)new ActivityData((string)shrItm[1], status: PostStatusType.Removed);
+                                    return (object)new ActivityData((string)shrItm[1], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivities);
                             }
                         default:
                             System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");

@@ -35,7 +35,7 @@ namespace SunokoLibrary.Web.GooglePlus
         public DateTime EditDate { get { return CheckFlag(_commentData.EditDate, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public PostStatusType Status { get { return _commentData.Status; } }
         public ProfileInfo Owner { get { return CheckFlag(_owner, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public ActivityInfo ParentActivity { get { return CheckFlag(_parentActivity, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public ActivityInfo ParentActivity { get { return _parentActivity; } }
         //public PlusOneInfo PlusOne { get; private set; }
 
         public StyleElement GetParsedContent() { return ContentElement.ParseHtml(Html, Client); }
