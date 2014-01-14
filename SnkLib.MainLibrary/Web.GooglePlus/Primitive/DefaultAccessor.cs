@@ -39,20 +39,20 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<Tuple<CircleData[], ProfileData[]>> GetCircleDatasAsync(IPlatformClient client)
         {
-            var lookupedProfiles = new List<string>();
-            var circles = new Dictionary<string, Tuple<string, List<string>>>();
+            var lookupedProfiles = new List<ProfileData>();
+            var circles = new Dictionary<string, Tuple<string, List<ProfileData>>>();
             var json = await Primitive.ApiWrapper.ConnectToLookupCircles(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue);
             var lastUpdateDate = DateTime.UtcNow;
 
             //サークル一覧生成。List<ProfileInfo>の初期化と一緒にサークル名も
             //この時点で取得してしまう。
             foreach (var item in json[0][1][1])
-                circles.Add((string)item[0][0], Tuple.Create((string)item[1][0], new List<string>()));
+                circles.Add((string)item[0][0], Tuple.Create((string)item[1][0], new List<ProfileData>()));
             //profileIdをサークルに振り分けてく
             foreach (var item in json[0][1][2])
             {
                 var profileId = (string)item[0].ElementAtOrDefault(2) ?? (string)item[0][0];
-                var profile = GetProfileId(item, ProfileUpdateApiFlag.LookupCircle);
+                var profile = GenerateProfileData(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle);
                 var circleIdLst = new List<string>();
                 bool isBlockingId = false;
                 foreach (var cidItm in item[3])

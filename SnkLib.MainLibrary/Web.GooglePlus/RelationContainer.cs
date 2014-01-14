@@ -105,14 +105,16 @@ namespace SunokoLibrary.Web.GooglePlus
                             switch (item.Id)
                             {
                                 case "15":
-                                    _blockCircle.Refresh(item.Members);
+                                    _blockCircle.Refresh(item.Members.Select(dt => InternalGetAndUpdateProfile(dt)).ToArray());
                                     break;
                                 case "anyone":
-                                    _yourCircle.Refresh(item.Members, Client.LatestActivities, Client.EjxValue);
+                                    _yourCircle.Refresh(
+                                        item.Members.Select(dt => InternalGetAndUpdateProfile(dt)).ToArray(),
+                                        Client.LatestActivities, Client.EjxValue);
                                     break;
                                 default:
                                     var circle = _circles.FirstOrDefault(info => info.Id == item.Id) ?? new CircleInfo(Client, item);
-                                    circle.Refresh(item.Members);
+                                    circle.Refresh(item.Members.Select(dt => InternalGetAndUpdateProfile(dt)).ToArray());
                                     circleInfos.Add(circle);
                                     break;
                             }
@@ -131,7 +133,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     try
                     {
                         var json = await Client.ServiceApi.GetIgnoredProfilesAsync(Client);
-                        var ignoreLst = new List<string>();
+                        var ignoreLst = new List<ProfileInfo>();
                         foreach (var item in json)
                         {
                             //lookupCircleする前に既に生成していたProfileがある場合は
@@ -139,7 +141,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             var profileId = item.Id;
                             var profile = InternalUpdateProfile(new ProfileData(
                                 ProfileUpdateApiFlag.Base, id: profileId, name: item.Name, iconImageUrl: item.IconImageUrl));
-                            ignoreLst.Add(profile.Id);
+                            ignoreLst.Add(InternalGetAndUpdateProfile(profile));
                         }
                         _ignoreCircle.Refresh(ignoreLst.ToArray());
                         IsUpdatedIgnore = true;
@@ -158,7 +160,7 @@ namespace SunokoLibrary.Web.GooglePlus
                         var resultLst = await Client.ServiceApi.GetFollowingMeProfilesAsync(Client);
                         foreach (var item in resultLst)
                             InternalUpdateProfile(item);
-                        _followerCircle.Refresh(resultLst.Select(info => info.Id).ToArray());
+                        _followerCircle.Refresh(resultLst.Select(info => InternalGetAndUpdateProfile(info)).ToArray());
 
                         IsUpdatedFollowers = true;
                         OnUpdatedFollowers(new EventArgs());
@@ -221,11 +223,14 @@ namespace SunokoLibrary.Web.GooglePlus
         ActivityData[] _activities;
         string _ctValue;
 
-        protected internal override void Refresh(string[] members)
+        protected internal override void Refresh(ProfileInfo[] members)
         { throw new NotSupportedException("YourCircleクラスはRefresh(IEnumerable<ProfileInfo>)をサポートしていません。"); }
-        protected internal virtual void Refresh(string[] members, ActivityData[] activities, string ctValue)
+        protected internal virtual void Refresh(ProfileInfo[] members, ActivityData[] activities, string ctValue)
         {
-            base.Refresh(members);
+            //HomeInit情報ではmembersがnullになる。この時のために
+            //membersがnull時はRefreshを実行しないようにする。
+            if (members != null)
+                base.Refresh(members);
             _activities = activities;
             _ctValue = ctValue;
         }
@@ -272,28 +277,30 @@ namespace SunokoLibrary.Web.GooglePlus
     {
         public GroupContainer(PlatformClient client, string name)
             : base(client) { Name = name; }
-        string[] _protectedMembers;
         HashSet<string> _membersHashSet;
+        ProfileInfo[] _protectedMembers;
+
         public virtual bool IsLoadedMember { get; private set; }
         public virtual string Name { get; private set; }
-        protected virtual string[] ProtectedMembers
+        protected virtual ProfileInfo[] ProtectedMembers
         {
             get { return _protectedMembers; }
             set
             {
                 _protectedMembers = value;
-                _membersHashSet = new HashSet<string>(value ?? new string[]{ });
+                _membersHashSet = value != null ? new HashSet<string>(value.Select(dt => dt.Id)) : null;
             }
         }
 
         public virtual IEnumerable<ProfileInfo> GetMembers()
+        { return CheckFlag(ProtectedMembers, "IsLoadedMember", () => IsLoadedMember, "trueでない"); }
+        public bool ContainsKey(string itemProfileId)
         {
-            return CheckFlag(ProtectedMembers, "IsLoadedMember", () => IsLoadedMember, "trueでない")
-                .Select(dt => Client.Relation.GetProfileOf(dt));
+            return CheckFlag(
+                _membersHashSet != null ? _membersHashSet.Contains(itemProfileId) : false,
+                "IsLoadedMember", () => IsLoadedMember, "trueでない");
         }
-        public bool Contains(string profileId)
-        { return _membersHashSet != null ? _membersHashSet.Contains(profileId) : false; }
-        protected internal virtual void Refresh(string[] members)
+        protected internal virtual void Refresh(ProfileInfo[] members)
         {
             ProtectedMembers = members;
             IsLoadedMember = true;
@@ -302,16 +309,16 @@ namespace SunokoLibrary.Web.GooglePlus
     public class EditableGroupContainer : GroupContainer
     {
         public EditableGroupContainer(PlatformClient client, string name, List<ProfileInfo> members,
-            Func<BlockActionType, ProfileInfo[], Task> editor)
-            : base(client, name) { _editor = editor; }
+            Func<BlockActionType, ProfileInfo[], Task> editProc)
+            : base(client, name) { _editorProc = editProc; }
 
-        Func<BlockActionType, ProfileInfo[], Task> _editor;
+        Func<BlockActionType, ProfileInfo[], Task> _editorProc;
         public async Task EditRange(BlockActionType operationType, params ProfileInfo[] targets)
         {
-            await _editor(operationType, targets);
+            await _editorProc(operationType, targets);
             ProtectedMembers = operationType == BlockActionType.Add
-                ? ProtectedMembers.Concat(targets.Select(dt => dt.Id)).ToArray()
-                : ProtectedMembers.Where(dt => targets.Any(profile => profile.Id == dt)).ToArray();
+                ? ProtectedMembers.Union(targets, ProfileEqualityComparer.Default).ToArray()
+                : ProtectedMembers.Where(info => targets.Any(profile => profile.Id == info.Id)).ToArray();
         }
     }
     public class ProfileCache : ICacheInfo<ProfileData>

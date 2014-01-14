@@ -14,7 +14,7 @@ namespace SunokoLibrary.Web.GooglePlus
     public class CircleInfo : GroupContainer, IReadRange, IPostRange
     {
         public CircleInfo(PlatformClient client, CircleData targetData)
-            : base(client, null)
+            : base(client, targetData.Name)
         {
             if (targetData == null)
                 throw new ArgumentNullException("引数targetDataをnullにする事はできません。");
@@ -22,8 +22,6 @@ namespace SunokoLibrary.Web.GooglePlus
         }
         CircleData _data;
 
-        public override bool IsLoadedMember { get { return _data.Members != null; } }
-        public override string Name { get { return _data.Name; } }
         public string Id { get { return _data.Id; } }
         public virtual IObservable<ActivityInfo> GetStream()
         {
@@ -39,21 +37,12 @@ namespace SunokoLibrary.Web.GooglePlus
                         .Where(info => false)
                         .Concat(Client.Activity.GetStream()
                             .OfType<ActivityInfo>()
-                            .Where(info => info.PostStatus != PostStatusType.Removed && ProtectedMembers.Contains(info.PostUser.Id)))
+                            .Where(info => info.PostStatus != PostStatusType.Removed && ContainsKey(info.PostUser.Id)))
                         .Subscribe(obs);
                 });
         }
         public virtual IInfoList<ActivityInfo> GetActivities()
         { return new ActivityInfoList(this, null, Client, null, null); }
-        protected override string[] ProtectedMembers
-        {
-            get { return _data.Members; }
-            set
-            {
-                _data = new CircleData(_data.Id, _data.Name, value);
-                base.ProtectedMembers = value;
-            }
-        }
         public async virtual Task<bool> Post(string content)
         {
             try

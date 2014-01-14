@@ -8,7 +8,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class CircleData
     {
-        public CircleData(string id, string name, string[] members)
+        public CircleData(string id, string name, ProfileData[] members)
         {
             Id = id;
             Name = name;
@@ -16,6 +16,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public readonly string Id;
         public readonly string Name;
-        public readonly string[] Members;
+        public readonly ProfileData[] Members;
     }
 }

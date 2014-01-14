@@ -65,7 +65,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 if (Client.Relation.CirclesAndBlockStatus != CircleUpdateLevel.LoadedWithMembers)
                     throw new InvalidOperationException("サークル情報が初期化されていません。UpdateLookupCircleAsync()を呼び出して初期化してください。");
                 return new ReadOnlyCollection<CircleInfo>(CheckFlag(
-                    Client.Relation.Circles.Where(inf => inf.Contains(Id)).ToList(), ProfileUpdateApiFlag.LookupCircle));
+                    Client.Relation.Circles.Where(inf => inf.ContainsKey(Id)).ToList(), ProfileUpdateApiFlag.LookupCircle));
             }
         }
 
@@ -170,5 +170,14 @@ namespace SunokoLibrary.Web.GooglePlus
                 throw new InvalidOperationException("StatusプロパティがMailOnlyの状態で各プロパティを参照する事はできません。");
             return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag));
         }
+    }
+    public class ProfileEqualityComparer : IEqualityComparer<ProfileInfo>
+    {
+        public bool Equals(ProfileInfo x, ProfileInfo y)
+        { return x == y || x != null && y != null && x.Id == y.Id; }
+        public int GetHashCode(ProfileInfo obj)
+        { return obj.Id.GetHashCode(); }
+
+        public static ProfileEqualityComparer Default = new ProfileEqualityComparer();
     }
 }

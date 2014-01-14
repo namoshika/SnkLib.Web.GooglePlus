@@ -29,15 +29,17 @@ namespace UnitTests.Web.GooglePlus
         }
         public Task<Tuple<CircleData[], ProfileData[]>> GetCircleDatasAsync(IPlatformClient client)
         {
+            var profiles = Enumerable.Range(1, 3)
+                .Select(id => GenerateProfileData(id, ProfileUpdateApiFlag.LookupCircle, "circle"))
+                .ToArray();
             return Task.FromResult(Tuple.Create(
                 new CircleData[]{
-                    new CircleData("anyone", "全員", new string[] { "01", "02", "03" }),
-                    new CircleData("cid02", "cname02", new string[] { "01", "02" }),
-                    new CircleData("cid03", "cname03", new string[] { "02", "03" }),
-                    new CircleData("cid04", "cname04", new string[] { }),
-                    new CircleData("15", "ブロック中", new string[] { "04" })
-                },
-                Enumerable.Range(1,3).Select(id => GenerateProfileData(id, ProfileUpdateApiFlag.LookupCircle, "circle")).ToArray()));
+                    new CircleData("anyone", "全員", new ProfileData[] { profiles[0], profiles[1], profiles[2] }),
+                    new CircleData("cid02", "cname02", new ProfileData[] { profiles[0], profiles[1] }),
+                    new CircleData("cid03", "cname03", new ProfileData[] { profiles[1], profiles[2] }),
+                    new CircleData("cid04", "cname04", new ProfileData[] { }),
+                    new CircleData("15", "ブロック中", new ProfileData[] { GenerateProfileData(3, ProfileUpdateApiFlag.LookupCircle, "circle") })
+                }, profiles));
         }
         public Task<ProfileData> GetProfileLiteAsync(string profileId, IPlatformClient client)
         { return Task.FromResult(GenerateProfileData(int.Parse(profileId.Substring(3)), ProfileUpdateApiFlag.LookupProfile, "profileLite")); }

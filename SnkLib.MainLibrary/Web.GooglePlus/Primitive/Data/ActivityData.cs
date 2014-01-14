@@ -150,6 +150,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
         }
     }
-    public enum PostStatusType { First = 1, Edited = 3, Removed = 0, }
+    public enum PostStatusType { Removed, First, Edited }
     public enum ActivityUpdateApiFlag { Unloaded = 0, GetActivities = 1, Notification = 3, GetActivity = 7 }
 }
