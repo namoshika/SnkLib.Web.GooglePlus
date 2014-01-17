@@ -11,6 +11,7 @@ namespace SunokoLibrary.Web.GooglePlus
 {
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
+#if PLATFORM_WIN
     public static class PlatformClientFactoryEx
     {
         public static Task<IPlatformClientBuilder[]> ImportFromChrome(this PlatformClientFactory factory)
@@ -80,4 +81,5 @@ namespace SunokoLibrary.Web.GooglePlus
             return cookies;
         }
     }
+#endif
 }

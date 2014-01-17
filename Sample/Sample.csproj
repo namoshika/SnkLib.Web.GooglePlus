@@ -93,7 +93,7 @@
       <Project>{a19c98e5-7048-43e2-98f0-689a3ffe2a82}</Project>
       <Name>SnkLib.MainLibrary</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SnkLib.PS.win\SnkLib.PS.win.csproj">
+    <ProjectReference Include="..\SnkLib.Platform\SnkLib.Platform.csproj">
       <Project>{37846c4e-2f87-46e9-b036-9569f422bf63}</Project>
       <Name>SnkLib.PS.win</Name>
     </ProjectReference>
