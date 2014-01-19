@@ -33,13 +33,12 @@ namespace SunokoLibrary.Web.GooglePlus
         public IObservable<object> GetStream()
         {
             return Observable
-                .Defer(() => Client.IsLoadedHomeInitData
-                    ? Observable.Return(0) 
-                    : Observable.Throw(new InvalidOperationException(
-                        "PlatformClient.IsLoadedHomeInitDataがfalseの状態で使うことはできません。"), 0))
+                .If(() => Client.IsLoadedHomeInitData, Observable.Return(0), Observable.Throw(
+                    new InvalidOperationException("PlatformClient.IsLoadedHomeInitDataがfalseの状態で使うことはできません。"), 0))
                 .SelectMany(hoge => Observable.Create<object>(obsrvr =>
                     {
                         lock (_syncerStream)
+                        {
                             if (_stream == null)
                             {
                                 //_gottenTalkGadgetCookieでPlatformClient生成後の初回の実行か
@@ -47,23 +46,26 @@ namespace SunokoLibrary.Web.GooglePlus
                                 //if(Client.Cookies.GetCookies("talkgadget.com
                                 _stream = Client.ServiceApi.GetStreamAttacher(Client).Publish();
                                 _streamSession = _stream.Connect();
-                                _streamSessionRefCount++;
                                 BeganTimeToBind = DateTime.UtcNow;
                                 OnChangedIsConnected(new EventArgs());
                             }
+                            _streamSessionRefCount++;
+                        }
                         var strm = _stream.Subscribe(obsrvr);
                         var disposer = (Action)(() =>
                         {
                             strm.Dispose();
                             lock (_syncerStream)
+                            {
                                 if (_streamSessionRefCount == 0)
                                 {
                                     _stream = null;
                                     _streamSession.Dispose();
-                                    _streamSessionRefCount--;
                                     BeganTimeToBind = DateTime.MaxValue;
                                     OnChangedIsConnected(new EventArgs());
                                 }
+                                _streamSessionRefCount--;
+                            }
                         });
                         return disposer;
                     })
