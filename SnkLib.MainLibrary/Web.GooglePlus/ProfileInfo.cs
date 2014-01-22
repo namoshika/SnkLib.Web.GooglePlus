@@ -62,10 +62,10 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             get
             {
-                if (Client.Relation.CirclesAndBlockStatus != CircleUpdateLevel.LoadedWithMembers)
+                if (Client.People.CirclesAndBlockStatus != CircleUpdateLevel.LoadedWithMembers)
                     throw new InvalidOperationException("サークル情報が初期化されていません。UpdateLookupCircleAsync()を呼び出して初期化してください。");
                 return new ReadOnlyCollection<CircleInfo>(CheckFlag(
-                    Client.Relation.Circles.Where(inf => inf.ContainsKey(Id)).ToList(), ProfileUpdateApiFlag.LookupCircle));
+                    Client.People.Circles.Where(inf => inf.ContainsKey(Id)).ToList(), ProfileUpdateApiFlag.LookupCircle));
             }
         }
 
@@ -98,8 +98,8 @@ namespace SunokoLibrary.Web.GooglePlus
                     var apiResult = await Client.ServiceApi.GetFollowingProfilesAsync(_data.Id, Client);
                     foreach (var item in apiResult)
                     {
-                        Client.Relation.InternalUpdateProfile(item);
-                        results.Add(Client.Relation.GetProfileOf(item.Id));
+                        Client.People.InternalUpdateProfile(item);
+                        results.Add(Client.People.GetProfileOf(item.Id));
                     }
                     return results.ToArray();
                 }
@@ -118,7 +118,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     var results = new List<ProfileInfo>();
                     var json = await Client.ServiceApi.GetFollowedProfilesAsync(_data.Id, count, Client);
                     foreach (var item in json)
-                        results.Add(Client.Relation.InternalGetAndUpdateProfile(item));
+                        results.Add(Client.People.InternalGetAndUpdateProfile(item));
                     return results.ToArray();
                 }
                 catch (ApiErrorException e)
@@ -129,7 +129,7 @@ namespace SunokoLibrary.Web.GooglePlus
         }
         public async Task UpdateLookupProfileAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
-            var cache = Client.Relation.InternalGetProfileCache(_data.Id);
+            var cache = Client.People.InternalGetProfileCache(_data.Id);
             await cache.SyncerUpdateProfileSummary.LockAsync(
                 isForced, () => (cache.Value.LoadedApiTypes & ProfileUpdateApiFlag.LookupProfile) != ProfileUpdateApiFlag.LookupProfile,
                 intervalRestriction, async () =>
@@ -137,7 +137,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     try
                     {
                         var apiResult = await Client.ServiceApi.GetProfileLiteAsync(_data.Id, Client);
-                        _data = Client.Relation.InternalUpdateProfile(apiResult);
+                        _data = Client.People.InternalUpdateProfile(apiResult);
                     }
                     catch (ApiErrorException e)
                     { throw new FailToOperationException("ProfileInfo.UpdateLookupProfileAsync()に失敗。", e); }
@@ -146,7 +146,7 @@ namespace SunokoLibrary.Web.GooglePlus
         }
         public async Task UpdateProfileGetAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
-            var cache = Client.Relation.InternalGetProfileCache(_data.Id);
+            var cache = Client.People.InternalGetProfileCache(_data.Id);
             await cache.SyncerUpdateProfileGet.LockAsync(
                 isForced, () => (cache.Value.LoadedApiTypes & ProfileUpdateApiFlag.ProfileGet) != ProfileUpdateApiFlag.ProfileGet,
                 intervalRestriction,
@@ -155,7 +155,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     try
                     {
                         var apiResult = await Client.ServiceApi.GetProfileFullAsync(_data.Id, Client);
-                        _data = Client.Relation.InternalUpdateProfile(apiResult);
+                        _data = Client.People.InternalUpdateProfile(apiResult);
                     }
                     catch (ApiErrorException e)
                     { throw new FailToOperationException("UpdateProfileGetAsync()に失敗。G+API呼び出しで例外が発生しました。", e); }

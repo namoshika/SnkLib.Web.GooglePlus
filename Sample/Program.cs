@@ -23,8 +23,8 @@ namespace Sample
             var atVal = platform.AtValue;
             var pvtVal = platform.PvtValue;
 
-            //platform.Relation.UpdateCirclesAndBlockAsync(false, CircleUpdateLevel.LoadedWithMembers).Wait();
-            //var aaa = platform.Relation.Circles[0];
+            //platform.People.UpdateCirclesAndBlockAsync(false, CircleUpdateLevel.LoadedWithMembers).Wait();
+            //var aaa = platform.People.Circles[0];
             //var bbb = aaa.GetMembers();
 
             //reshare - youtube

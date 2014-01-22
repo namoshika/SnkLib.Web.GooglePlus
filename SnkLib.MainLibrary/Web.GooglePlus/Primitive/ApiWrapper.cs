@@ -16,6 +16,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     {
         public static readonly DateTime DateUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static readonly string SilhouetteImageUrl = "https://ssl.gstatic.com/s2/profiles/images/silhouette$SIZE_NUM.png";
+        static readonly string SilhouetteImagePattern = "https://ssl.gstatic.com/s2/profiles/images/silhouette";
 
         [Obsolete("このメソッドはGoogleサーバー側に不正アクセスと誤認識される事があるため、使用すべきではありません。")]
         public static async Task<bool> ConnectToServiceLoginAuth(HttpClient client, Uri plusBaseUrl, System.Net.CookieContainer responseCheckTarget, string email, string password)
@@ -982,21 +983,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public static string ConvertReplasableUrl(string urlText)
         {
             urlText = ComplementUrl(urlText, SilhouetteImageUrl);
-            if (urlText != SilhouetteImageUrl)
+            if (urlText.Substring(0, SilhouetteImagePattern.Length) == SilhouetteImagePattern)
+                urlText = SilhouetteImageUrl;
+            else
             {
-                var fileSeg = urlText.LastIndexOf('/');
-                if (fileSeg < 0)
+                int fileSeg, argSeg;
+                if ((fileSeg = urlText.LastIndexOf('/')) < 0 || (argSeg = urlText.LastIndexOf('/', fileSeg - 1)) < 0)
                     throw new ArgumentException("引数urlTextのサイズセグメントに異常があります。");
-                var argSeg = urlText.LastIndexOf('/', fileSeg - 1);
-                if (argSeg < 0)
-                    throw new ArgumentException("引数urlTextのサイズセグメントに異常があります。");
-                if (argSeg < urlText.Length - 1)
-                    if (urlText[argSeg + 1] == 's' || urlText[argSeg + 1] == 'w' || urlText[argSeg + 1] == 'h')
-                        urlText = urlText.Substring(0, argSeg) + "/$SIZE_SEGMENT"
-                            + urlText.Substring(fileSeg);
-                    else
-                        urlText = urlText.Substring(0, fileSeg) + "/$SIZE_SEGMENT"
-                            + urlText.Substring(fileSeg);
+
+                if (urlText.Split('/').Length == 9)
+                    urlText = urlText.Substring(0, argSeg) + "/$SIZE_SEGMENT" + urlText.Substring(fileSeg);
+                else
+                    urlText = urlText.Substring(0, fileSeg) + "/$SIZE_SEGMENT" + urlText.Substring(fileSeg);
             }
             return urlText;
         }

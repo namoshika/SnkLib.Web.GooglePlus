@@ -21,7 +21,7 @@ namespace SunokoLibrary.Web.GooglePlus
             : base(client)
         {
             _data = data;
-            _postUser = data.Owner != null ? client.Relation.InternalGetAndUpdateProfile(data.Owner) : null;
+            _postUser = data.Owner != null ? client.People.InternalGetAndUpdateProfile(data.Owner) : null;
         }
         ActivityData _data;
         ProfileInfo _postUser;
@@ -63,7 +63,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     try
                     {
                         _data = Client.Activity.InternalUpdateActivity(await Client.ServiceApi.GetActivityAsync(Id, Client));
-                        _postUser = Client.Relation.InternalGetAndUpdateProfile(_data.Owner);
+                        _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                         _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
                     }
                     catch (ApiErrorException e)
@@ -79,7 +79,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 () =>
                     {
                         _data = cache.Value;
-                        _postUser = Client.Relation.InternalGetAndUpdateProfile(_data.Owner);
+                        _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                         _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
                     });
         }

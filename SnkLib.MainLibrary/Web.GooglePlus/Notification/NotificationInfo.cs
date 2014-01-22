@@ -14,7 +14,7 @@ namespace SunokoLibrary.Web.GooglePlus
             : base(client)
         {
             _data = data;
-            _actor = client.Relation.InternalGetAndUpdateProfile(data.Actor);
+            _actor = client.People.InternalGetAndUpdateProfile(data.Actor);
             _followingNotifications = new ObservableCollection<ChainingNotificationInfo>(
                 data.FollowingNotifications.Select(dt => new ChainingNotificationInfo(this, dt, client)));
             Container = container;
@@ -39,7 +39,7 @@ namespace SunokoLibrary.Web.GooglePlus
             foreach (var item in newItems)
                 _followingNotifications.Insert(0, new ChainingNotificationInfo(this, item, Client));
             if(_actor.Id != _followingNotifications.First().Id)
-                _actor = Client.Relation.InternalGetAndUpdateProfile(data.Actor);
+                _actor = Client.People.InternalGetAndUpdateProfile(data.Actor);
             if (newItems.Length > 0)
                 OnUpdated(new NotificationUpdatedEventArgs(newItems));
         }
@@ -63,7 +63,7 @@ namespace SunokoLibrary.Web.GooglePlus
 
         public bool IsReaded { get { return _data.NoticedDate < _latestInfo.Container.LastReadedTime; } }
         public string Id { get { return _data.Id; } }
-        public ProfileInfo Actor { get { return Client.Relation.InternalGetAndUpdateProfile(_data.Actor); } }
+        public ProfileInfo Actor { get { return Client.People.InternalGetAndUpdateProfile(_data.Actor); } }
         public DateTime NoticedDate { get { return _data.NoticedDate; } }
     }
     public delegate void NotificationUpdatedEventHandler(object sender, NotificationUpdatedEventArgs e);

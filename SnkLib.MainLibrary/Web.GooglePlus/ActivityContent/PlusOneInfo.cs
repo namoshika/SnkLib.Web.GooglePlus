@@ -78,13 +78,13 @@ namespace SunokoLibrary.Web.GooglePlus
                     return new ProfileInfo[] { };
                 if (_isUpdatedMembers && isForced == false
                     || isForced && DateTime.UtcNow - _lastUpdateMember < intervalRestriction)
-                    return _members.Select(id => Client.Relation.GetProfileOf(id)).ToArray();
+                    return _members.Select(id => Client.People.GetProfileOf(id)).ToArray();
 
                 var resLst = await Client.ServiceApi.GetProfileOfPusherAsync(PlusOneId, PushCount, Client);
                 _members = resLst.Select(data => data.Id).ToArray();
                 _lastUpdateMember = DateTime.UtcNow;
                 _isUpdatedMembers = true;
-                return resLst.Select(data => Client.Relation.InternalGetAndUpdateProfile(data)).ToArray();
+                return resLst.Select(data => Client.People.InternalGetAndUpdateProfile(data)).ToArray();
             }
             finally
             { _syncerGetPushMembers.Release(); }

@@ -75,7 +75,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     if (item is ActivityData)
                         return Client.Activity.InternalGetAndUpdateActivity((ActivityData)item);
                     else if (item is ProfileData)
-                        return Client.Relation.InternalGetAndUpdateProfile((ProfileData)item);
+                        return Client.People.InternalGetAndUpdateProfile((ProfileData)item);
                     else if (item is CommentData)
                     {
                         var cData = (CommentData)item;

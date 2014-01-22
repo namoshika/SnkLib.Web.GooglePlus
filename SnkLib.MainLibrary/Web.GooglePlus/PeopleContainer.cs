@@ -13,9 +13,9 @@ namespace SunokoLibrary.Web.GooglePlus
     using SunokoLibrary.Threading;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
-    public class RelationContainer : AccessorBase
+    public class PeopleContainer : AccessorBase
     {
-        public RelationContainer(PlatformClient client)
+        public PeopleContainer(PlatformClient client)
             : base(client)
         {
             _circles = new CircleInfo[] { };
@@ -264,7 +264,7 @@ namespace SunokoLibrary.Web.GooglePlus
             try
             {
                 await ApiWrapper.ConnectToPost(
-                    Client.NormalHttpClient, Client.PlusBaseUrl, DateTime.Now, 0, (await Client.Relation.GetProfileOfMeAsync(false)).Id,
+                    Client.NormalHttpClient, Client.PlusBaseUrl, DateTime.Now, 0, (await Client.People.GetProfileOfMeAsync(false)).Id,
                     new Dictionary<string, string> { { Id, Name } }, new Dictionary<string, string> { },
                     null, content, false, false, Client.AtValue);
                 return true;

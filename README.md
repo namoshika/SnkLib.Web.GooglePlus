@@ -29,8 +29,9 @@ NuGetのインストール済みを想定。
 
 1. (ライブラリの.csprojを初めて開く際に ".\packages\Microsoft.Bcl.Build.1.0.7\tools\Microsoft.Bcl.Build.targets" が見つからずエラーが発生する事を確認。その場合は以下の手順で必要パッケージのダウンロードを行なってください)  
 2. NuGetパッケージの復元を有効化  
-3. 追加されたファイルを使用し、コンソール上で参照パッケージをインストール  
-> SolutionFolder>.\.nuget\NuGet.exe install -o packages SnkLib_GooglePlus\packages.config
+3. 追加されたファイルを使用し、パッケージ マネージャー コンソール上で参照パッケージをインストール  
+> PM>.nuget\NuGet.exe install -o packages SnkLib.MainLibrary\packages.config  
+> PM>.nuget\NuGet.exe install -o packages SnkLib.Platform\packages.config  
 4. プロジェクトをソリューションエクスプローラー上で再読み込みする  
 
 ------------------------
@@ -43,8 +44,8 @@ NuGetのインストール済みを想定。
 * PlatformClient.Activity: ストリーム上の投稿データ\(ActivityInfo\)を提供  
 
 使用例  
->var generator = await PlatformClient.Factory.ImportFromChrome();
->var client = await generator[0].Build();
+>var generator = await PlatformClient.Factory.ImportFromChrome();  
+>var client = await generator[0].Build();  
 >
 >await client.Relation.UpdateCirclesAndBlockAsync(false, CircleUpdateLevel.Loaded);  
 >var circles = client.Relation.Circles;  

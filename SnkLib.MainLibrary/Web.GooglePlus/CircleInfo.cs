@@ -30,7 +30,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     return Observable.Start(() =>
                         {
                             if (IsLoadedMember == false)
-                                Client.Relation.UpdateCirclesAndBlockAsync(
+                                Client.People.UpdateCirclesAndBlockAsync(
                                     false, CircleUpdateLevel.LoadedWithMembers, TimeSpan.FromSeconds(1)).Wait();
                             return (ActivityInfo)null;
                         })
@@ -48,7 +48,7 @@ namespace SunokoLibrary.Web.GooglePlus
             try
             {
                 await ApiWrapper.ConnectToPost(
-                    Client.NormalHttpClient, Client.PlusBaseUrl, DateTime.Now, 0, (await Client.Relation.GetProfileOfMeAsync(false)).Id,
+                    Client.NormalHttpClient, Client.PlusBaseUrl, DateTime.Now, 0, (await Client.People.GetProfileOfMeAsync(false)).Id,
                     new Dictionary<string, string> { { Id, Name } }, new Dictionary<string, string> { },
                     null, content, false, false, Client.AtValue);
                 return true;
@@ -128,7 +128,7 @@ namespace SunokoLibrary.Web.GooglePlus
                         var client = rangePairs.Item1;
                         var circles = rangePairs.Item2.Cast<IPostRange>();
                         await ApiWrapper.ConnectToPost(
-                            client.NormalHttpClient, client.PlusBaseUrl, DateTime.Now, 0, (await client.Relation.GetProfileOfMeAsync(false)).Id,
+                            client.NormalHttpClient, client.PlusBaseUrl, DateTime.Now, 0, (await client.People.GetProfileOfMeAsync(false)).Id,
                             circles.ToDictionary(obj => obj.Id, obj => obj.Name), new Dictionary<string, string> { },
                             null, content, false, false, client.AtValue);
                     }

@@ -19,7 +19,7 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             _commentData = commentData;
             _activityData = activityData;
-            _owner = commentData.Owner != null ? client.Relation.InternalGetAndUpdateProfile(commentData.Owner) : null;
+            _owner = commentData.Owner != null ? client.People.InternalGetAndUpdateProfile(commentData.Owner) : null;
             _parentActivity = Client.Activity.InternalGetAndUpdateActivity(activityData);
             _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
         }

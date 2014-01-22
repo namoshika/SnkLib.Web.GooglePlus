@@ -17,7 +17,7 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             _data = data;
             _attachedActivity = client.Activity.GetActivityInfo(_data.AttachedActivity);
-            _owner = client.Relation.InternalGetAndUpdateProfile(data.Owner);
+            _owner = client.People.InternalGetAndUpdateProfile(data.Owner);
         }
 
         AlbumData _data;
@@ -48,7 +48,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     {
                         _data = _data + await Client.ServiceApi.GetAlbumAsync(Id, Owner.Id, Client);
                         _attachedActivity = Client.Activity.GetActivityInfo(_data.AttachedActivity);
-                        _owner = Client.Relation.InternalGetAndUpdateProfile(_data.Owner);
+                        _owner = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                     }
                     catch (Primitive.ApiErrorException e)
                     { throw new FailToOperationException("UpdateAlbumAsync()に失敗しました。", e); }

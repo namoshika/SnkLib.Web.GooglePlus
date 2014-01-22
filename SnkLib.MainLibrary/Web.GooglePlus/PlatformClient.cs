@@ -29,7 +29,7 @@ namespace SunokoLibrary.Web.GooglePlus
             StreamHttpClient.Timeout = TimeSpan.FromMinutes(15);
             StreamHttpClient.DefaultRequestHeaders.Add(
                 "user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
-            Relation = new RelationContainer(this);
+            People = new PeopleContainer(this);
             Activity = new ActivityContainer(this);
             Notification = new NotificationContainer(this);
         }
@@ -49,7 +49,7 @@ namespace SunokoLibrary.Web.GooglePlus
         { get { return AccessorBase.CheckFlag(_data.PvtValue, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
         public string EjxValue
         { get { return AccessorBase.CheckFlag(_data.EjxValue, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
-        public RelationContainer Relation { get; private set; }
+        public PeopleContainer People { get; private set; }
         public ActivityContainer Activity { get; private set; }
         public NotificationContainer Notification { get; private set; }
         internal ActivityData[] LatestActivities
