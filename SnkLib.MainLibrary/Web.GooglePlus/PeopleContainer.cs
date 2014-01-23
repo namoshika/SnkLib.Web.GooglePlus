@@ -97,7 +97,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             profiles = res.Item2;
                         }
                         catch (ApiErrorException e)
-                        { throw new FailToOperationException("UpdateCirclesAndBlockAsync()に失敗しました。G+API呼び出しで例外が発生しました。", e); }
+                        { throw new FailToOperationException<PeopleContainer>("UpdateCirclesAndBlockAsync()に失敗しました。G+API呼び出しで例外が発生しました。", this, e); }
 
                         //メンバ変数に収めていく。ブロックサークルは別枠扱い
                         List<CircleInfo> circleInfos = new List<CircleInfo>();
@@ -148,7 +148,7 @@ namespace SunokoLibrary.Web.GooglePlus
                         OnUpdatedIgnore(new EventArgs());
                     }
                     catch (ApiErrorException e)
-                    { throw new FailToOperationException("UpdateIgnoreAsync()に失敗。G+API呼び出しで例外が発生しました。", e); }
+                    { throw new FailToOperationException<PeopleContainer>("UpdateIgnoreAsync()に失敗。G+API呼び出しで例外が発生しました。", this, e); }
                 }, null);
         }
         public async Task UpdateFollowerAsync(bool isForced, TimeSpan? intervalRestriction = null)
@@ -166,7 +166,7 @@ namespace SunokoLibrary.Web.GooglePlus
                         OnUpdatedFollowers(new EventArgs());
                     }
                     catch (ApiErrorException e)
-                    { throw new FailToOperationException("UpdateFollowerAsync()に失敗。G+API呼び出しで例外が発生しました。", e); }
+                    { throw new FailToOperationException<PeopleContainer>("UpdateFollowerAsync()に失敗。G+API呼び出しで例外が発生しました。", this, e); }
                 }, null);
         }
         public async Task<ProfileInfo> GetProfileOfMeAsync(bool isForced)
@@ -182,7 +182,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     return GetProfileOf(_profileAboutMe.Id);
                 }
                 catch (ApiErrorException e)
-                { throw new FailToOperationException("GetProfileOfMeAsync()に失敗。ログインされてるユーザの情報の取得に失敗しました。", e); }
+                { throw new FailToOperationException<PeopleContainer>("GetProfileOfMeAsync()に失敗。ログインされてるユーザの情報の取得に失敗しました。", this, e); }
         }
         internal ProfileCache InternalGetProfileCache(string plusId)
         {

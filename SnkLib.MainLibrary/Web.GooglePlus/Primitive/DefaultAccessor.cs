@@ -35,7 +35,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 return new InitData(atVal, pvtVal, eJxVal, circleInfos, latestActivities); ;
             }
             catch (KeyNotFoundException e)
-            { throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, e); }
+            { throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, new Uri("https://plus.google.com"), null, e); }
         }
         public async Task<Tuple<CircleData[], ProfileData[]>> GetCircleDatasAsync(IPlatformClient client)
         {
@@ -97,7 +97,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var id = (string)json[0][0][1];
             var lastUpdateDate = DateTime.UtcNow;
             if (id == null)
-                throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null);
+                throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null, null, null);
             return GenerateProfileData(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData[]> GetFollowingProfilesAsync(string profileId, IPlatformClient client)
@@ -335,39 +335,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client)
         { return ApiWrapper.ConnectToNotificationsUpdateLastReadTime(client.NormalHttpClient, client.PlusBaseUrl, value, client.AtValue); }
-        public async Task<bool> PostComment(string activityId, string content, IPlatformClient client)
-        {
-            try
-            {
-                await ApiWrapper.ConnectToComment(
-                    client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue);
-                return true;
-            }
-            catch (ApiErrorException)
-            { return false; }
-        }
-        public async Task<bool> EditComment(string activityId, string commentId, string content, IPlatformClient client)
-        {
-            try
-            {
-                await ApiWrapper.ConnectToEditComment(
-                    client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue);
-                return true;
-            }
-            catch (ApiErrorException)
-            { return false; }
-        }
-        public async Task<bool> DeleteComment(string commentId, IPlatformClient client)
-        {
-            try
-            {
-                await ApiWrapper.ConnectToDeleteComment(
-                    client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue);
-                return true;
-            }
-            catch (ApiErrorException)
-            { return false; }
-        }
+        public Task PostComment(string activityId, string content, IPlatformClient client)
+        { return ApiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue); }
+        public Task EditComment(string activityId, string commentId, string content, IPlatformClient client)
+        { return ApiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue); }
+        public Task DeleteComment(string commentId, IPlatformClient client)
+        { return ApiWrapper.ConnectToDeleteComment(client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue); }
 
         ProfileData GenerateProfileData(JToken apiResponse, DateTime? lastUpdateDate, ProfileUpdateApiFlag apiType)
         {

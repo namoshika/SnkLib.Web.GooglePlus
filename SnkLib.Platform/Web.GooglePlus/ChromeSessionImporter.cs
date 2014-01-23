@@ -44,41 +44,52 @@ namespace SunokoLibrary.Web.GooglePlus
             var cookies = await ImportCookies();
             var hClient = new HttpClient(new HttpClientHandler() { CookieContainer = cookies });
             hClient.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
-            var accountListPage = await hClient.GetStringAsync(_accountListUrl);
-            var jsonTxt = Uri.UnescapeDataString(_regex.Match(accountListPage).Groups["jsonTxt"].Value.Replace("\\x", "%"));
-            if (jsonTxt == string.Empty)
-                return new IPlatformClientBuilder[] { };
-            else
+
+            try
             {
-                var json = JArray.Parse(jsonTxt);
-                var generators = json[1]
-                    .Select(item => new ChromeSessionImporter((string)item[3], (string)item[2], ApiWrapper.ConvertReplasableUrl((string)item[4]), (int)item[7], cookies))
-                    .ToArray();
-                return generators;
+                var accountListPage = await hClient.GetStringAsync(_accountListUrl);
+                var jsonTxt = Uri.UnescapeDataString(_regex.Match(accountListPage).Groups["jsonTxt"].Value.Replace("\\x", "%"));
+                if (jsonTxt == string.Empty)
+                    return new IPlatformClientBuilder[] { };
+                else
+                {
+                    var json = JArray.Parse(jsonTxt);
+                    var generators = json[1]
+                        .Select(item => new ChromeSessionImporter((string)item[3], (string)item[2], ApiWrapper.ConvertReplasableUrl((string)item[4]), (int)item[7], cookies))
+                        .ToArray();
+                    return generators;
+                }
             }
+            catch (System.Net.Http.HttpRequestException e)
+            { throw new FailToOperationException("Chromeでログイン中のアカウントの取得に失敗しました。", e); }
         }
         public static async Task<CookieContainer> ImportCookies()
         {
             var cookies = new CookieContainer();
-            using (var dbClient = new System.Data.SQLite.SQLiteConnection(string.Format("Data Source={0}", _cookiesFilePath)))
+            try
             {
-                await dbClient.OpenAsync();
-                var command = dbClient.CreateCommand();
-                command.CommandText = "select * from cookies where host_key like \"%.google.com\"";
-                using (var reader = await command.ExecuteReaderAsync())
-                    while (reader.Read())
-                        cookies.Add(
-                            new Cookie()
-                            {
-                                Name = (string)reader["name"],
-                                Value = (string)reader["value"],
-                                Path = (string)reader["path"],
-                                Domain =(string)reader["host_key"],
-                                Secure = (long)reader["secure"] == 1,
-                                HttpOnly = (long)reader["httponly"] == 1
-                            });
+                using (var dbClient = new System.Data.SQLite.SQLiteConnection(string.Format("Data Source={0}", _cookiesFilePath)))
+                {
+                    await dbClient.OpenAsync();
+                    var command = dbClient.CreateCommand();
+                    command.CommandText = "select * from cookies where host_key like \"%.google.com\"";
+                    using (var reader = await command.ExecuteReaderAsync())
+                        while (reader.Read())
+                            cookies.Add(
+                                new Cookie()
+                                {
+                                    Name = (string)reader["name"],
+                                    Value = (string)reader["value"],
+                                    Path = (string)reader["path"],
+                                    Domain = (string)reader["host_key"],
+                                    Secure = (long)reader["secure"] == 1,
+                                    HttpOnly = (long)reader["httponly"] == 1
+                                });
+                }
+                return cookies;
             }
-            return cookies;
+            catch (System.Data.SQLite.SQLiteException e)
+            { throw new FailToOperationException("Chromeからのログイン用Cookie取得に失敗しました。", e); }
         }
     }
 #endif

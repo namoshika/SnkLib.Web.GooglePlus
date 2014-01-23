@@ -565,18 +565,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                             try
                                             { subject.OnNext(item); }
                                             catch (Exception e)
-                                            { throw new OutsideException(e); }
+                                            { throw new OutsideException("通知先で例外が発生しました。", e); }
                                             aidVal++;
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                    catch (OutsideException e)
-                    {
-                        throw new AggregateException(
-                            new Exception("通知先で例外が発生しました。", e.InnerException));
                     }
                     catch (Exception e)
                     {
@@ -698,7 +693,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
 
             if (string.IsNullOrEmpty(clid) || string.IsNullOrEmpty(gsessionid))
-                throw new ApiErrorException("clid, gsessionidの読み込みに失敗しました。", ErrorType.UnknownError, null);
+                throw new ApiErrorException("clid, gsessionidの読み込みに失敗しました。", ErrorType.UnknownError, url, null, null);
             else
                 return new Dictionary<string, string>()
                 {
@@ -1027,20 +1022,20 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     switch (res.StatusCode)
                     {
                         case HttpStatusCode.Forbidden:
-                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。" + res.StatusCode, ErrorType.SessionError, null);
+                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。" + res.StatusCode, ErrorType.SessionError, requestUrl, content, null);
                         case HttpStatusCode.NotFound:
-                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。" + res.StatusCode, ErrorType.ParameterError, null);
+                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。" + res.StatusCode, ErrorType.ParameterError, requestUrl, content, null);
                         default:
-                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。" + res.StatusCode, ErrorType.UnknownError, null);
+                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。" + res.StatusCode, ErrorType.UnknownError, requestUrl, content, null);
                     }
                 }
             }
             catch (HttpRequestException e)
             {
                 if (e.InnerException is WebException)
-                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, e);
+                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, requestUrl, content, e);
                 else
-                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, e);
+                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, content, e);
             }
         }
         static async Task<string> GetStringAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
@@ -1055,20 +1050,20 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     switch (res.StatusCode)
                     {
                         case HttpStatusCode.Forbidden:
-                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。", ErrorType.SessionError, null);
+                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。", ErrorType.SessionError, requestUrl, null, null);
                         case HttpStatusCode.NotFound:
-                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。", ErrorType.ParameterError, null);
+                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。", ErrorType.ParameterError, requestUrl, null, null);
                         default:
-                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。", ErrorType.UnknownError, null);
+                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。", ErrorType.UnknownError, requestUrl, null, null);
                     }
                 }
             }
             catch (HttpRequestException e)
             {
                 if (e.InnerException is WebException)
-                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, e);
+                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, requestUrl, null, e);
                 else
-                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, e);
+                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, null, e);
             }
         }
         static async Task<System.IO.Stream> GetStreamAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
@@ -1085,20 +1080,20 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     switch (res.StatusCode)
                     {
                         case HttpStatusCode.Forbidden:
-                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。", ErrorType.SessionError, null);
+                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。", ErrorType.SessionError, requestUrl, null, null);
                         case HttpStatusCode.NotFound:
-                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。", ErrorType.ParameterError, null);
+                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。", ErrorType.ParameterError, requestUrl, null, null);
                         default:
-                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。", ErrorType.UnknownError, null);
+                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。", ErrorType.UnknownError, requestUrl, null, null);
                     }
                 }
             }
             catch (HttpRequestException e)
             {
                 if (e.InnerException is WebException)
-                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, e);
+                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, requestUrl, null, e);
                 else
-                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, e);
+                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, null, e);
             }
         }
         enum NodeType { DictKey, DictVal, Array, KeyStr, KeyNum, ValNum, ValStr, None, }
@@ -1179,5 +1174,5 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public enum ContentType { Album, Image, Link, InteractiveLink, YouTube, Reshare }
 
     class OutsideException : Exception
-    { public OutsideException(Exception innerException) : base(null, innerException) { } }
+    { public OutsideException(string message, Exception innerException) : base(message, innerException) { } }
 }

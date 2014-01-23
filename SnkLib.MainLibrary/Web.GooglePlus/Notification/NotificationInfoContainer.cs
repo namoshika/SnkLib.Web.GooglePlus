@@ -29,61 +29,70 @@ namespace SunokoLibrary.Web.GooglePlus
 
         public Task UpdateAsync(int length) { return PrivateUpdate(length, null); }
         public Task LoadMore(int length) { return PrivateUpdate(length, _continueToken); }
-        public Task UpdateLatestCheckTimeAsync(DateTime? lastReadTime = null)
-        { return Client.ServiceApi.UpdateNotificationCheckDateAsync(lastReadTime ?? DateTime.UtcNow, Client); }
+        public async Task UpdateLatestCheckTimeAsync(DateTime? lastReadTime = null)
+        {
+            try { await Client.ServiceApi.UpdateNotificationCheckDateAsync(lastReadTime ?? DateTime.UtcNow, Client); }
+            catch (ApiErrorException e)
+            { throw new FailToOperationException<NotificationInfoContainer>("既読時間の送信に失敗しました。", this, e); }
+        }
         async Task PrivateUpdate(int length, string continueToken)
         {
-            var apiResult = await Client.ServiceApi.GetNotificationsAsync(_filtter, length, continueToken, Client);
-            var unreadItemCount = 0;
-            LastReadedTime = apiResult.Item2;
-            if (continueToken == null)
+            try
             {
-                foreach (var item in apiResult.Item1
-                    .GroupJoin(
-                        _notifications,
-                        newItem => newItem.FollowingNotifications.Last().Id,
-                        oldItem => oldItem.FollowingNotifications.Last().Id,
-                        (nw, old) => new { NewItem = nw, OldItem = old.DefaultIfEmpty() })
-                    .Reverse()
-                    .SelectMany(
-                        pair => pair.OldItem, (pair, oldItem) => new { NewData = pair.NewItem, OldInfo = oldItem }))
+                var apiResult = await Client.ServiceApi.GetNotificationsAsync(_filtter, length, continueToken, Client);
+                var unreadItemCount = 0;
+                LastReadedTime = apiResult.Item2;
+                if (continueToken == null)
                 {
-                    if (LastReadedTime < item.NewData.NoticedDate)
-                        unreadItemCount++;
-                    if (item.OldInfo != null)
+                    foreach (var item in apiResult.Item1
+                        .GroupJoin(
+                            _notifications,
+                            newItem => newItem.FollowingNotifications.Last().Id,
+                            oldItem => oldItem.FollowingNotifications.Last().Id,
+                            (nw, old) => new { NewItem = nw, OldItem = old.DefaultIfEmpty() })
+                        .Reverse()
+                        .SelectMany(
+                            pair => pair.OldItem, (pair, oldItem) => new { NewData = pair.NewItem, OldInfo = oldItem }))
                     {
-                        var oldIdx = _notifications.IndexOf(item.OldInfo);
-                        _notifications.Move(oldIdx, 0);
-                        item.OldInfo.Update(item.NewData);
-                    }
-                    else
-                        if (item.NewData is NotificationDataWithActivity)
-                            _notifications.Insert(0, new NotificationInfoWithActivity((NotificationDataWithActivity)item.NewData, this, Client));
-                        else if (item.NewData is NotificationDataWithImage)
-                            _notifications.Insert(0, new NotificationInfoWithImage((NotificationDataWithImage)item.NewData, this, Client));
+                        if (LastReadedTime < item.NewData.NoticedDate)
+                            unreadItemCount++;
+                        if (item.OldInfo != null)
+                        {
+                            var oldIdx = _notifications.IndexOf(item.OldInfo);
+                            _notifications.Move(oldIdx, 0);
+                            item.OldInfo.Update(item.NewData);
+                        }
                         else
-                            _notifications.Insert(0, new NotificationInfo(item.NewData, this, Client));
+                            if (item.NewData is NotificationDataWithActivity)
+                                _notifications.Insert(0, new NotificationInfoWithActivity((NotificationDataWithActivity)item.NewData, this, Client));
+                            else if (item.NewData is NotificationDataWithImage)
+                                _notifications.Insert(0, new NotificationInfoWithImage((NotificationDataWithImage)item.NewData, this, Client));
+                            else
+                                _notifications.Insert(0, new NotificationInfo(item.NewData, this, Client));
+                    }
+                    for (var i = length; length < _notifications.Count; i++)
+                        _notifications.RemoveAt(length);
+                    UnreadItemCount = unreadItemCount;
                 }
-                for (var i = length; length < _notifications.Count; i++)
-                    _notifications.RemoveAt(length);
-                UnreadItemCount = unreadItemCount;
-            }
-            else
-            {
-                foreach (var item in apiResult.Item1)
+                else
                 {
-                    if (LastReadedTime < item.NoticedDate)
-                        unreadItemCount++;
-                    if (item is NotificationDataWithActivity)
-                        _notifications.Add(new NotificationInfoWithActivity((NotificationDataWithActivity)item, this, Client));
-                    else if (item is NotificationDataWithImage)
-                        _notifications.Add(new NotificationInfoWithImage((NotificationDataWithImage)item, this, Client));
-                    else
-                        _notifications.Add(new NotificationInfo(item, this, Client));
+                    foreach (var item in apiResult.Item1)
+                    {
+                        if (LastReadedTime < item.NoticedDate)
+                            unreadItemCount++;
+                        if (item is NotificationDataWithActivity)
+                            _notifications.Add(new NotificationInfoWithActivity((NotificationDataWithActivity)item, this, Client));
+                        else if (item is NotificationDataWithImage)
+                            _notifications.Add(new NotificationInfoWithImage((NotificationDataWithImage)item, this, Client));
+                        else
+                            _notifications.Add(new NotificationInfo(item, this, Client));
+                    }
+                    UnreadItemCount += unreadItemCount;
                 }
-                UnreadItemCount += unreadItemCount;
+                _continueToken = apiResult.Item3;
             }
-            _continueToken = apiResult.Item3;
+            catch (ApiErrorException e)
+            { throw new FailToOperationException<NotificationInfoContainer>("NotificationInfoContainerの更新に失敗しました。", this, e); }
         }
     }
 }

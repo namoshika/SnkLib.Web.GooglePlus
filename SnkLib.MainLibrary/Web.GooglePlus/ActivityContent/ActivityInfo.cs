@@ -13,8 +13,7 @@ namespace SunokoLibrary.Web.GooglePlus
     using SunokoLibrary.Threading;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
-    [System.Diagnostics.DebuggerTypeProxy(typeof(ActivityInfoDebugView)),
-    System.Diagnostics.DebuggerDisplay("{Id,nq}, {PostStatus}")]
+    [System.Diagnostics.DebuggerDisplay("{Id,nq}, {PostStatus}")]
     public class ActivityInfo : AccessorBase
     {
         public ActivityInfo(PlatformClient client, ActivityData data)
@@ -26,7 +25,7 @@ namespace SunokoLibrary.Web.GooglePlus
         ActivityData _data;
         ProfileInfo _postUser;
         CommentInfo[] _comments;
-        readonly Dictionary<EventHandler, IDisposable> _talkgadgetBindObjs = new Dictionary<EventHandler,IDisposable>();
+        readonly Dictionary<EventHandler, IDisposable> _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
 
         public string Id { get { return _data.Id; } }
         public ActivityUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
@@ -46,10 +45,13 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             var obs = Observable
                 .Defer(() => UpdateGetActivityAsync(
-                    false, allowGetActivity ? ActivityUpdateApiFlag.GetActivity : ActivityUpdateApiFlag.GetActivities).ToObservable())
+                    false, allowGetActivity ? ActivityUpdateApiFlag.GetActivity : ActivityUpdateApiFlag.Unloaded).ToObservable())
                 .SelectMany(unit => _comments);
             if (isInfinityEnum)
-                obs = obs.Concat(Client.Activity.GetStream().OfType<CommentInfo>().Where(inf => inf.ParentActivity.Id == Id));
+                obs = obs.Concat(Client.Activity.GetStream()
+                    .OfType<CommentInfo>()
+                    .Where(inf => inf.ParentActivity.Id == Id)
+                    .Catch<CommentInfo, ApiErrorException>(ex => Observable.Throw(new FailToOperationException<ActivityInfo>("CommentInfoの受信中にエラーが発生しました。", this, ex), (CommentInfo)null)));
             return obs;
         }
         public async Task UpdateGetActivityAsync(bool isForced, ActivityUpdateApiFlag updaterTypes, TimeSpan? intervalRestriction = null)
@@ -73,22 +75,73 @@ namespace SunokoLibrary.Web.GooglePlus
                             Client.Activity.InternalUpdateActivity(new ActivityData(
                                 Id, status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivity));
                         else
-                            throw new FailToOperationException("UpdateGetActivityAsync()に失敗しました。", e);
+                            throw new FailToOperationException<ActivityInfo>("UpdateGetActivityAsync()に失敗しました。", this, e);
                     }
                 },
                 () =>
-                    {
-                        _data = cache.Value;
-                        _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
-                        _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
-                    });
+                {
+                    _data = cache.Value;
+                    _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
+                    _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
+                });
         }
-        public Task<bool> PostComment(string content)
-        { return Client.ServiceApi.PostComment(Id, content, Client); }
-        public Task<bool> EditComment(string commentId, string content)
-        { return Client.ServiceApi.EditComment(Id, commentId, content, Client); }
-        public Task<bool> DeleteComment(string commentId)
-        { return Client.ServiceApi.DeleteComment(commentId, Client); }
+        public async Task<bool> PostComment(string content)
+        {
+            try
+            {
+                await Client.ServiceApi.PostComment(Id, content, Client);
+                return true;
+            }
+            catch (ApiErrorException e)
+            {
+                switch (e.Type)
+                {
+                    case ErrorType.SessionError:
+                    case ErrorType.ParameterError:
+                        return false;
+                    default:
+                        throw new FailToOperationException<ActivityInfo>("コメント投稿に失敗しました。", this, e);
+                }
+            }
+        }
+        public async Task<bool> EditComment(string commentId, string content)
+        {
+            try
+            {
+                await Client.ServiceApi.EditComment(Id, commentId, content, Client);
+                return true;
+            }
+            catch (ApiErrorException e)
+            {
+                switch (e.Type)
+                {
+                    case ErrorType.SessionError:
+                    case ErrorType.ParameterError:
+                        return false;
+                    default:
+                        throw new FailToOperationException<ActivityInfo>("コメント投稿に失敗しました。", this, e);
+                }
+            }
+        }
+        public async Task<bool> DeleteComment(string commentId)
+        {
+            try
+            {
+                await Client.ServiceApi.DeleteComment(commentId, Client);
+                return true;
+            }
+            catch (ApiErrorException e)
+            {
+                switch (e.Type)
+                {
+                    case ErrorType.SessionError:
+                    case ErrorType.ParameterError:
+                        return false;
+                    default:
+                        throw new FailToOperationException<ActivityInfo>("コメント投稿に失敗しました。", this, e);
+                }
+            }
+        }
         public StyleElement GetParsedContent()
         { return ContentElement.ParseHtml(Html, Client); }
 
@@ -119,36 +172,6 @@ namespace SunokoLibrary.Web.GooglePlus
                         obj.Dispose();
                     }
             }
-        }
-
-        class ActivityInfoDebugView
-        {
-            public ActivityInfoDebugView(ActivityInfo myhashtable) { _target = myhashtable; }
-            static Dictionary<int, string> _profileUpdateApiFlagBitDesc =
-                new Dictionary<int, string>() { { 1, "GetActivities" }, { 2, "Notification" }, { 4, "GetActivity" } };
-            ActivityInfo _target;
-
-            public string Id { get { return _target.Id; } }
-            [System.Diagnostics.DebuggerDisplay("{LoadedApiTypes,nq}")]
-            public string LoadedApiTypes
-            {
-                get
-                {
-                    return string.Join(", ", _profileUpdateApiFlagBitDesc
-                        .Where(pair => ((int)_target.LoadedApiTypes & pair.Key) == pair.Key)
-                        .Select(pair => pair.Value));
-                }
-            }
-            public bool? IsEditable { get { return _target._data.IsEditable; } }
-            public string Html { get { return _target._data.Html; } }
-            public string Text { get { return _target._data.Text; } }
-            public Uri PostUrl { get { return _target._data.PostUrl; } }
-            public DateTime? PostDate { get { return _target._data.PostDate; } }
-            public DateTime? EditDate { get { return _target._data.EditDate; } }
-            public PostStatusType? PostStatus { get { return _target._data.PostStatus; } }
-            public ProfileData Owner { get { return _target._data.Owner; } }
-            public IAttachable AttachedContent { get { return _target._data.AttachedContent; } }
-            public ServiceType SericeType { get { return _target._data.ServiceType; } }
         }
     }
 }

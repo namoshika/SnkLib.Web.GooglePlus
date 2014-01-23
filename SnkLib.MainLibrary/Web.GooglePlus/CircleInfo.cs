@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus
 {
@@ -25,21 +26,14 @@ namespace SunokoLibrary.Web.GooglePlus
         public string Id { get { return _data.Id; } }
         public virtual IObservable<ActivityInfo> GetStream()
         {
-            return Observable.Create<ActivityInfo>(obs =>
-                {
-                    return Observable.Start(() =>
-                        {
-                            if (IsLoadedMember == false)
-                                Client.People.UpdateCirclesAndBlockAsync(
-                                    false, CircleUpdateLevel.LoadedWithMembers, TimeSpan.FromSeconds(1)).Wait();
-                            return (ActivityInfo)null;
-                        })
-                        .Where(info => false)
-                        .Concat(Client.Activity.GetStream()
-                            .OfType<ActivityInfo>()
-                            .Where(info => info.PostStatus != PostStatusType.Removed && ContainsKey(info.PostUser.Id)))
-                        .Subscribe(obs);
-                });
+            return Observable
+                .If(() => IsLoadedMember == false,
+                    Client.People.UpdateCirclesAndBlockAsync(false, CircleUpdateLevel.LoadedWithMembers).ToObservable(),
+                    Observable.Return(System.Reactive.Unit.Default))
+                .SelectMany(unit => Client.Activity.GetStream()
+                    .OfType<ActivityInfo>()
+                    .Where(info => info.PostStatus != PostStatusType.Removed && ContainsKey(info.PostUser.Id))
+                    .Catch<ActivityInfo, ApiErrorException>(ex => Observable.Throw(new FailToOperationException<CircleInfo>("CircleInfo.GetStream()の受信中にエラーが発生しました。", this, ex), (ActivityInfo)null)));
         }
         public virtual IInfoList<ActivityInfo> GetActivities()
         { return new ActivityInfoList(this, null, Client, null, null); }
@@ -96,6 +90,8 @@ namespace SunokoLibrary.Web.GooglePlus
                         apiResult = await Client.ServiceApi.GetActivitiesAsync(circleId, profileId, _ctValue, length, Client);
                         _ctValue = apiResult.Item2;
                     }
+                    catch (ApiErrorException e)
+                    { throw new FailToOperationException<ActivityInfoList>("CircleInfoのActivity取得に失敗しました。", this, e); }
                     finally
                     { _syncer.Release(); }
 

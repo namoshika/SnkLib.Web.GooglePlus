@@ -47,16 +47,23 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         Task<ImageData> GetImageAsync(string imageId, string profileId, IPlatformClient client);
         IObservable<object> GetStreamAttacher(IPlatformClient client);
         Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client);
-        Task<bool> PostComment(string activityId, string content, IPlatformClient client);
-        Task<bool> EditComment(string activityId, string commentId, string content, IPlatformClient client);
-        Task<bool> DeleteComment(string commentId, IPlatformClient client);
+        Task PostComment(string activityId, string content, IPlatformClient client);
+        Task EditComment(string activityId, string commentId, string content, IPlatformClient client);
+        Task DeleteComment(string commentId, IPlatformClient client);
     }
 
     /// <summary>APIが所定の目的を果たせずエラーを返した時に使用されます。</summary>
     public class ApiErrorException : Exception
     {
-        public ApiErrorException(string message, ErrorType type, Exception innerException)
-            : base(message, innerException) { Type = type; }
+        public ApiErrorException(string message, ErrorType type, Uri requestUrl, HttpContent requestEntity, Exception innerException)
+            : base(message, innerException)
+        {
+            Type = type;
+            RequestUrl = requestUrl;
+            RequestEntity = requestEntity;
+        }
+        public Uri RequestUrl { get; private set; }
+        public HttpContent RequestEntity { get; private set; }
         public ErrorType Type { get; private set; }
     }
     public enum ErrorType { ParameterError, SessionError, NetworkError, UnknownError }

@@ -41,4 +41,15 @@ namespace SunokoLibrary.Web.GooglePlus
             return target;
         }
     }
+    public class FailToOperationException : Exception
+    {
+        public FailToOperationException(string message, Exception innerException)
+            : base(message, innerException) { }
+    }
+    public class FailToOperationException<T> : FailToOperationException
+    {
+        public FailToOperationException(string message, T errorTarget, Exception innerException)
+            : base(message, innerException) { Info = errorTarget; }
+        public T Info { get; private set; }
+    }
 }
