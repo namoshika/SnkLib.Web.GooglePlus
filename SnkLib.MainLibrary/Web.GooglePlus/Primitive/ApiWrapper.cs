@@ -708,7 +708,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var initDtQ = new Dictionary<int, JToken>();
             foreach (System.Text.RegularExpressions.Match match in matches)
             {
-                var json = JToken.Parse(ConvertIntoValidJson(match.Groups["json"].Value));
+                var txt = match.Groups["json"].Value;
+                //移行期のマルチタイプ対策
+                if (txt.Contains(", isError:  false , data:function(){return "))
+                {
+                    txt = txt.Replace(", isError:  false , data:function(){return ", ", isError:  false , data: ");
+                    txt = txt.Substring(0, txt.LastIndexOf('}'));
+                }
+                var json = JToken.Parse(ConvertIntoValidJson(txt));
                 initDtQ.Add(int.Parse((string)json["key"]), json["data"]);
             }
             return initDtQ;
