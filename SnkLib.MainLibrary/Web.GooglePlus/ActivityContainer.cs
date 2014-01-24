@@ -23,51 +23,65 @@ namespace SunokoLibrary.Web.GooglePlus
         readonly object _syncerStream = new object();
         readonly CacheDictionary<string, ActivityCache, ActivityData> _activityCache =
             new CacheDictionary<string, ActivityCache, ActivityData>(600, 3, dt => new ActivityCache() { Value = dt });
+        bool _isConnected;
         int _streamSessionRefCount;
         IDisposable _streamSession;
         IConnectableObservable<object> _stream;
 
         public DateTime BeganTimeToBind { get; private set; }
-        public bool IsConnected { get { return BeganTimeToBind != DateTime.MaxValue; } }
+        public bool IsConnected
+        {
+            get { return _isConnected; }
+            set
+            {
+                var isChanged = _isConnected != value;
+                _isConnected = value;
+                if (isChanged)
+                    OnChangedIsConnected(new EventArgs());
+            }
+        }
 
         public IObservable<object> GetStream()
         {
             return Observable
                 .If(() => Client.IsLoadedHomeInitData, Observable.Return(0), Observable.Throw(
                     new InvalidOperationException("PlatformClient.IsLoadedHomeInitDataがfalseの状態で使うことはできません。"), 0))
-                .SelectMany(hoge => Observable.Create<object>(obsrvr =>
+                .SelectMany(hoge => Observable.Create<object>(subject =>
                     {
                         lock (_syncerStream)
                         {
                             if (_stream == null)
                             {
-                                //_gottenTalkGadgetCookieでPlatformClient生成後の初回の実行か
-                                //どうかを確認。初回の場合は認証処理をかませておく
-                                //if(Client.Cookies.GetCookies("talkgadget.com
                                 _stream = Client.ServiceApi.GetStreamAttacher(Client).Publish();
                                 _streamSession = _stream.Connect();
                                 BeganTimeToBind = DateTime.UtcNow;
-                                OnChangedIsConnected(new EventArgs());
+                                IsConnected = true;
                             }
                             _streamSessionRefCount++;
-                        }
-                        var strm = _stream.Subscribe(obsrvr);
-                        var disposer = (Action)(() =>
-                        {
-                            strm.Dispose();
-                            lock (_syncerStream)
-                            {
-                                if (_streamSessionRefCount == 0)
+                            var strm = _stream.Subscribe(subject.OnNext,
+                                ex =>
                                 {
-                                    _stream = null;
-                                    _streamSession.Dispose();
-                                    BeganTimeToBind = DateTime.MaxValue;
-                                    OnChangedIsConnected(new EventArgs());
-                                }
-                                _streamSessionRefCount--;
-                            }
-                        });
-                        return disposer;
+                                    try { subject.OnError(ex); }
+                                    catch { }
+                                }, subject.OnCompleted);
+                            var disposer = (Action)(() =>
+                            {
+                                strm.Dispose();
+                                lock (_syncerStream)
+                                    if (_streamSessionRefCount > 0)
+                                    {
+                                        _streamSessionRefCount = Math.Max(_streamSessionRefCount - 1, 0);
+                                        if (_streamSessionRefCount == 0)
+                                        {
+                                            _stream = null;
+                                            _streamSession.Dispose();
+                                            BeganTimeToBind = DateTime.MaxValue;
+                                            IsConnected = false;
+                                        }
+                                    }
+                            });
+                            return disposer;
+                        }
                     })
                 )
             .Select(item =>

@@ -432,12 +432,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var observable = Observable.Create<JToken>(subject =>
             {
                 var tokenSource = new System.Threading.CancellationTokenSource();
-                var task = Task.Factory.StartNew(async () =>
+                var task = Task.Run(async () =>
                 {
                     try
                     {
                         tokenSource.Token.ThrowIfCancellationRequested();
-                        var talkCookies = checkTargetCookies.GetCookies(new Uri("https://talkgadget.google.com"));
                         var vals = LoadNotifierClient(normalClient, talkBaseUrl, checkTargetCookies, pvtVal).Result;
                         var clidVal = (string)vals["clid"];
                         var gsidVal = (string)vals["gsessionid"];
