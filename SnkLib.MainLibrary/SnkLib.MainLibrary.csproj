@@ -45,6 +45,7 @@
     <Compile Include="Web.GooglePlus\AccessorBase.cs" />
     <Compile Include="Web.GooglePlus\ActivityContainer.cs" />
     <Compile Include="Web.GooglePlus\ActivityContent\ActivityInfo.cs" />
+    <Compile Include="Web.GooglePlus\PlatformClientBuilder.cs" />
     <Compile Include="Web.GooglePlus\Primitive\AttachedContent\AttachedAlbum.cs" />
     <Compile Include="Web.GooglePlus\Primitive\AttachedContent\AttachedBase.cs" />
     <Compile Include="Web.GooglePlus\Primitive\AttachedContent\AttachedImage.cs" />

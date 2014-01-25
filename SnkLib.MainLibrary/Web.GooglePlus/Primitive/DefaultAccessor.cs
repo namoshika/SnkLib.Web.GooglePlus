@@ -14,6 +14,21 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
     public class DefaultAccessor : IApiAccessor
     {
+        public async Task<IPlatformClientBuilder[]> GetAccountList(CookieContainer cookies)
+        {
+            try
+            {
+                var client = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler() { CookieContainer = cookies });
+                client.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
+                var json = (JArray)await ApiWrapper.LoadListAccounts(client);
+                var generators = json[1]
+                    .Select(item => new PlatformClientBuilder((string)item[3], (string)item[2], ApiWrapper.ConvertReplasableUrl((string)item[4]), (int)item[7], cookies, this))
+                    .ToArray();
+                return generators;
+            }
+            catch (System.Net.Http.HttpRequestException e)
+            { throw new FailToOperationException("引数cookiesからログインされているアカウントの取得に失敗しました。", e); }
+        }
         [Obsolete("このメソッドを使用すべきではありません。認証を使わずに外部からのCookieの取り込みを検討してください。")]
         public Task<bool> LoginAsync(string email, string password, IPlatformClient client)
         { return ApiWrapper.ConnectToServiceLoginAuth(client.NormalHttpClient, client.PlusBaseUrl, client.Cookies, email, password); }

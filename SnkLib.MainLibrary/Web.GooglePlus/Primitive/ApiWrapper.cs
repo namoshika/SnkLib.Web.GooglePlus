@@ -719,6 +719,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
             return initDtQ;
         }
+        public static async Task<JToken> LoadListAccounts(HttpClient client)
+        {
+            var accountListUrl = new Uri("https://accounts.google.com/b/0/ListAccounts?listPages=0&origin=https%3A%2F%2Fplus.google.com");
+            var regex = new System.Text.RegularExpressions.Regex("window.parent.postMessage\\([^\"]*\"(?<jsonTxt>(?:[^\"])*)\"");
+
+            var accountListPage = await client.GetStringAsync(accountListUrl);
+            var jsonTxt = Uri.UnescapeDataString(regex.Match(accountListPage).Groups["jsonTxt"].Value.Replace("\\x", "%"));
+            if (jsonTxt == string.Empty)
+                throw new ApiErrorException("アカウント一覧の読み込みに失敗しました。", ErrorType.UnknownError, accountListUrl, null, null);
+            var json = JArray.Parse(jsonTxt);
+            return json;
+        }
 
         //支援関数
         public static string ComplementUrl(string urlText, string defaultUrl)

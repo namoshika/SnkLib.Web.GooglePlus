@@ -28,6 +28,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     }
     public interface IApiAccessor
     {
+        Task<IPlatformClientBuilder[]> GetAccountList(CookieContainer cookies);
         Task<bool> LoginAsync(string email, string password, IPlatformClient client);
         Task<InitData> GetInitDataAsync(IPlatformClient client);
         Task<Tuple<CircleData[], ProfileData[]>> GetCircleDatasAsync(IPlatformClient client);
