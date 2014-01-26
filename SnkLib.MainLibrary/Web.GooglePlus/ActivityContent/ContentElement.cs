@@ -30,7 +30,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 //タグが開始される前に出現したテキストをblocksに入れる
                 tmpStr = contentHtml.Substring(nextReadIdx, idx - nextReadIdx);
                 if (tmpStr.Length > 0)
-                    blocks.Peek().Add(new TextElement(Primitive.ApiWrapper.DecodeHtmlText(tmpStr), ElementType.Text));
+                    blocks.Peek().Add(new TextElement(Primitive.ApiAccessorUtility.DecodeHtmlText(tmpStr), ElementType.Text));
 
                 //メンション、リンク用
                 if (contentHtml[idx + 1] == 'a' || contentHtml.IndexOf("span", idx + 1) == idx + 1)
@@ -62,7 +62,7 @@ namespace SunokoLibrary.Web.GooglePlus
 
                     startIdx = contentHtml.IndexOf(">", idx) + 1;
                     endIdx = contentHtml.IndexOf("</", startIdx);
-                    mensionTargetName = Primitive.ApiWrapper.DecodeHtmlText(
+                    mensionTargetName = Primitive.ApiAccessorUtility.DecodeHtmlText(
                         contentHtml.Substring(startIdx, endIdx - startIdx));
 
                     //最端の閉じタグの最後の">"部分の直後の番地を次の文字処理位置とする
@@ -105,7 +105,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             if (closeEleIdx == otherStartEleIdx)
                             {
                                 var elements = new[] { new TextElement(
-                                    Primitive.ApiWrapper.DecodeHtmlText(contentHtml.Substring(startIdx, closeEleIdx - startIdx)),
+                                    Primitive.ApiAccessorUtility.DecodeHtmlText(contentHtml.Substring(startIdx, closeEleIdx - startIdx)),
                                     ElementType.Text) };
                                 switch (contentHtml[idx + 1])
                                 {
@@ -124,7 +124,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             else
                             {
                                 var elements = new List<ContentElement>();
-                                tmpStr = Primitive.ApiWrapper.DecodeHtmlText(
+                                tmpStr = Primitive.ApiAccessorUtility.DecodeHtmlText(
                                     contentHtml.Substring(startIdx, otherStartEleIdx - startIdx));
                                 if (tmpStr.Length > 0)
                                     elements.Add(new TextElement(tmpStr, ElementType.Text));
@@ -155,7 +155,7 @@ namespace SunokoLibrary.Web.GooglePlus
             //タグが無くなったら残りの文字列をblocksに入れる
             tmpStr = contentHtml.Substring(nextReadIdx, contentHtml.Length - nextReadIdx);
             if (tmpStr.Length > 0)
-                blocks.Peek().Add(new TextElement(Primitive.ApiWrapper.DecodeHtmlText(tmpStr), ElementType.Text));
+                blocks.Peek().Add(new TextElement(Primitive.ApiAccessorUtility.DecodeHtmlText(tmpStr), ElementType.Text));
 
             //ルート要素は書式設定無しのスタイル要素にする。しかし、配列に要素が
             //一つしか入っておらず、要素がスタイル要素だった場合には新しく生成せ

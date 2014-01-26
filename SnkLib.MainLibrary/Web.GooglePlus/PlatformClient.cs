@@ -23,12 +23,10 @@ namespace SunokoLibrary.Web.GooglePlus
             PlusBaseUrl = plusBaseUrl;
             TalkBaseUrl = talkBaseUrl;
             NormalHttpClient = new System.Net.Http.HttpClient(handler);
-            NormalHttpClient.DefaultRequestHeaders.Add(
-                "user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
+            NormalHttpClient.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
             StreamHttpClient = new System.Net.Http.HttpClient(handler);
-            StreamHttpClient.Timeout = TimeSpan.FromMinutes(3);
-            StreamHttpClient.DefaultRequestHeaders.Add(
-                "user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
+            StreamHttpClient.Timeout = TimeSpan.FromMinutes(6);
+            StreamHttpClient.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
             People = new PeopleContainer(this);
             Activity = new ActivityContainer(this);
             Notification = new NotificationContainer(this);

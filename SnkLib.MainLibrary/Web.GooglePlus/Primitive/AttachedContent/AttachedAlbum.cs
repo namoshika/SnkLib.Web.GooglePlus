@@ -20,7 +20,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         protected void ParseAlbum(JArray json)
         {
             //アルバム
-            var albumTitle = Primitive.ApiWrapper.DecodeHtmlText((string)json[2]);
+            var albumTitle = Primitive.ApiAccessorUtility.DecodeHtmlText((string)json[2]);
             var albumId = (string)json[37];
             var ownerId = (string)json[26];
             Album = new AlbumData(albumId, albumTitle, LinkUrl, owner: new ProfileData(ownerId));

@@ -27,11 +27,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             string tmp;
             Title = (string)json[2];
             Summary = string.IsNullOrEmpty(tmp = (string)json[3]) ? null : tmp;
-            FaviconUrl = string.IsNullOrEmpty(tmp = (string)json[6]) ? null : new Uri(ApiWrapper.ComplementUrl(tmp, null));
+            FaviconUrl = string.IsNullOrEmpty(tmp = (string)json[6]) ? null : new Uri(ApiAccessorUtility.ComplementUrl(tmp, null));
             var thumbJson = json[5].Type == JTokenType.Array ? (JArray)json[5] : null;
             if (thumbJson != null)
             {
-                var urlTxt = ApiWrapper.ComplementUrl((string)thumbJson[0], null);
+                var urlTxt = ApiAccessorUtility.ComplementUrl((string)thumbJson[0], null);
                 ThumbnailWidth = (int)thumbJson[1];
                 ThumbnailHeight = (int)thumbJson[2];
                 ThumbnailUrl = System.Text.RegularExpressions.Regex
