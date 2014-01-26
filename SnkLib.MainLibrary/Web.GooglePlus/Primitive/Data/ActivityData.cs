@@ -10,9 +10,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     {
         public ActivityData(
             string id, string html = null, string text = null, bool? isEditable = null, Uri postUrl = null,
-            CommentData[] comments = null,  DateTime? postDate = null, DateTime? editDate = null, DateTime? getActivityDate = null,
+            CommentData[] comments = null, DateTime? postDate = null, DateTime? editDate = null,
             ServiceType serviceType = null, PostStatusType? status = null, IAttachable attachedContent = null,
-            ProfileData owner = null, ActivityUpdateApiFlag updaterTypes = ActivityUpdateApiFlag.Unloaded)
+            ProfileData owner = null, DateTime? getActivityDate = null,
+            ActivityUpdateApiFlag updaterTypes = ActivityUpdateApiFlag.Unloaded)
         {
             LoadedApiTypes = updaterTypes;
             Id = id;
@@ -50,26 +51,32 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
         public static ActivityData operator +(ActivityData value1, ActivityData value2)
         {
-            var flg = 
+            bool val1_isNotNull = value1 != null, val2_isNotNull = value2 != null;
+            if (val1_isNotNull && val2_isNotNull)
+            {
+                var newUpdateType =
                 (value2 != null ? value2.LoadedApiTypes : ActivityUpdateApiFlag.Unloaded)
                 | (value1 != null ? value1.LoadedApiTypes : ActivityUpdateApiFlag.Unloaded);
-            return new ActivityData(
-                Merge(value1, value2, obj => obj.Id),
-                Merge(value1, value2, obj => obj.Html),
-                Merge(value1, value2, obj => obj.Text),
-                Merge(value1, value2, obj => obj.IsEditable),
-                Merge(value1, value2, obj => obj.PostUrl),
-                Merge(value1, value2, obj => obj.Comments),
-                Merge(value1, value2, obj => obj.PostDate),
-                Merge(value1, value2, obj => obj.EditDate),
-                Merge(value1, value2, obj => obj.GetActivityDate),
-                Merge(value1, value2, obj => obj.ServiceType),
-                Merge(value1, value2, obj => obj.PostStatus),
-                Merge(value1, value2, obj => obj.AttachedContent),
-                Merge(value1, value2, obj => obj.Owner, true),
-                flg);
-            
-            //PlusOne               = AAA(baseData, plusOne, obj => obj.Html);
+                return new ActivityData(
+                    Merge(value1, value2, obj => obj.Id),
+                    Merge(value1, value2, obj => obj.Html),
+                    Merge(value1, value2, obj => obj.Text),
+                    Merge(value1, value2, obj => obj.IsEditable),
+                    Merge(value1, value2, obj => obj.PostUrl),
+                    Merge(value1, value2, obj => obj.Comments),
+                    Merge(value1, value2, obj => obj.PostDate),
+                    Merge(value1, value2, obj => obj.EditDate),
+                    Merge(value1, value2, obj => obj.ServiceType),
+                    Merge(value1, value2, obj => obj.PostStatus),
+                    Merge(value1, value2, obj => obj.AttachedContent),
+                    Merge(value1, value2, obj => obj.Owner, true),
+                    Merge(value1, value2, obj => obj.GetActivityDate),
+                    newUpdateType);
+            }
+            else if (val2_isNotNull)
+                return value2;
+            else
+                return value1;
         }
     }
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay_TypeName,nq}")]

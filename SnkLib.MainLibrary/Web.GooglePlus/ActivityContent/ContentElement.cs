@@ -73,9 +73,8 @@ namespace SunokoLibrary.Web.GooglePlus
                     {
                         if (mensionTargetProfileUrl != null)
                             blocks.Peek().Add(new MensionElement(new ProfileData(
-                                ProfileUpdateApiFlag.Base,
-                                id: mensionTargetProfileUrl.Substring(mensionTargetProfileUrl.LastIndexOf('/') + 1),
-                                name: mensionTargetName)));
+                                mensionTargetProfileUrl.Substring(mensionTargetProfileUrl.LastIndexOf('/') + 1),
+                                mensionTargetName, loadedApiTypes: ProfileUpdateApiFlag.Base)));
                         else
                             blocks.Peek().Add(new TextElement("+" + mensionTargetName, ElementType.Text));
                     }

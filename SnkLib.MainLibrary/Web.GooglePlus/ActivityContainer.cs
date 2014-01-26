@@ -109,16 +109,16 @@ namespace SunokoLibrary.Web.GooglePlus
                         return item;
                 });
         }
-        public ActivityInfo GetActivityInfo(string id)
+        public ActivityInfo GetActivityInfo(string targetId)
         {
-            var cache = InternalGetActivityCache(id);
+            var cache = InternalGetActivityCache(targetId);
             return new ActivityInfo(Client, cache.Value);
         }
-        internal ActivityCache InternalGetActivityCache(string plusId)
+        internal ActivityCache InternalGetActivityCache(string targetId)
         {
             ActivityCache result;
-            if (_activityCache.TryGetValue(plusId, out result) == false)
-                result = _activityCache.Add(plusId, new ActivityData(id: plusId));
+            if (_activityCache.TryGetValue(targetId, out result) == false)
+                result = _activityCache.Add(targetId, new ActivityData(targetId));
             return result;
         }
         internal ActivityData InternalUpdateActivity(ActivityData newValue)

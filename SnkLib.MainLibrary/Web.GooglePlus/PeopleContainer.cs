@@ -140,7 +140,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             //使いまわすようにしながらProfileインスタンスを生成する
                             var profileId = item.Id;
                             var profile = InternalUpdateProfile(new ProfileData(
-                                ProfileUpdateApiFlag.Base, id: profileId, name: item.Name, iconImageUrl: item.IconImageUrl));
+                                profileId, item.Name, item.IconImageUrl, loadedApiTypes: ProfileUpdateApiFlag.Base));
                             ignoreLst.Add(InternalGetAndUpdateProfile(profile));
                         }
                         _ignoreCircle.Refresh(ignoreLst.ToArray());
@@ -184,11 +184,11 @@ namespace SunokoLibrary.Web.GooglePlus
                 catch (ApiErrorException e)
                 { throw new FailToOperationException<PeopleContainer>("GetProfileOfMeAsync()に失敗。ログインされてるユーザの情報の取得に失敗しました。", this, e); }
         }
-        internal ProfileCache InternalGetProfileCache(string plusId)
+        internal ProfileCache InternalGetProfileCache(string targetId)
         {
             ProfileCache result;
-            if (_profileCache.TryGetValue(plusId, out result) == false)
-                result = _profileCache.Add(plusId, new ProfileData(id: plusId));
+            if (_profileCache.TryGetValue(targetId, out result) == false)
+                result = _profileCache.Add(targetId, new ProfileData(targetId));
             return result;
         }
         internal ProfileData InternalUpdateProfile(ProfileData newValue)

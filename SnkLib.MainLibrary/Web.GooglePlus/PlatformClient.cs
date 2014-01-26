@@ -26,7 +26,7 @@ namespace SunokoLibrary.Web.GooglePlus
             NormalHttpClient.DefaultRequestHeaders.Add(
                 "user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
             StreamHttpClient = new System.Net.Http.HttpClient(handler);
-            StreamHttpClient.Timeout = TimeSpan.FromMinutes(15);
+            StreamHttpClient.Timeout = TimeSpan.FromMinutes(3);
             StreamHttpClient.DefaultRequestHeaders.Add(
                 "user-agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36");
             People = new PeopleContainer(this);

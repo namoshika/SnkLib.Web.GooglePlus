@@ -72,8 +72,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     {
                         if (e.InnerException is System.Net.WebException
                             && ((System.Net.WebException)e.InnerException).Status == System.Net.WebExceptionStatus.UnknownError)
-                            Client.Activity.InternalUpdateActivity(new ActivityData(
-                                Id, status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivity));
+                            Client.Activity.InternalUpdateActivity(new ActivityData(Id, status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivity));
                         else
                             throw new FailToOperationException<ActivityInfo>("UpdateGetActivityAsync()に失敗しました。", this, e);
                     }

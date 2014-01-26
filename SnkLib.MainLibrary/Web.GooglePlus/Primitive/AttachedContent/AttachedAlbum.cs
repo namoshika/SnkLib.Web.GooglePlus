@@ -23,7 +23,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var albumTitle = Primitive.ApiWrapper.DecodeHtmlText((string)json[2]);
             var albumId = (string)json[37];
             var ownerId = (string)json[26];
-            Album = new AlbumData(albumId, albumTitle, LinkUrl, owner: new ProfileData(id: ownerId));
+            Album = new AlbumData(albumId, albumTitle, LinkUrl, owner: new ProfileData(ownerId));
             Pictures = json[41].Select(item => (AttachedImage)Create((JArray)item, PlusBaseUrl)).ToArray();
         }
     }

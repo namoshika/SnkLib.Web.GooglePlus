@@ -10,17 +10,21 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public class ProfileData : DataBase
     {
         public ProfileData(
-            ProfileUpdateApiFlag loadedApiTypes = ProfileUpdateApiFlag.Unloaded, AccountStatus? status = null,
-            DateTime? lastUpdateLookupProfile = null, DateTime? lastUpdateProfileGet = null,
-            string id = null, string name = null, string firstName = null, string lastName = null,
-            string introduction = null, string braggingRights = null, string occupation = null,
-            string greetingText = null, string nickName = null, string iconImageUrl = null,
-            RelationType? relationship = null, GenderType? genderType = null, LookingFor lookingFor = null,
-            EmploymentInfo[] employments = null, EducationInfo[] educations = null,
-            ContactInfo[] contactsInHome = null, ContactInfo[] contactsInWork = null,
+            string id = null, string name = null, string iconImageUrl = null, AccountStatus? status = null,
+            string firstName = null, string lastName = null, string introduction = null, string braggingRights = null,
+            string occupation = null, string greetingText = null, string nickName = null, RelationType? relationship = null,
+            GenderType? genderType = null, LookingFor lookingFor = null, EmploymentInfo[] employments = null,
+            EducationInfo[] educations = null, ContactInfo[] contactsInHome = null, ContactInfo[] contactsInWork = null,
             UrlInfo[] otherProfileUrls = null, UrlInfo[] contributeUrls = null, UrlInfo[] recommendedUrls = null,
-            string[] placesLived = null, string[] otherNames = null)
+            string[] placesLived = null, string[] otherNames = null,
+            ProfileUpdateApiFlag loadedApiTypes = ProfileUpdateApiFlag.Unloaded,
+            DateTime? lastUpdateLookupProfile = null, DateTime? lastUpdateProfileGet = null)
         {
+            if (id == null)
+                throw new ArgumentNullException("ProfileDataの引数idをnullにする事はできません。");
+            if (System.Text.RegularExpressions.Regex.IsMatch(id, "^\\d+$") == false && status == AccountStatus.Active)
+                throw new ArgumentException("ProfileDataの引数idがメアド状態で引数statusをActiveにする事はできません。");
+
             LoadedApiTypes = loadedApiTypes;
             Status = status;
             Id = id;
@@ -48,11 +52,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
             LastUpdateLookupProfile = lastUpdateLookupProfile ?? DateTime.MinValue;
             LastUpdateProfileGet = lastUpdateProfileGet ?? DateTime.MinValue;
-
-            if (Id == null)
-                throw new ArgumentNullException("ProfileDataの引数idをnullにする事はできません。");
-            if (System.Text.RegularExpressions.Regex.IsMatch(id, "^\\d+$") == false && status == AccountStatus.Active)
-                throw new ArgumentException("ProfileDataの引数idがメアド状態で引数statusをActiveにする事はできません。");
         }
 
         public DateTime LastUpdateLookupProfile{get;private set;}
@@ -84,36 +83,44 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
         public static ProfileData operator +(ProfileData value1, ProfileData value2)
         {
-            var flg = 
+            bool val1_isNotNull = value1 != null, val2_isNotNull = value2 != null;
+            if (val1_isNotNull && val2_isNotNull)
+            {
+                var newUpdateType =
                 (value2 != null ? value2.LoadedApiTypes : ProfileUpdateApiFlag.Unloaded)
                 | (value1 != null ? value1.LoadedApiTypes : ProfileUpdateApiFlag.Unloaded);
-            return new ProfileData(
-                flg,
-                Merge(value1, value2, obj => obj.Status),
-                Merge(value1, value2, obj => obj.LastUpdateLookupProfile),
-                Merge(value1, value2, obj => obj.LastUpdateProfileGet),
-                Merge(value1, value2, obj => obj.Id),
-                Merge(value1, value2, obj => obj.Name),
-                Merge(value1, value2, obj => obj.FirstName),
-                Merge(value1, value2, obj => obj.LastName),
-                Merge(value1, value2, obj => obj.Introduction),
-                Merge(value1, value2, obj => obj.BraggingRights),
-                Merge(value1, value2, obj => obj.Occupation),
-                Merge(value1, value2, obj => obj.GreetingText),
-                Merge(value1, value2, obj => obj.NickName),
-                Merge(value1, value2, obj => obj.IconImageUrl),
-                Merge(value1, value2, obj => obj.Relationship),
-                Merge(value1, value2, obj => obj.GenderType),
-                Merge(value1, value2, obj => obj.LookingFor),
-                Merge(value1, value2, obj => obj.Employments),
-                Merge(value1, value2, obj => obj.Educations),
-                Merge(value1, value2, obj => obj.ContactsInHome),
-                Merge(value1, value2, obj => obj.ContactsInWork),
-                Merge(value1, value2, obj => obj.OtherProfileUrls),
-                Merge(value1, value2, obj => obj.ContributeUrls),
-                Merge(value1, value2, obj => obj.RecommendedUrls),
-                Merge(value1, value2, obj => obj.PlacesLived),
-                Merge(value1, value2, obj => obj.OtherNames));
+                return new ProfileData(
+                    Merge(value1, value2, obj => obj.Id),
+                    Merge(value1, value2, obj => obj.Name),
+                    Merge(value1, value2, obj => obj.IconImageUrl),
+                    Merge(value1, value2, obj => obj.Status),
+                    Merge(value1, value2, obj => obj.FirstName),
+                    Merge(value1, value2, obj => obj.LastName),
+                    Merge(value1, value2, obj => obj.Introduction),
+                    Merge(value1, value2, obj => obj.BraggingRights),
+                    Merge(value1, value2, obj => obj.Occupation),
+                    Merge(value1, value2, obj => obj.GreetingText),
+                    Merge(value1, value2, obj => obj.NickName),
+                    Merge(value1, value2, obj => obj.Relationship),
+                    Merge(value1, value2, obj => obj.GenderType),
+                    Merge(value1, value2, obj => obj.LookingFor),
+                    Merge(value1, value2, obj => obj.Employments),
+                    Merge(value1, value2, obj => obj.Educations),
+                    Merge(value1, value2, obj => obj.ContactsInHome),
+                    Merge(value1, value2, obj => obj.ContactsInWork),
+                    Merge(value1, value2, obj => obj.OtherProfileUrls),
+                    Merge(value1, value2, obj => obj.ContributeUrls),
+                    Merge(value1, value2, obj => obj.RecommendedUrls),
+                    Merge(value1, value2, obj => obj.PlacesLived),
+                    Merge(value1, value2, obj => obj.OtherNames),
+                    newUpdateType,
+                    Merge(value1, value2, obj => obj.LastUpdateLookupProfile),
+                    Merge(value1, value2, obj => obj.LastUpdateProfileGet));
+            }
+            else if (val2_isNotNull)
+                return value2;
+            else
+                return value1;
         }
     }
 

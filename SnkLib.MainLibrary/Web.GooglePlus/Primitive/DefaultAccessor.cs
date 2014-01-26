@@ -122,8 +122,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue);
             foreach (var item in json[0][1][2])
                 results.Add(new ProfileData(
-                    loadedApiTypes: ProfileUpdateApiFlag.Base, id: (string)item[0][2], name: (string)item[2][0],
-                    greetingText: (string)item[2][21], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)item[2][8])));
+                    (string)item[0][2], (string)item[2][0], ApiWrapper.ConvertReplasableUrl((string)item[2][8]),
+                    greetingText: (string)item[2][21], loadedApiTypes: ProfileUpdateApiFlag.Base));
             return results.ToArray();
         }
         public async Task<ProfileData[]> GetFollowedProfilesAsync(string profileId, int count, IPlatformClient client)
@@ -135,8 +135,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 var iconUrl = item[2][8].Type != JTokenType.Null ? (string)item[2][8] : null;
                 results.Add(new ProfileData(
-                    ProfileUpdateApiFlag.Base, id: (string)item[0][2], name: (string)item[2][0], greetingText: (string)item[2][21],
-                    iconImageUrl: ApiWrapper.ConvertReplasableUrl(iconUrl)));
+                    (string)item[0][2], (string)item[2][0], ApiWrapper.ConvertReplasableUrl(iconUrl),
+                    greetingText: (string)item[2][21], loadedApiTypes: ProfileUpdateApiFlag.Base));
             }
             return results.ToArray();
         }
@@ -148,7 +148,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 var profileId = (string)item[0].ElementAtOrDefault(2);
                 var iconUrl = ApiWrapper.ConvertReplasableUrl((string)item[2][8]);
-                var profile = new ProfileData(ProfileUpdateApiFlag.Base, id: profileId, name: (string)item[2][0], iconImageUrl: iconUrl);
+                var profile = new ProfileData(profileId, (string)item[2][0], iconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base);
                 ignoreLst.Add(profile);
             }
             return ignoreLst.ToArray();
@@ -163,7 +163,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 {
                     var profileId = (string)item[0].ElementAtOrDefault(2);
                     var iconUrl = ApiWrapper.ConvertReplasableUrl((string)item[2][8]);
-                    followersLst.Add(new ProfileData(ProfileUpdateApiFlag.Base, id: profileId, name: (string)item[2][0], iconImageUrl: iconUrl));
+                    followersLst.Add(new ProfileData(
+                        profileId, (string)item[2][0], iconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base));
                 }
             return followersLst.ToArray();
         }
@@ -173,7 +174,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var json = (await ApiWrapper.ConnectToCommonGetPeople(
                 client.NormalHttpClient, client.PlusBaseUrl, plusOneId, pushCount, client.AtValue))[0][1][1];
             foreach (var item in json)
-                resLst.Add(new ProfileData(ProfileUpdateApiFlag.Base, AccountStatus.Active, id: (string)item[1], name: (string)item[0], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)item[3])));
+                resLst.Add(new ProfileData(
+                    (string)item[1], (string)item[0], ApiWrapper.ConvertReplasableUrl((string)item[3]),
+                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base));
             return resLst.ToArray();
         }
         public async Task<ActivityData> GetActivityAsync(string activityId, IPlatformClient client)
@@ -229,10 +232,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     foreach (var childNotification in subItemB)
                     {
                         string iconUrl = ApiWrapper.ConvertReplasableUrl((string)childNotification[2][2]);
-                        chainedItems.Add(
-                            new ChainingNotificationData(
-                                (string)childNotification[0], new ProfileData(ProfileUpdateApiFlag.Base, id: (string)childNotification[2][3], name: (string)childNotification[2][0], iconImageUrl: iconUrl),
-                                ApiWrapper.GetDateTime((ulong)childNotification[3] / 1000)));
+                        chainedItems.Add(new ChainingNotificationData(
+                            (string)childNotification[0], new ProfileData((string)childNotification[2][3], (string)childNotification[2][0], iconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
+                            ApiWrapper.GetDateTime((ulong)childNotification[3] / 1000)));
                     }
                     var datas = new Dictionary<string, string>();
                     foreach (var propInfo in item[5])
@@ -246,9 +248,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                             var subItemA = existsDetailInfo ? item[18][0] : null;
                             var activity = existsDetailInfo && subItemA[0].Type == JTokenType.Array
                                 ? GenerateActivityData(subItemA[0], ActivityUpdateApiFlag.Notification, client)
-                                : new ActivityData(
-                                    id: (string)item[10], status: PostStatusType.Removed,
-                                    updaterTypes: ActivityUpdateApiFlag.Notification);
+                                : new ActivityData((string)item[10], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.Notification);
                             //notificationTypeに通知タイプを代入
                             //clientAppに各通知の最新のものを発生させるのに用いられたアプリを代入
                             var notificationType =
@@ -305,7 +305,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var json = (await ApiWrapper.ConnectToPhotosLightbox(client.NormalHttpClient, client.PlusBaseUrl, profileId, imageId))[1][1];
             var tempJson = json[7];
             var owner = new ProfileData(
-                ProfileUpdateApiFlag.Base, id: (string)tempJson[0], name: (string)tempJson[3], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)tempJson[4]));
+                (string)tempJson[0], (string)tempJson[3], ApiWrapper.ConvertReplasableUrl((string)tempJson[4]),
+                loadedApiTypes: ProfileUpdateApiFlag.Base);
             var albumInfo = GenerateAlbumData(json[11]);
             var name = (string)json[8];
             tempJson = json[25];
@@ -323,20 +324,19 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                             return (ImageTagData)new ImageMensionTagInfo(
                                 (int)item[1], (int)item[2], (int)item[3], (int)item[4],
                                 new ProfileData(
-                                    ProfileUpdateApiFlag.Base, id: (string)tagContentJson[0], name: (string)tagContentJson[3],
-                                    iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)tagContentJson[8]),
-                                    status: AccountStatus.Active),
+                                    (string)tagContentJson[0], (string)tagContentJson[3],
+                                    ApiWrapper.ConvertReplasableUrl((string)tagContentJson[8]),
+                                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base),
                                 new ProfileData(
-                                    ProfileUpdateApiFlag.Base, id: (string)ownerJson[0], name: (string)ownerJson[4],
-                                    iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)ownerJson[8]),
-                                    status: AccountStatus.Active));
+                                    (string)ownerJson[0], (string)ownerJson[4],
+                                    ApiWrapper.ConvertReplasableUrl((string)ownerJson[8]),
+                                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base));
                         else
                             return (ImageTagData)new ImageTextTagInfo(
                                 (int)item[1], (int)item[2], (int)item[3], (int)item[4], (string)tagContentJson[3],
                                 new ProfileData(
-                                    ProfileUpdateApiFlag.Base, id: (string)ownerJson[0], name: (string)ownerJson[3],
-                                    iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)ownerJson[8]),
-                                    status: AccountStatus.Active));
+                                    (string)ownerJson[0], (string)ownerJson[3], ApiWrapper.ConvertReplasableUrl((string)ownerJson[8]),
+                                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base));
                     })
                 .ToArray();
             return new ImageData(true, imageId, name, width, height, imageUrl, null, tagArray, owner, isolateActivity);
@@ -378,10 +378,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         var circleIds = apiResponse[3] != null ? apiResponse[3].Select(cidItm => (string)cidItm[2][0]).ToArray() : null;
 
                         return new ProfileData(
-                            apiType, status,
-                            apiType == ProfileUpdateApiFlag.LookupProfile ? lastUpdateDate : null,
-                            apiType == ProfileUpdateApiFlag.ProfileGet ? lastUpdateDate : null,
-                            id, name, greetingText: greetingText, iconImageUrl: iconImageUrl);
+                            id, name, iconImageUrl: iconImageUrl, status: status, greetingText: greetingText,
+                            loadedApiTypes: apiType,
+                            lastUpdateLookupProfile: apiType == ProfileUpdateApiFlag.LookupProfile ? lastUpdateDate : null,
+                            lastUpdateProfileGet: apiType == ProfileUpdateApiFlag.ProfileGet ? lastUpdateDate : null);
                     }
                 case ProfileUpdateApiFlag.ProfileGet:
                     {
@@ -446,13 +446,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         var iconImageUrl = ApiWrapper.ConvertReplasableUrl((string)apiResponse[3]);
 
                         return new ProfileData(
-                            apiType, AccountStatus.Active,
+                            id, name, iconImageUrl, AccountStatus.Active, firstName, lastName, introduction, braggingRights,
+                            occupation, greetingText, nickName, relationship, genderType, lookingFor, employments, educations,
+                            contactsInHome, contactsInWork, otherProfileUrls, contributeUrls, recommendedUrls, placesLived,
+                            otherNames, apiType,
                             apiType == ProfileUpdateApiFlag.LookupProfile ? lastUpdateDate : null,
-                            apiType == ProfileUpdateApiFlag.ProfileGet ? lastUpdateDate : null,
-                            id, name, firstName, lastName, introduction, braggingRights, occupation, greetingText,
-                            nickName, iconImageUrl, relationship, genderType, lookingFor, employments, educations,
-                            contactsInHome, contactsInWork, otherProfileUrls, contributeUrls, recommendedUrls,
-                            placesLived, otherNames);
+                            apiType == ProfileUpdateApiFlag.ProfileGet ? lastUpdateDate : null);
                     }
                 default:
                     throw new ArgumentException("引数apiTypeに予想外の値が代入されていました。");
@@ -514,8 +513,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
 
             return new ActivityData(
-                id, html, text, isEditable, postUrl, comments, postDate, editDate, updateDate, serviceType, postStatus,
-                attachedContent, new ProfileData(ProfileUpdateApiFlag.Base, id: postUserId, name: postUserName, iconImageUrl: postUserIconUrl), loadedApiTypes);
+                id, html, text, isEditable, postUrl, comments, postDate, editDate, serviceType, postStatus, attachedContent,
+                new ProfileData(postUserId, postUserName, postUserIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
+                updateDate, loadedApiTypes);
         }
         CommentData GenerateCommentData(JToken apiResponse)
         {
@@ -542,14 +542,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 status = PostStatusType.First;
             }
             return new CommentData(
-                cid, aid, chtml, commentDate, cEditDate, new ProfileData(ProfileUpdateApiFlag.Base, id: ownerId, name: ownerName, iconImageUrl: ownerIconUrl), status);
+                cid, aid, chtml, commentDate, cEditDate,
+                new ProfileData(ownerId, ownerName, ownerIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
+                status);
         }
         AlbumData GenerateAlbumData(JToken apiResponse)
         {
             var id = (string)apiResponse[5];
             var name = (string)apiResponse[2];
             var albumUrl = new Uri((string)apiResponse[8]);
-            var owner = new ProfileData(ProfileUpdateApiFlag.Base, id: (string)apiResponse[13][0], name: (string)apiResponse[13][3], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)apiResponse[13][4]));
+            var owner = new ProfileData(
+                (string)apiResponse[13][0], (string)apiResponse[13][3], ApiWrapper.ConvertReplasableUrl((string)apiResponse[13][4]),
+                loadedApiTypes: ProfileUpdateApiFlag.Base);
             var spltAry = ((string)apiResponse[7]).Split('E');
             var createDate = ApiWrapper.GetDateTime((ulong)(double.Parse(spltAry[0]) * Math.Pow(10.0, (double.Parse(spltAry[1]) + 3))));
             var attachedActivityId = (string)apiResponse[8];
@@ -571,7 +575,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var height = ((JArray)apiResponse[2]).Count >= 3 ? (int)apiResponse[2][2] : -1;
             var picasaUrl = new Uri((string)apiResponse[0]);
             var createDate = ((JValue)apiResponse[15]).Value != null ? new Nullable<DateTime>(ApiWrapper.GetDateTime((ulong)apiResponse[15])) : null;
-            var owner = new ProfileData(ProfileUpdateApiFlag.Base, id: (string)apiResponse[7][0], name: (string)apiResponse[7][3], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)apiResponse[7][4]));
+            var owner = new ProfileData(
+                (string)apiResponse[7][0], (string)apiResponse[7][3], ApiWrapper.ConvertReplasableUrl((string)apiResponse[7][4]),
+                loadedApiTypes: ProfileUpdateApiFlag.Base);
             var tags = new List<ImageTagData>();
             foreach (var item in apiResponse[6])
             {
@@ -580,11 +586,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 var rightBottom = locationJson[1];
                 var ownerJson = item[4];
                 var contentJson = item[1];
-                var tagOwner = new ProfileData(ProfileUpdateApiFlag.Base, id: (string)ownerJson[0], name: (string)ownerJson[3], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)ownerJson[4]), status: AccountStatus.Active);
+                var tagOwner = new ProfileData(
+                    (string)ownerJson[0], (string)ownerJson[3], ApiWrapper.ConvertReplasableUrl((string)ownerJson[4]),
+                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base);
                 if (contentJson[1] != null)
-                    tags.Add(new ImageMensionTagInfo((int)leftTop[0], (int)leftTop[1], (int)rightBottom[0], (int)rightBottom[1], new ProfileData(id: (string)contentJson[0], name: (string)contentJson[3], iconImageUrl: ApiWrapper.ConvertReplasableUrl((string)contentJson[4])), tagOwner));
+                    tags.Add(new ImageMensionTagInfo(
+                        (int)leftTop[0], (int)leftTop[1], (int)rightBottom[0], (int)rightBottom[1],
+                        new ProfileData((string)contentJson[0], (string)contentJson[3], ApiWrapper.ConvertReplasableUrl((string)contentJson[4])),
+                        tagOwner));
                 else
-                    tags.Add(new ImageTextTagInfo((int)leftTop[0], (int)leftTop[1], (int)rightBottom[0], (int)rightBottom[1], (string)contentJson[3], tagOwner));
+                    tags.Add(new ImageTextTagInfo(
+                        (int)leftTop[0], (int)leftTop[1], (int)rightBottom[0],
+                        (int)rightBottom[1], (string)contentJson[3], tagOwner));
             }
             var attachedTags = tags.ToArray();
 

@@ -22,7 +22,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Album = new AlbumData((string)json[37]);
             Image = new ImageData(
                 false, (string)json[38], (string)json[2], (int)json[20], (int)json[21], ApiWrapper.ConvertReplasableUrl((string)json[1]),
-                owner: new ProfileData(ProfileUpdateApiFlag.Unloaded, id: (string)json[26]));
+                owner: new ProfileData((string)json[26], loadedApiTypes: ProfileUpdateApiFlag.Unloaded));
         }
     }
 }
