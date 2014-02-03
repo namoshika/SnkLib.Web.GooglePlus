@@ -20,7 +20,7 @@ namespace UnitTests.Web.GooglePlus
         [ClassInitialize]
         public static void PlatformClientInitialize(TestContext testContext)
         {
-            var cookies = ChromeSessionImporter.ImportCookies().Result;
+            var cookies = PlatformClientFactoryEx.ImportCookiesFromChrome().Result;
             clientStabA = new PlatformClientStab(cookies);
             var initDt = target.GetInitDataAsync(clientStabA).Result;
             clientStabA.AtValue = initDt.AtValue;

@@ -9,7 +9,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public class ActivityData : DataBase
     {
         public ActivityData(
-            string id, string html = null, string text = null, bool? isEditable = null, Uri postUrl = null,
+            string id, string html = null, string text = null, StyleElement parsedText = null, bool? isEditable = null, Uri postUrl = null,
             CommentData[] comments = null, DateTime? postDate = null, DateTime? editDate = null,
             ServiceType serviceType = null, PostStatusType? status = null, IAttachable attachedContent = null,
             ProfileData owner = null, DateTime? getActivityDate = null,
@@ -20,6 +20,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             IsEditable = isEditable;
             Html = html;
             Text = text;
+            ParsedText = parsedText;
             Comments = comments;
             PostUrl = postUrl;
             PostDate = postDate;
@@ -29,8 +30,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Owner = owner;
             AttachedContent = attachedContent;
             ServiceType = serviceType;
-            //PlusOne               = Merge(baseData, plusOne, obj => obj.Html);
-            //ParsedContent         = Merge(baseData, , obj => obj.Html);
         }
 
         public ActivityUpdateApiFlag LoadedApiTypes { get; private set; }
@@ -38,6 +37,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public string Id { get; private set; }
         public string Html { get; private set; }
         public string Text { get; private set; }
+        public StyleElement ParsedText { get; private set; }
         public Uri PostUrl { get; private set; }
         public DateTime? PostDate { get; private set; }
         public DateTime? EditDate { get; private set; }
@@ -61,6 +61,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     Merge(value1, value2, obj => obj.Id),
                     Merge(value1, value2, obj => obj.Html),
                     Merge(value1, value2, obj => obj.Text),
+                    Merge(value1, value2, obj => obj.ParsedText),
                     Merge(value1, value2, obj => obj.IsEditable),
                     Merge(value1, value2, obj => obj.PostUrl),
                     Merge(value1, value2, obj => obj.Comments),

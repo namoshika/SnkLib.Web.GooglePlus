@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace SunokoLibrary.Web.GooglePlus
         public ContentElement(ElementType type) { Type = type; }
         public ElementType Type { get; private set; }
 
-        public static StyleElement ParseHtml(string contentHtml, PlatformClient client)
+        public static StyleElement ParseHtml(string contentHtml, IPlatformClient client)
         {
             if (string.IsNullOrEmpty(contentHtml))
                 return null;
@@ -30,7 +31,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 //タグが開始される前に出現したテキストをblocksに入れる
                 tmpStr = contentHtml.Substring(nextReadIdx, idx - nextReadIdx);
                 if (tmpStr.Length > 0)
-                    blocks.Peek().Add(new TextElement(Primitive.ApiAccessorUtility.DecodeHtmlText(tmpStr), ElementType.Text));
+                    blocks.Peek().Add(new TextElement(Primitive.ApiAccessorUtility.DecodeHtmlText(tmpStr)));
 
                 //メンション、リンク用
                 if (contentHtml[idx + 1] == 'a' || contentHtml.IndexOf("span", idx + 1) == idx + 1)
@@ -76,7 +77,7 @@ namespace SunokoLibrary.Web.GooglePlus
                                 mensionTargetProfileUrl.Substring(mensionTargetProfileUrl.LastIndexOf('/') + 1),
                                 mensionTargetName, loadedApiTypes: ProfileUpdateApiFlag.Base)));
                         else
-                            blocks.Peek().Add(new TextElement("+" + mensionTargetName, ElementType.Text));
+                            blocks.Peek().Add(new TextElement("+" + mensionTargetName));
                     }
                     else
                     {
@@ -105,8 +106,8 @@ namespace SunokoLibrary.Web.GooglePlus
                             if (closeEleIdx == otherStartEleIdx)
                             {
                                 var elements = new[] { new TextElement(
-                                    Primitive.ApiAccessorUtility.DecodeHtmlText(contentHtml.Substring(startIdx, closeEleIdx - startIdx)),
-                                    ElementType.Text) };
+                                    Primitive.ApiAccessorUtility.DecodeHtmlText(
+                                    contentHtml.Substring(startIdx, closeEleIdx - startIdx))) };
                                 switch (contentHtml[idx + 1])
                                 {
                                     case 'b':
@@ -127,7 +128,7 @@ namespace SunokoLibrary.Web.GooglePlus
                                 tmpStr = Primitive.ApiAccessorUtility.DecodeHtmlText(
                                     contentHtml.Substring(startIdx, otherStartEleIdx - startIdx));
                                 if (tmpStr.Length > 0)
-                                    elements.Add(new TextElement(tmpStr, ElementType.Text));
+                                    elements.Add(new TextElement(tmpStr));
                                 blocks.Push(elements);
 
                                 currentEleStack.Push(contentHtml[idx + 1]);
@@ -155,7 +156,7 @@ namespace SunokoLibrary.Web.GooglePlus
             //タグが無くなったら残りの文字列をblocksに入れる
             tmpStr = contentHtml.Substring(nextReadIdx, contentHtml.Length - nextReadIdx);
             if (tmpStr.Length > 0)
-                blocks.Peek().Add(new TextElement(Primitive.ApiAccessorUtility.DecodeHtmlText(tmpStr), ElementType.Text));
+                blocks.Peek().Add(new TextElement(Primitive.ApiAccessorUtility.DecodeHtmlText(tmpStr)));
 
             //ルート要素は書式設定無しのスタイル要素にする。しかし、配列に要素が
             //一つしか入っておらず、要素がスタイル要素だった場合には新しく生成せ
@@ -165,6 +166,80 @@ namespace SunokoLibrary.Web.GooglePlus
             else
                 return new StyleElement(StyleType.None, blocks.Pop().ToArray());
         }
+        public static StyleElement ParseJson(JToken contentJson)
+        {
+            contentJson = contentJson.ElementAtOrDefault(0);
+            if (contentJson == null)
+                return new StyleElement(StyleType.None, new List<ContentElement>());
+
+            var styleStatus = new[] { false, false, false };
+            var styleStack = new Stack<StyleType>();
+            var blocksStack = new Stack<List<ContentElement>>();
+            blocksStack.Push(new List<ContentElement>());
+            foreach (var item in contentJson)
+                switch ((int)item[0])
+                {
+                    case 0:
+                    case 2:
+                    case 3:
+                    case 4:
+                        //itemの書式を取得
+                        var newStyleStatus = new[] { false, false, false };
+                        if (item.Count() > 2 && item[2].Type == JTokenType.Array)
+                            foreach (var styleItem in item[2].Select((token, idx) => new { Token = token, Index = idx }))
+                                newStyleStatus[styleItem.Index] = styleItem.Token.Type != JTokenType.Null && (int)styleItem.Token == 1;
+                        //書式解除があった場合は新旧比較し、解除書式全てを消すまで書式スタックを削る
+                        //ここで開始地点がスライドしてる書式などの巻き添えになる書式も発生する。その
+                        //書式は後続の書式追加で補填する
+                        for (var currentStyleIdx = 0; currentStyleIdx < styleStatus.Length; currentStyleIdx++)
+                        {
+                            if (newStyleStatus[currentStyleIdx] == false && styleStatus[currentStyleIdx])
+                                while (blocksStack.Count > 0)
+                                {
+                                    styleStatus[(int)styleStack.Peek()] = false;
+                                    var newElement = new StyleElement(styleStack.Peek(), blocksStack.Pop());
+                                    blocksStack.Peek().Add(newElement);
+                                    if (styleStack.Pop() == (StyleType)currentStyleIdx)
+                                        break;
+                                }
+                        }
+                        //書式追加がある場合は書式スタックの追加とブロックスタックの最上にある
+                        //要素リストを新規追加で新品リストにする
+                        for (var currentStyleIdx = 0; currentStyleIdx < styleStatus.Length; currentStyleIdx++)
+                        {
+                            if (newStyleStatus[currentStyleIdx] && styleStatus[currentStyleIdx] == false)
+                            {
+                                styleStack.Push((StyleType)currentStyleIdx);
+                                styleStatus[currentStyleIdx] = true;
+                                blocksStack.Push(new List<ContentElement>());
+                            }
+                        }
+                        switch ((int)item[0])
+                        {
+                            case 0:
+                                blocksStack.Peek().Add(new TextElement((string)item[1]));
+                                break;
+                            case 2:
+                            case 4:
+                                blocksStack.Peek().Add(new HyperlinkElement(new Uri((string)item[3][0]), (string)item[1]));
+                                break;
+                            case 3:
+                                blocksStack.Peek().Add(new MensionElement(new ProfileData((string)item[4][1], (string)item[1])));
+                                break;
+                        }
+                        break;
+                    case 1:
+                        blocksStack.Peek().Add(new BreakElement());
+                        break;
+                }
+            //ルート要素は書式設定無しのスタイル要素にする。しかし、配列に要素が
+            //一つしか入っておらず、要素がスタイル要素だった場合には新しく生成せ
+            //ずにそのスタイル要素を戻り値とする
+            if (blocksStack.Peek().Count == 1 && blocksStack.Peek().First() is StyleElement)
+                return (StyleElement)blocksStack.Peek().First();
+            else
+                return new StyleElement(StyleType.None, blocksStack.Pop());
+        }
     }
     [System.Diagnostics.DebuggerDisplay("<br />")]
     public class BreakElement : ContentElement
@@ -172,18 +247,18 @@ namespace SunokoLibrary.Web.GooglePlus
     [System.Diagnostics.DebuggerDisplay("Text = {Text}, Type = {Type}")]
     public class TextElement : ContentElement
     {
-        public TextElement(string text, ElementType type)
-            : base(type) { Text = text; }
+        public TextElement(string text) : base(ElementType.Text) { Text = text; }
+        public TextElement(string text, ElementType type) : base(type) { Text = text; }
         public string Text { get; private set; }
     }
     [System.Diagnostics.DebuggerDisplay("Style = {Style}")]
     public class StyleElement : ContentElement
     {
-        public StyleElement(StyleType style, ContentElement[] children)
+        public StyleElement(StyleType style, IEnumerable<ContentElement> children)
             : base(ElementType.Style)
         {
             Style = style;
-            Children = children;
+            Children = children.ToArray();
         }
         public StyleType Style { get; private set; }
         public ContentElement[] Children { get; private set; }
@@ -202,5 +277,5 @@ namespace SunokoLibrary.Web.GooglePlus
     }
 
     public enum ElementType { Text, Mension, Hyperlink, Style, Break }
-    public enum StyleType { Middle, Bold, Italic, None }
+    public enum StyleType { Bold = 0, Italic = 1, Middle = 2, None = 3 }
 }

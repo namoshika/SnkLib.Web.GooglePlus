@@ -14,6 +14,15 @@ namespace UnitTests.Web.GooglePlus
 
     public class DefaultAccessorStab : IApiAccessor
     {
+        public Task<IPlatformClientBuilder[]> GetAccountList(System.Net.CookieContainer cookies)
+        {
+            return Task.Run(() =>
+                new IPlatformClientBuilder[]
+                {
+                    new PlatformClientBuilder("builder_email", "builder_name", "builder_iconurl", 0, null, null),
+                    new PlatformClientBuilder("builder_email", "builder_name", "builder_iconurl", 1, null, null),
+                });
+        }
         public Task<bool> LoginAsync(string email, string password, IPlatformClient client)
         { return Task.FromResult(true); }
         public Task<InitData> GetInitDataAsync(IPlatformClient client)
@@ -145,12 +154,13 @@ namespace UnitTests.Web.GooglePlus
                         string.Format("aid{0:00}", id),
                         string.Format("ahtml{0:00}_{1}", id, marking),
                         string.Format("atext{0:00}_{1}", id, marking),
+                        new StyleElement(StyleType.None, new[] { new TextElement(string.Format("aelement{0:00}_{1}", id, marking)) }),
                         false,
                         new Uri(string.Format("http://aurl.com/{0:00}_{0}", id, marking)),
                         commentIds.Select(cid => GenerateCommentData(cid, cid, marking)).ToArray(),
-                        DateTime.UtcNow, DateTime.MinValue, DateTime.UtcNow,
+                        DateTime.UtcNow, DateTime.MinValue,
                         ServiceType.Desktop, PostStatusType.First, null,
-                        GenerateProfileData(5, ProfileUpdateApiFlag.LookupCircle, marking),
+                        GenerateProfileData(5, ProfileUpdateApiFlag.LookupCircle, marking), DateTime.UtcNow,
                         flagMode);
                 default:
                     throw new NotImplementedException();
@@ -173,20 +183,17 @@ namespace UnitTests.Web.GooglePlus
                 case ProfileUpdateApiFlag.Base:
                 case ProfileUpdateApiFlag.LookupCircle:
                     return new ProfileData(
-                        apiType, AccountStatus.Active,
-                        apiType == ProfileUpdateApiFlag.LookupProfile ? new Nullable<DateTime>(DateTime.UtcNow) : null,
-                        apiType == ProfileUpdateApiFlag.ProfileGet ? new Nullable<DateTime>(DateTime.UtcNow) : null,
-                        id: string.Format("{0:00}", id), name: string.Format("pname{0:00}_{1}", id, marking),
-                        iconImageUrl: string.Format("http://picon/s0/{0:00}_{1}", id, marking));
+                        string.Format("{0:00}", id), string.Format("pname{0:00}_{1}", id, marking),
+                        string.Format("http://picon/s0/{0:00}_{1}", id, marking), AccountStatus.Active, loadedApiTypes: apiType,
+                        lastUpdateLookupProfile: apiType == ProfileUpdateApiFlag.LookupProfile ? new Nullable<DateTime>(DateTime.UtcNow) : null,
+                        lastUpdateProfileGet: apiType == ProfileUpdateApiFlag.ProfileGet ? new Nullable<DateTime>(DateTime.UtcNow) : null);
                 case ProfileUpdateApiFlag.LookupProfile:
                 case ProfileUpdateApiFlag.ProfileGet:
                     return new ProfileData(
-                        apiType, AccountStatus.Active,
-                        apiType == ProfileUpdateApiFlag.LookupProfile ? new Nullable<DateTime>(DateTime.UtcNow) : null,
-                        apiType == ProfileUpdateApiFlag.ProfileGet ? new Nullable<DateTime>(DateTime.UtcNow) : null,
                         string.Format("{0:00}", id),
                         string.Format("pname{0:00}_{1}", id, marking),
                         string.Format("pfnam{0:00}_{1}", id, marking),
+                        AccountStatus.Active,
                         string.Format("plnam{0:00}_{1}", id, marking),
                         string.Format("pintr{0:00}_{1}", id, marking),
                         string.Format("pbrag{0:00}_{1}", id, marking),
@@ -196,7 +203,9 @@ namespace UnitTests.Web.GooglePlus
                         string.Format("http://picon/s0/{0:00}_{1}", id, marking),
                         RelationType.Engaged, GenderType.Other, null, null, null, null, null, null, null, null,
                         new string[] { string.Format("pplace{0:00}_{1}", id, marking), },
-                        new string[] { string.Format("pother{0:00}_{1}", id, marking), });
+                        new string[] { string.Format("pother{0:00}_{1}", id, marking), }, apiType,
+                        apiType == ProfileUpdateApiFlag.LookupProfile ? new Nullable<DateTime>(DateTime.UtcNow) : null,
+                        apiType == ProfileUpdateApiFlag.ProfileGet ? new Nullable<DateTime>(DateTime.UtcNow) : null);
                 default:
                     throw new NotImplementedException();
 

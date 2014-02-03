@@ -491,14 +491,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 ? AttachedBase.Create((JArray)apiResponse[97], client.PlusBaseUrl) : null;
             //再共有投稿の場合はデータの並びが一部異なるため、処理を分ける
             string html, text;
+            StyleElement element;
             IAttachable attachedContent;
             if (apiResponse[39].Type == JTokenType.String)
             {
                 html = (string)apiResponse[47];
                 text = (string)apiResponse[48];
-                string attachedHtml, attachedText;
-                attachedHtml = (string)apiResponse[4];
-                attachedText = (string)apiResponse[20];
+                element = ContentElement.ParseHtml(html, client) ?? ContentElement.ParseJson(apiResponse[139]);
+                var attachedHtml = (string)apiResponse[4];
+                var attachedText = (string)apiResponse[20];
+                var attachedElement = ContentElement.ParseJson(apiResponse[137]);
                 attachedContent = new AttachedPost(
                     (string)apiResponse[40], attachedHtml, attachedText, (string)apiResponse[43][1], (string)apiResponse[43][0],
                     new Uri(ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[43][4])),
@@ -509,11 +511,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 html = (string)apiResponse[4];
                 text = (string)apiResponse[20];
+                element = ContentElement.ParseHtml(html, client) ?? ContentElement.ParseJson(apiResponse[137]);
                 attachedContent = atchCnt;
             }
 
             return new ActivityData(
-                id, html, text, isEditable, postUrl, comments, postDate, editDate, serviceType, postStatus, attachedContent,
+                id, html, text, element, isEditable, postUrl, comments, postDate, editDate, serviceType, postStatus, attachedContent,
                 new ProfileData(postUserId, postUserName, postUserIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
                 updateDate, loadedApiTypes);
         }
