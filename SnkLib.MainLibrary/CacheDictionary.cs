@@ -6,15 +6,14 @@ using System.Text;
 
 namespace SunokoLibrary.Collection.Generic
 {
-    public class CacheDictionary<TKey, TCache, TValue> : IEnumerable<KeyValuePair<TKey, TCache>>
+    public class CacheDictionary<TKey, TCache, TValue> : ICacheDictionary<TKey, TCache, TValue>
         where TCache : ICacheInfo<TValue>
     {
-        public CacheDictionary(int cacheLength, int cacheArrayLength, Func<TValue, TCache> cacheWrapGenerator)
+        public CacheDictionary(int cacheSize, int cacheOutSize, Func<TValue, TCache> cacheWrapGenerator)
         {
             _cacheWrapGenerator = cacheWrapGenerator;
-            _cacheLength = cacheLength;
-            _caches = Enumerable.Range(0,cacheArrayLength).Select(idx => new Dictionary<TKey, TCache>()).ToArray();
-            _currentCacheIndex = 0;
+            _cacheOutSize = cacheOutSize;
+            _cacheSize = cacheSize;
 
             //TValue同士の加算を行う式を生成
             var paramExpA = Expression.Parameter(typeof(TValue), "value1");
@@ -24,127 +23,70 @@ namespace SunokoLibrary.Collection.Generic
             _notEqualFunc = (Func<TValue, TValue, bool>)Expression.Lambda(
                 Expression.NotEqual(paramExpA, paramExpB), paramExpA, paramExpB).Compile();
         }
-        int _cacheLength;
-        int _currentCacheIndex;
-        Dictionary<TKey, TCache>[] _caches;
+
+        int _cacheSize, _cacheOutSize;
+        Dictionary<TKey, TCache> _values = new Dictionary<TKey, TCache>();
+        LinkedList<TKey> _usedKeyLog = new LinkedList<TKey>();
+        Dictionary<TKey, LinkedListNode<TKey>> _keyNodeDict = new Dictionary<TKey, LinkedListNode<TKey>>();
         Func<TValue, TValue, TValue> _addFunc;
         Func<TValue, TValue, bool> _notEqualFunc;
         Func<TValue, TCache> _cacheWrapGenerator;
 
-        public TCache this[TKey key]
-        {
-            get
-            {
-                TCache val;
-                if (TryGetValue(key, out val) == false)
-                    throw new KeyNotFoundException("引数keyを持つ要素が存在しませんでした。");
-                return val;
-            }
-        }
-        public TCache Update(TKey key, TValue updateData)
+        public TCache Update(TKey key, TValue newValue)
         {
             TCache result;
-            lock (_caches)
-                if (TryGetValue(key, out result))
+            lock(_values)
+                if (_values.ContainsKey(key))
                 {
-                    if (_notEqualFunc(result.Value, updateData))
-                        (result = _caches[_currentCacheIndex][key]).Value = _addFunc(result.Value, updateData);
+                    (result = _values[key]).Value = _addFunc(_values[key].Value, newValue);
+
+                    var node = _keyNodeDict[key];
+                    _usedKeyLog.Remove(node);
+                    _usedKeyLog.AddFirst(node);
                 }
                 else
-                    if (updateData != null)
-                        result = Add(key, updateData);
+                {
+                    result = _cacheWrapGenerator(newValue);
+                    _values.Add(key, result);
 
+                    var newNode = new LinkedListNode<TKey>(key);
+                    _usedKeyLog.AddFirst(newNode);
+                    _keyNodeDict.Add(key, newNode);
+
+                    if (_usedKeyLog.Count > _cacheSize)
+                        for (var i = 0; i < _cacheOutSize; i++)
+                        {
+                            _keyNodeDict.Remove(_usedKeyLog.Last.Value);
+                            _values.Remove(_usedKeyLog.Last.Value);
+                            _usedKeyLog.RemoveLast();
+                        }
+                }
             return result;
         }
-        public TCache Add(TKey key, TValue value)
+        public TCache Update(TKey key, Func<TValue> substituteValueGenerator)
         {
-            lock (_caches)
-            {
-                if (_caches[_currentCacheIndex].Count >= _cacheLength)
-                {
-                    _currentCacheIndex = (_currentCacheIndex > 0 ? _currentCacheIndex : _caches.Length) - 1;
-                    _caches[_currentCacheIndex].Clear();
-                }
-                var wrap = _cacheWrapGenerator(value);
-                _caches[_currentCacheIndex].Add(key, wrap);
-                return wrap;
-            }
+            lock (_values)
+                return _values.ContainsKey(key) ? Get(key) : Update(key, substituteValueGenerator());
         }
-        public bool Remove(TKey key)
+        public TCache Get(TKey key)
         {
-            lock (_caches)
-            {
-                var isFound = false;
-                var i = 0;
-                do
+            lock (_values)
+                if (_values.ContainsKey(key))
                 {
-                    isFound = _caches[(_currentCacheIndex + i) % _caches.Length].Remove(key);
-                    if (isFound)
-                        break;
-                    i++;
+                    var node = _keyNodeDict[key];
+                    _usedKeyLog.Remove(node);
+                    _usedKeyLog.AddFirst(node);
+                    return _values[key];
                 }
-                while (i < _caches.Length);
-                return isFound;
-            }
+                else
+                    throw new KeyNotFoundException();
         }
-        public bool ContainsKey(TKey key)
-        {
-            lock (_caches)
-            {
-                var isFound = false;
-                var i = 0;
-                do
-                {
-                    isFound = _caches[(_currentCacheIndex + i) % _caches.Length].ContainsKey(key);
-                    if (isFound)
-                        break;
-                    i++;
-                }
-                while (i < _caches.Length);
-                return isFound;
-            }
-        }
-        public bool TryGetValue(TKey key, out TCache value)
-        {
-            lock (_caches)
-            {
-                var isFound = false;
-                var i = 0;
-                do
-                {
-                    isFound = _caches[(_currentCacheIndex + i) % _caches.Length].TryGetValue(key, out value);
-                    if (isFound)
-                    {
-                        if (i > 0)
-                        {
-                            _caches[(_currentCacheIndex + i) % _caches.Length].Remove(key);
-                            if (_caches[_currentCacheIndex].Count < _cacheLength)
-                                _caches[_currentCacheIndex].Add(key, value);
-                            else
-                            {
-                                _currentCacheIndex = (_currentCacheIndex > 0 ? _currentCacheIndex : _caches.Length) - 1;
-                                _caches[_currentCacheIndex].Clear();
-                                _caches[_currentCacheIndex].Add(key, value);
-                            }
-                        }
-                        break;
-                    }
-                    i++;
-                }
-                while (i < _caches.Length);
-
-                value = isFound ? value : default(TCache);
-                return isFound;
-            }
-        }
-        public IEnumerator<KeyValuePair<TKey, TCache>> GetEnumerator()
-        { return _caches.SelectMany(dict => dict).GetEnumerator(); }
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        { return GetEnumerator(); }
-
-        [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-        IEnumerable<KeyValuePair<TKey, TCache>> Debug_DebuggerDisplay
-        { get { return _caches.SelectMany(dict => dict); } }
+    }
+    public interface ICacheDictionary<TKey, TCache, TValue> where TCache : ICacheInfo<TValue>
+    {
+        TCache Update(TKey key, TValue newValue);
+        TCache Update(TKey key, Func<TValue> substituteValueGenerator);
+        TCache Get(TKey key);
     }
     public interface ICacheInfo<T> { T Value { get; set; } }
 }
