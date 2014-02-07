@@ -21,9 +21,12 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             _data = data;
             _postUser = data.Owner != null ? client.People.InternalGetAndUpdateProfile(data.Owner) : null;
+            _attachedContent = data.AttachedContent != null ? AttachedContentDecorator(data.AttachedContent, client) : null;
+            _comments = _data.Comments != null ? _data.Comments.Select(dt => new CommentInfo(Client, dt, _data, this)).ToArray() : null;
         }
         ActivityData _data;
         ProfileInfo _postUser;
+        IAttachable _attachedContent;
         CommentInfo[] _comments;
         readonly Dictionary<EventHandler, IDisposable> _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
 
@@ -38,7 +41,7 @@ namespace SunokoLibrary.Web.GooglePlus
         public DateTime EditDate { get { return CheckFlag(_data.EditDate, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
         public PostStatusType PostStatus { get { return CheckFlag(_data.PostStatus, "LoadedApiTypes", () => _data.LoadedApiTypes > ActivityUpdateApiFlag.Unloaded, "ActivityUpdateApiFlag.Unloadedである").Value; } }
         public ProfileInfo PostUser { get { return CheckFlag(_postUser, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public IAttachable AttachedContent { get { return CheckFlag(_data.AttachedContent, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public IAttachable AttachedContent { get { return CheckFlag(_attachedContent, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public ServiceType ServiceType { get { return CheckFlag(_data.ServiceType, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         //public PlusOneInfo PlusOne { get { return CheckFlag(_data.AttachedContent, "PostStatus", _data.PostStatus | PostStatusType.First, PostStatusType.First); } }
 
@@ -55,10 +58,10 @@ namespace SunokoLibrary.Web.GooglePlus
                     .Catch<CommentInfo, ApiErrorException>(ex => Observable.Throw(new FailToOperationException<ActivityInfo>("CommentInfoの受信中にエラーが発生しました。", this, ex), (CommentInfo)null)));
             return obs;
         }
-        public async Task UpdateGetActivityAsync(bool isForced, ActivityUpdateApiFlag updaterTypes, TimeSpan? intervalRestriction = null)
+        public Task UpdateGetActivityAsync(bool isForced, ActivityUpdateApiFlag updaterTypes, TimeSpan? intervalRestriction = null)
         {
             var cache = Client.Activity.InternalGetActivityCache(_data.Id);
-            await cache.SyncerUpdateActivity.LockAsync(
+            return cache.SyncerUpdateActivity.LockAsync(
                 isForced, () => _data.PostStatus != PostStatusType.Removed && (LoadedApiTypes & updaterTypes) != updaterTypes,
                 intervalRestriction,
                 async () =>
@@ -67,6 +70,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     {
                         _data = Client.Activity.InternalUpdateActivity(await Client.ServiceApi.GetActivityAsync(Id, Client));
                         _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
+                        _attachedContent = _data.AttachedContent != null ? AttachedContentDecorator(_data.AttachedContent, Client) : null;
                         _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
                     }
                     catch (ApiErrorException e)
@@ -82,6 +86,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 {
                     _data = cache.Value;
                     _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
+                    _attachedContent = _data.AttachedContent != null ? AttachedContentDecorator(_data.AttachedContent, Client) : null;
                     _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
                 });
         }
@@ -140,6 +145,20 @@ namespace SunokoLibrary.Web.GooglePlus
                     default:
                         throw new FailToOperationException<ActivityInfo>("コメント投稿に失敗しました。", this, e);
                 }
+            }
+        }
+        public static IAttachable AttachedContentDecorator(IAttachable info, PlatformClient client)
+        {
+            switch(info.Type)
+            {
+                case ContentType.Album:
+                    return new AttachedAlbum(client, (AttachedAlbumData)info);
+                case ContentType.Image:
+                    return new AttachedImage(client, (AttachedImageData)info);
+                case ContentType.Reshare:
+                    return new AttachedPost(client, (AttachedPostData)info);
+                default:
+                    return info;
             }
         }
 

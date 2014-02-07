@@ -16,33 +16,33 @@ namespace SunokoLibrary.Web.GooglePlus
             : base(client)
         {
             _data = data;
-            _isolateActivity = data.IsUpdatedLightBox
+            _isolateActivity = LoadedApiTypes >= ImageUpdateApiFlag.LightBox
                 ? Client.Activity.InternalGetAndUpdateActivity(_data.IsolateActivity) : null;
         }
         ActivityInfo _isolateActivity;
         ImageData _data;
         readonly AsyncLocker _syncerUpdateLightBox = new AsyncLocker();
 
-        public bool IsUpdatedLightBox { get { return _data.IsUpdatedLightBox; } }
-        public string Id { get { return CheckFlag(_data.Id, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
-        public string Name { get { return CheckFlag(_data.Name, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
-        public int Width { get { return CheckFlag(_data.Width, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない").Value; } }
-        public int Height { get { return CheckFlag(_data.Height, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない").Value; } }
-        public string ImageUrl { get { return CheckFlag(_data.ImageUrl, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
-        public ProfileInfo Owner { get { return Client.People.InternalGetAndUpdateProfile(CheckFlag(_data.Owner, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない")); } }
-        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない").Value; } }
-        public ActivityInfo IsolateActivity { get { return CheckFlag(_isolateActivity, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
-        public ImageTagData[] Tags { get { return CheckFlag(_data.AttachedTags, "IsUpdatedLightBox", () => IsUpdatedLightBox, "trueでない"); } }
+        public ImageUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
+        public string Id { get { return _data.Id; } }
+        public string Name { get { return CheckFlag(_data.Name, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない"); } }
+        public int Width { get { return CheckFlag(_data.Width, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない").Value; } }
+        public int Height { get { return CheckFlag(_data.Height, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない").Value; } }
+        public string ImageUrl { get { return CheckFlag(_data.ImageUrl, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない"); } }
+        public ProfileInfo Owner { get { return Client.People.InternalGetAndUpdateProfile(CheckFlag(_data.Owner, "IsUpdatedLightBox", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない")); } }
+        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.LightBox, "trueでない").Value; } }
+        public ActivityInfo IsolateActivity { get { return CheckFlag(_isolateActivity, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.LightBox, "trueでない"); } }
+        public ImageTagData[] Tags { get { return CheckFlag(_data.AttachedTags, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.LightBox, "trueでない"); } }
 
         public async Task UpdateLightBoxAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
-            await _syncerUpdateLightBox.LockAsync(isForced, () => IsUpdatedLightBox == false, intervalRestriction,
+            await _syncerUpdateLightBox.LockAsync(isForced, () => LoadedApiTypes < ImageUpdateApiFlag.LightBox, intervalRestriction,
                 async () =>
                 {
                     try
                     {
                         _data = _data + await Client.ServiceApi.GetImageAsync(_data.Id, _data.Owner.Id, Client);
-                        _isolateActivity = _data.IsUpdatedLightBox
+                        _isolateActivity = _data.LoadedApiTypes >= ImageUpdateApiFlag.LightBox
                             ? Client.Activity.InternalGetAndUpdateActivity(_data.IsolateActivity) : null;
                     }
                     catch (ApiErrorException e) { throw new FailToOperationException("UpdateLightBoxAsync()に失敗。G+API呼び出しで例外が発生しました。", e); }

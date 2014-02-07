@@ -6,8 +6,24 @@ using System.Text;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class AttachedImage : AttachedLink
+    public class AttachedImage : AccessorBase, IAttachable
     {
+        public AttachedImage(PlatformClient client, AttachedImageData data)
+            : base(client)
+        {
+            _data = data;
+            Image = new ImageInfo(client, data.Image);
+            Album = new AlbumInfo(client, data.Album);
+        }
+        AttachedImageData _data;
+        public ContentType Type { get { return _data.Type; } }
+        public Uri LinkUrl { get { return _data.LinkUrl; } }
+        public ImageInfo Image { get; private set; }
+        public AlbumInfo Album { get; private set; }
+    }
+    public class AttachedImageData : AttachedLink
+    {
+        public AttachedImageData(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
         public override ContentType Type { get { return ContentType.Image; } }
         public ImageData Image { get; private set; }
         public AlbumData Album { get; private set; }
@@ -21,7 +37,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             Album = new AlbumData((string)json[37]);
             Image = new ImageData(
-                false, (string)json[38], (string)json[2], (int)json[20], (int)json[21], ApiAccessorUtility.ConvertReplasableUrl((string)json[1]),
+                ImageUpdateApiFlag.Base, (string)json[38], (string)json[2], (int)json[20], (int)json[21], ApiAccessorUtility.ConvertReplasableUrl((string)json[1]),
                 owner: new ProfileData((string)json[26], loadedApiTypes: ProfileUpdateApiFlag.Unloaded));
         }
     }

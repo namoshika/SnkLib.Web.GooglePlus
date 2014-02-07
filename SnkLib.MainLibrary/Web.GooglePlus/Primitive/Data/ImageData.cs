@@ -8,11 +8,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class ImageData : DataBase
     {
-        public ImageData(bool isUpdatedLightBox, string id, string name = null, int? width = null, int? height = null,
+        public ImageData(ImageUpdateApiFlag loadedApiType, string id, string name = null, int? width = null, int? height = null,
             string imageUrl = null, DateTime? createDate = null, ImageTagData[] attachedTags = null,
             ProfileData owner = null, ActivityData isolateActivity = null)
         {
-            IsUpdatedLightBox = isUpdatedLightBox;
+            LoadedApiTypes = loadedApiType;
             Id = id;
             Name = name;
             Width = width;
@@ -24,7 +24,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             IsolateActivity = isolateActivity;
         }
 
-        public bool IsUpdatedLightBox { get; private set; }
+        public ImageUpdateApiFlag LoadedApiTypes { get; private set; }
         public string Id { get; protected set; }
         public string Name { get; private set; }
         public string ImageUrl { get; private set; }
@@ -38,18 +38,29 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
         public static ImageData operator +(ImageData value1, ImageData value2)
         {
-            var isUpdatedLightBox = value1 != null ? value1.IsUpdatedLightBox : false
-                || value2 != null ? value2.IsUpdatedLightBox : false;
-            return new ImageData(
-                isUpdatedLightBox,
-                Merge(value1, value2, obj => obj.Id),
-                Merge(value1, value2, obj => obj.Name),
-                Merge(value1, value2, obj => obj.Width),
-                Merge(value1, value2, obj => obj.Height),
-                Merge(value1, value2, obj => obj.ImageUrl),
-                Merge(value1, value2, obj => obj.CreateDate),
-                Merge(value1, value2, obj => obj.AttachedTags),
-                Merge(value1, value2, obj => obj.Owner));
-        }
+            bool val1_isNotNull = value1 != null, val2_isNotNull = value2 != null;
+            if (val1_isNotNull && val2_isNotNull)
+            {
+                var newUpdateType =
+                    (value2 != null ? value2.LoadedApiTypes : ImageUpdateApiFlag.Unloaded)
+                    | (value1 != null ? value1.LoadedApiTypes : ImageUpdateApiFlag.Unloaded);
+                return new ImageData(
+                    newUpdateType,
+                    Merge(value1, value2, obj => obj.Id),
+                    Merge(value1, value2, obj => obj.Name),
+                    Merge(value1, value2, obj => obj.Width),
+                    Merge(value1, value2, obj => obj.Height),
+                    Merge(value1, value2, obj => obj.ImageUrl),
+                    Merge(value1, value2, obj => obj.CreateDate),
+                    Merge(value1, value2, obj => obj.AttachedTags),
+                    Merge(value1, value2, obj => obj.Owner));
+            }
+            else if (val2_isNotNull)
+                return value2;
+            else
+                return value1;
+            }
     }
+    public enum ImageUpdateApiFlag
+    { Unloaded = 0, Base = 1, LightBox = 3, }
 }

@@ -8,6 +8,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class AttachedLink : AttachedBase
     {
+        public AttachedLink(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
         public override ContentType Type { get { return ContentType.Link; } }
         public string Title { get; protected set; }
         public string Summary { get; protected set; }

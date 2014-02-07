@@ -9,6 +9,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class AttachedInteractiveLink : AttachedLink
     {
+        public AttachedInteractiveLink(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
         public override ContentType Type { get { return ContentType.InteractiveLink; } }
         public string ProviderName { get; private set; }
         public Uri ProviderUrl { get; private set; }
@@ -21,14 +22,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var workJson = (JArray)json[75];
             ActionUrl = new Uri((string)workJson[0][3]);
             LabelType tmp;
-            if (Enum.TryParse((string)workJson[2], out tmp) == false)
+            var labelTypeStr = string.Join(string.Empty, ((string)workJson[2]).Split(' ').Select(str => str[0].ToString().ToUpper() + str.Substring(1)));
+            if (Enum.TryParse(labelTypeStr, out tmp) == false)
                 tmp = LabelType.Unknown;
             Label = tmp;
 
-            workJson = (JArray)json[77];
-            ProviderName = (string)workJson[0];
-            ProviderUrl = new Uri((string)workJson[1]);
-            ProviderLogoUrl = new Uri((string)workJson[2]);
+            if (json[77].Type == JTokenType.Array)
+            {
+                workJson = (JArray)json[77];
+                ProviderName = (string)workJson[0];
+                ProviderUrl = new Uri((string)workJson[1]);
+                ProviderLogoUrl = new Uri((string)workJson[2]);
+            }
 
             base.ParseTemplate((JArray)GetContentBody((JArray)json[8]).Value);
         }

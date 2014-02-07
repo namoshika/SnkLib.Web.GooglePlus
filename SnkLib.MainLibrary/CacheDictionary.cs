@@ -38,6 +38,8 @@ namespace SunokoLibrary.Collection.Generic
             lock(_values)
                 if (_values.ContainsKey(key))
                 {
+                    if (_notEqualFunc(_values[key].Value, newValue) == false)
+                        return _values[key];
                     (result = _values[key]).Value = _addFunc(_values[key].Value, newValue);
 
                     var node = _keyNodeDict[key];

@@ -23,6 +23,18 @@ namespace SunokoLibrary.Web.GooglePlus
             _parentActivity = Client.Activity.InternalGetAndUpdateActivity(activityData);
             _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
         }
+        //ActivityInfo初期化はこちらの特殊仕様を使う。
+        //これはActivityInfo用のCommentInfo、CommentInfo用のActivityInfoという無限ループ回避用処置
+        internal CommentInfo(
+            PlatformClient client, CommentData commentData, ActivityData activityData, ActivityInfo activityInfo)
+            : base(client)
+        {
+            _commentData = commentData;
+            _activityData = activityData;
+            _owner = commentData.Owner != null ? client.People.InternalGetAndUpdateProfile(commentData.Owner) : null;
+            _parentActivity = activityInfo;
+            _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
+        }
         CommentData _commentData;
         ActivityData _activityData;
         ProfileInfo _owner;

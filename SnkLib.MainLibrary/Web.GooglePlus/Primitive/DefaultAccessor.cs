@@ -277,7 +277,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         case (int)NotificationsFilter.TaggedImage:
                             var images = new List<ImageData>();
                             foreach (var childItem in item[18][1][0])
-                                images.Add(GenerateImageData(childItem));
+                                images.Add(GenerateImageData(childItem, ImageUpdateApiFlag.Base));
                             notificationList.Add(new NotificationDataWithImage(
                                 images.ToArray(), NotificationsFilter.TaggedImage, chainedItems.ToArray()));
                             break;
@@ -339,7 +339,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base));
                     })
                 .ToArray();
-            return new ImageData(true, imageId, name, width, height, imageUrl, null, tagArray, owner, isolateActivity);
+            return new ImageData(ImageUpdateApiFlag.LightBox, imageId, name, width, height, imageUrl, null, tagArray, owner, isolateActivity);
         }
         public IObservable<object> GetStreamAttacher(IPlatformClient client)
         {
@@ -500,10 +500,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 element = ContentElement.ParseHtml(html, client) ?? ContentElement.ParseJson(apiResponse[139]);
                 var attachedHtml = (string)apiResponse[4];
                 var attachedText = (string)apiResponse[20];
-                var attachedElement = ContentElement.ParseJson(apiResponse[137]);
-                attachedContent = new AttachedPost(
-                    (string)apiResponse[40], attachedHtml, attachedText, (string)apiResponse[43][1], (string)apiResponse[43][0],
-                    new Uri(ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[43][4])),
+                var attachedElement = ContentElement.ParseHtml(attachedHtml, client) ?? ContentElement.ParseJson(apiResponse[137]);
+                attachedContent = new AttachedPostData(
+                    (string)apiResponse[40], attachedHtml, attachedText, attachedElement,
+                    (string)apiResponse[43][1], (string)apiResponse[43][0],
+                    ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[43][4]),
                     new Uri(client.PlusBaseUrl, (string)apiResponse[77]),
                     atchCnt);
             }
@@ -563,14 +564,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var picLst = new List<ImageData>();
             foreach (var itemA in apiResponse[10])
                 if (itemA != null)
-                    picLst.Add(GenerateImageData(itemA));
+                    picLst.Add(GenerateImageData(itemA, ImageUpdateApiFlag.Base));
             var bookCovers = picLst.ToArray();
 
             return new AlbumData(id, name, albumUrl, createDate, bookCovers, bookCovers, attachedActivityId, owner, null, null);
         }
-        static ImageData GenerateImageData(JToken apiResponse)
+        static ImageData GenerateImageData(JToken apiResponse, ImageUpdateApiFlag loadedApiTypes)
         {
-            var isUpdatedLightBox = false;
             var id = (string)apiResponse[5];
             var name = (string)apiResponse[8];
             var imageUrl = ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[2][0]);
@@ -604,7 +604,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
             var attachedTags = tags.ToArray();
 
-            return new ImageData(isUpdatedLightBox, id, name, width, height, imageUrl, createDate, attachedTags, owner);
+            return new ImageData(loadedApiTypes, id, name, width, height, imageUrl, createDate, attachedTags, owner);
         }
         static object GenerateDataFromStreamingApi(JToken json, IPlatformClient client)
         {

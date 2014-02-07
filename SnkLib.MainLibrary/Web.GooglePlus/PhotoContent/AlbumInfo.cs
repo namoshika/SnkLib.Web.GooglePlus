@@ -16,8 +16,8 @@ namespace SunokoLibrary.Web.GooglePlus
             : base(client)
         {
             _data = data;
-            _attachedActivity = client.Activity.GetActivityInfo(_data.AttachedActivity);
-            _owner = client.People.InternalGetAndUpdateProfile(data.Owner);
+            _attachedActivity = _data.AttachedActivity != null ? client.Activity.GetActivityInfo(_data.AttachedActivity) : null;
+            _owner = data.Owner != null ? client.People.InternalGetAndUpdateProfile(data.Owner) : null;
         }
 
         AlbumData _data;

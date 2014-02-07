@@ -8,6 +8,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public abstract class AttachedBase : IAttachable
     {
+        public AttachedBase(JArray json, Uri plusBaseUrl)
+        {
+            PlusBaseUrl = plusBaseUrl;
+            ParseTemplate(json);
+        }
         public Uri LinkUrl { get; private set; }
         public Uri PlusBaseUrl { get; private set; }
         public abstract ContentType Type { get; }
@@ -29,33 +34,23 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 case "39748951":
                 case "42861421":
                     //リンク
-                    content = new AttachedLink();
-                    content.PlusBaseUrl = plusBaseUrl;
-                    content.ParseTemplate((JArray)prop.Value);
+                    content = new AttachedLink((JArray)prop.Value, plusBaseUrl);
                     break;
                 case "41561070":
                     //インタラクティブ
-                    content = new AttachedInteractiveLink();
-                    content.PlusBaseUrl = plusBaseUrl;
-                    content.ParseTemplate((JArray)prop.Value);
+                    content = new AttachedInteractiveLink((JArray)prop.Value, plusBaseUrl);
                     break;
                 case "40655821":
                     //写真
-                    content = new AttachedImage();
-                    content.PlusBaseUrl = plusBaseUrl;
-                    content.ParseTemplate((JArray)prop.Value);
+                    content = new AttachedImageData((JArray)prop.Value, plusBaseUrl);
                     break;
                 case "40842909":
                     //アルバム
-                    content = new AttachedAlbum();
-                    content.PlusBaseUrl = plusBaseUrl;
-                    content.ParseTemplate((JArray)prop.Value);
+                    content = new AttachedAlbumData((JArray)prop.Value, plusBaseUrl);
                     break;
                 case "41186541":
                     //youtube
-                    content = new AttachedYouTube();
-                    content.PlusBaseUrl = plusBaseUrl;
-                    content.ParseTemplate((JArray)prop.Value);
+                    content = new AttachedYouTube((JArray)prop.Value, plusBaseUrl);
                     break;
                 case "41359510":
                     //現在地共有
@@ -69,7 +64,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
             return content;
         }
-        public static JProperty GetContentBody(JArray attachedContentJson)
+        protected static JProperty GetContentBody(JArray attachedContentJson)
         {
             JObject json = (JObject)(
                 attachedContentJson.Count > 7 && attachedContentJson[7].Type == JTokenType.Object ? attachedContentJson[7] :
