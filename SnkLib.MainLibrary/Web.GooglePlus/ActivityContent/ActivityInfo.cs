@@ -71,7 +71,7 @@ namespace SunokoLibrary.Web.GooglePlus
                         _data = Client.Activity.InternalUpdateActivity(await Client.ServiceApi.GetActivityAsync(Id, Client));
                         _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                         _attachedContent = _data.AttachedContent != null ? AttachedContentDecorator(_data.AttachedContent, Client) : null;
-                        _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
+                        _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data, this)).ToArray();
                     }
                     catch (ApiErrorException e)
                     {
@@ -87,7 +87,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     _data = cache.Value;
                     _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                     _attachedContent = _data.AttachedContent != null ? AttachedContentDecorator(_data.AttachedContent, Client) : null;
-                    _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data)).ToArray();
+                    _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data, this)).ToArray();
                 });
         }
         public async Task<bool> PostComment(string content)

@@ -52,7 +52,7 @@ namespace SunokoLibrary.Web.GooglePlus
                         {
                             if (_stream == null)
                             {
-                                _stream = Client.ServiceApi.GetStreamAttacher(Client).Publish();
+                                _stream = Client.ServiceApi.GetStreamAttacher(Client).Select(ConvertDataToInfo).Publish();
                                 _streamSession = _stream.Connect();
                                 BeganTimeToBind = DateTime.UtcNow;
                                 IsConnected = true;
@@ -83,31 +83,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             return disposer;
                         }
                     })
-                )
-            .Select(item =>
-                {
-                    if (item is ActivityData)
-                        return Client.Activity.InternalGetAndUpdateActivity((ActivityData)item);
-                    else if (item is ProfileData)
-                        return Client.People.InternalGetAndUpdateProfile((ProfileData)item);
-                    else if (item is CommentData)
-                    {
-                        var cData = (CommentData)item;
-                        var aData = Client.Activity.InternalGetActivityCache(cData.ActivityId).Value;
-                        var info = new CommentInfo(Client, cData, aData);
-                        if (cData.Status == PostStatusType.Removed)
-                            aData.Comments = aData.Comments != null ? aData.Comments
-                                .Where(dt => dt.CommentId != cData.CommentId).ToArray() : null;
-                        else
-                        {
-                            var cDataAry = new[] { cData };
-                            aData.Comments = aData.Comments != null ? aData.Comments.Concat(cDataAry).ToArray() : cDataAry;
-                        }
-                        return info;
-                    }
-                    else
-                        return item;
-                });
+                );
         }
         public ActivityInfo GetActivityInfo(string targetId)
         {
@@ -120,6 +96,44 @@ namespace SunokoLibrary.Web.GooglePlus
         { return _activityCache.Update(newValue.Id, newValue).Value; }
         internal ActivityInfo InternalGetAndUpdateActivity(ActivityData newValue)
         { return new ActivityInfo(Client, InternalUpdateActivity(newValue)); }
+        object ConvertDataToInfo(object item)
+        {
+            if (item is ActivityData)
+                return Client.Activity.InternalGetAndUpdateActivity((ActivityData)item);
+            else if (item is ProfileData)
+                return Client.People.InternalGetAndUpdateProfile((ProfileData)item);
+            else if (item is CommentData)
+            {
+                var cData = (CommentData)item;
+                var aData = Client.Activity.InternalGetActivityCache(cData.ActivityId).Value;
+                var info = new CommentInfo(Client, cData, aData);
+                if (cData.Status == PostStatusType.Removed)
+                    aData.Comments = aData.Comments != null ? aData.Comments
+                        .Where(dt => dt.CommentId != cData.CommentId).ToArray() : null;
+                else
+                    if (aData.Comments != null)
+                    {
+                        var i = 0;
+                        var cDatas = aData.Comments.ToArray();
+                        var found = false;
+                        for (; i < cDatas.Length; i++)
+                            if (cDatas[i].CommentId == cData.CommentId)
+                            {
+                                cDatas[i] = cData;
+                                found = true;
+                                break;
+                            }
+                        if (found == false)
+                            cDatas = cDatas.Concat(new[] { cData }).ToArray();
+                        aData.Comments = cDatas;
+                    }
+                    else
+                        aData.Comments = new[] { cData };
+                return info;
+            }
+            else
+                return item;
+        }
 
         public event EventHandler ChangedIsConnected;
         protected virtual void OnChangedIsConnected(EventArgs e)

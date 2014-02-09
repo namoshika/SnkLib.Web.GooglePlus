@@ -56,15 +56,17 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     /// <summary>APIが所定の目的を果たせずエラーを返した時に使用されます。</summary>
     public class ApiErrorException : Exception
     {
-        public ApiErrorException(string message, ErrorType type, Uri requestUrl, HttpContent requestEntity, Exception innerException)
+        public ApiErrorException(string message, ErrorType type, Uri requestUrl, HttpContent requestEntity, HttpResponseMessage response, Exception innerException)
             : base(message, innerException)
         {
             Type = type;
             RequestUrl = requestUrl;
             RequestEntity = requestEntity;
+            Response = response;
         }
         public Uri RequestUrl { get; private set; }
         public HttpContent RequestEntity { get; private set; }
+        public HttpResponseMessage Response { get; private set; }
         public ErrorType Type { get; private set; }
     }
     public enum ErrorType { ParameterError, SessionError, NetworkError, UnknownError }

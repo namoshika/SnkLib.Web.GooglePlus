@@ -50,7 +50,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 return new InitData(atVal, pvtVal, eJxVal, circleInfos, latestActivities); ;
             }
             catch (KeyNotFoundException e)
-            { throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, new Uri("https://plus.google.com"), null, e); }
+            { throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, new Uri("https://plus.google.com"), null, null, e); }
         }
         public async Task<Tuple<CircleData[], ProfileData[]>> GetCircleDatasAsync(IPlatformClient client)
         {
@@ -112,7 +112,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var id = (string)json[0][0][1];
             var lastUpdateDate = DateTime.UtcNow;
             if (id == null)
-                throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null, null, null);
+                throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null, null, null, null);
             return GenerateProfileData(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData[]> GetFollowingProfilesAsync(string profileId, IPlatformClient client)
