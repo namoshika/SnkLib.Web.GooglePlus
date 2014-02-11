@@ -22,7 +22,7 @@ namespace SunokoLibrary.Web.GooglePlus
 
         readonly object _syncerStream = new object();
         readonly ICacheDictionary<string, ActivityCache, ActivityData> _activityCache =
-            new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, dt => new ActivityCache() { Value = dt });
+            new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt });
         bool _isConnected;
         int _streamSessionRefCount;
         IDisposable _streamSession;

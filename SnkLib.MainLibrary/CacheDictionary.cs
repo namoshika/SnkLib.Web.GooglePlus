@@ -9,21 +9,23 @@ namespace SunokoLibrary.Collection.Generic
     public class CacheDictionary<TKey, TCache, TValue> : ICacheDictionary<TKey, TCache, TValue>
         where TCache : ICacheInfo<TValue>
     {
-        public CacheDictionary(int cacheSize, int cacheOutSize, Func<TValue, TCache> cacheWrapGenerator)
+        public CacheDictionary(int cacheSize, int cacheOutSize, bool isAddMode, Func<TValue, TCache> cacheWrapGenerator)
         {
             _cacheWrapGenerator = cacheWrapGenerator;
             _cacheOutSize = cacheOutSize;
             _cacheSize = cacheSize;
+            _isAddMode = isAddMode;
 
             //TValue同士の加算を行う式を生成
             var paramExpA = Expression.Parameter(typeof(TValue), "value1");
             var paramExpB = Expression.Parameter(typeof(TValue), "value2");
-            _addFunc = (Func<TValue, TValue, TValue>)Expression.Lambda(
-                Expression.Add(paramExpA, paramExpB), paramExpA, paramExpB).Compile();
+            if (isAddMode)
+                _addFunc = (Func<TValue, TValue, TValue>)Expression.Lambda(
+                    Expression.Add(paramExpA, paramExpB), paramExpA, paramExpB).Compile();
             _notEqualFunc = (Func<TValue, TValue, bool>)Expression.Lambda(
                 Expression.NotEqual(paramExpA, paramExpB), paramExpA, paramExpB).Compile();
         }
-
+        bool _isAddMode;
         int _cacheSize, _cacheOutSize;
         Dictionary<TKey, TCache> _values = new Dictionary<TKey, TCache>();
         LinkedList<TKey> _usedKeyLog = new LinkedList<TKey>();
@@ -40,7 +42,12 @@ namespace SunokoLibrary.Collection.Generic
                 {
                     if (_notEqualFunc(_values[key].Value, newValue) == false)
                         return _values[key];
-                    (result = _values[key]).Value = _addFunc(_values[key].Value, newValue);
+                    if (_isAddMode)
+                        (result = _values[key]).Value =
+                            _addFunc(_values[key].Value, newValue);
+                    else
+                        (result = _values[key]).Value =
+                            _notEqualFunc(newValue, default(TValue)) ? newValue : _values[key].Value;
 
                     var node = _keyNodeDict[key];
                     _usedKeyLog.Remove(node);

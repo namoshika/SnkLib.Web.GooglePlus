@@ -20,7 +20,7 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             _circles = new CircleInfo[] { };
             _yourCircle = new GooglePlus.YourCircle(client);
-            _profileCache = new Collection.Generic.CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, dt => new ProfileCache() { Value = dt });
+            _profileCache = new Collection.Generic.CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, true, dt => new ProfileCache() { Value = dt });
             _followerCircle = new GroupContainer(client, "Follower");
             _blockCircle = new EditableGroupContainer(
                 client, "blocked", null,
