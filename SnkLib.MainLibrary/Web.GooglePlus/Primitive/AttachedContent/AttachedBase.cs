@@ -58,7 +58,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     break;
                 default:
                     content = null;
-                    System.Diagnostics.Debug.Assert(false, string.Format("未確認の添付コンテンツが発見されました。Type:{0}", prop.Name));
+                    System.Diagnostics.Debug.WriteLine(string.Format("未確認の添付コンテンツが発見されました。JSON:{0}", attachedContentJson));
                     break;
             }
 

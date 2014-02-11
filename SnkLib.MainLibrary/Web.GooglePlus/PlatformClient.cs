@@ -25,7 +25,7 @@ namespace SunokoLibrary.Web.GooglePlus
             NormalHttpClient = new System.Net.Http.HttpClient(handler);
             NormalHttpClient.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
             StreamHttpClient = new System.Net.Http.HttpClient(handler);
-            StreamHttpClient.Timeout = TimeSpan.FromMinutes(6);
+            StreamHttpClient.Timeout = TimeSpan.FromMinutes(15);
             StreamHttpClient.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
             People = new PeopleContainer(this);
             Activity = new ActivityContainer(this);

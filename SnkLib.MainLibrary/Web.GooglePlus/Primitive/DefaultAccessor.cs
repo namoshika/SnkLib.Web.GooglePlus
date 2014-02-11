@@ -346,7 +346,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             return Primitive.ApiWrapper
                 .ConnectToTalkGadgetBind(client.NormalHttpClient, client.StreamHttpClient, client.TalkBaseUrl, client.Cookies, client.PvtValue)
                 .Where(json => (string)json[1][0] == "c")
-                .Select(json => GenerateDataFromStreamingApi(json[1][1][1], client));
+                .Select(json => GenerateDataFromStreamingApi(json, client));
         }
         public Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client)
         { return ApiWrapper.ConnectToNotificationsUpdateLastReadTime(client.NormalHttpClient, client.PlusBaseUrl, value, client.AtValue); }
@@ -606,8 +606,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
             return new ImageData(loadedApiTypes, id, name, width, height, imageUrl, createDate, attachedTags, owner);
         }
-        static object GenerateDataFromStreamingApi(JToken json, IPlatformClient client)
+        static object GenerateDataFromStreamingApi(JToken rawItem, IPlatformClient client)
         {
+            if (rawItem[1][1].Type != JTokenType.Array)
+                return rawItem;
+            var json = rawItem[1][1][1];
             switch ((string)json[0])
             {
                 case "tu":
@@ -631,7 +634,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                             }
                         default:
                             System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");
-                            return json;
+                            return rawItem;
                     }
                 //case "gb":
                 //    var notificationItem = JArray.Parse(
@@ -646,7 +649,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 //            return notificationItem;
                 //    }
                 default:
-                    return json;
+                    return rawItem;
             }
         }
         static string GetProfileId(JToken apiResponse, ProfileUpdateApiFlag apiType)

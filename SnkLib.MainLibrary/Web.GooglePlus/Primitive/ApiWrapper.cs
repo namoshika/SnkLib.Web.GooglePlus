@@ -434,10 +434,47 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 {
                     try
                     {
+                        //通信で使用されるパラメータ。各段階で使用される変数が違うが、
+                        //jsonRecieverで一括定義なので冒頭に宣言する必要があった
+
+                        //aidVal: 再接続をする際に取得済み配列が返されないようにするために送る値
+                        int aidVal = 0;
+                        //各段階で必要なセッションID類
+                        string sidVal = null, gsidVal = null, clidVal = null;
+
+                        //受信したjson配列には一定の形式がある。各要素の種類に
+                        //合わせた処理をここで一括定義
+                        Action<JToken> jsonReciever = (jsonItem) =>
+                        {
+                            aidVal = (int)jsonItem[0];
+                            var data = jsonItem[1];
+                            JToken tmp;
+                            switch ((string)data[0])
+                            {
+                                case "c":
+                                    switch ((tmp = data[1]).Type)
+                                    {
+                                        case JTokenType.String:
+                                            sidVal = (string)data[1];
+                                            break;
+                                        case JTokenType.Array:
+                                            if ((tmp = tmp[1]).Type == JTokenType.Array && (string)tmp[0] == "ei")
+                                                gsidVal = (string)tmp[1];
+                                            break;
+                                    }
+                                    break;
+                            }
+                            try
+                            { subject.OnNext(jsonItem); }
+                            catch (Exception e)
+                            { throw new OutsideException("通知先で例外が発生しました。", e); }
+                        };
+
+                        //clid, gsidを取得する
                         tokenSource.Token.ThrowIfCancellationRequested();
                         var vals = LoadNotifierClient(normalClient, talkBaseUrl, checkTargetCookies, pvtVal).Result;
-                        var clidVal = (string)vals["clid"];
-                        var gsidVal = (string)vals["gsessionid"];
+                        clidVal = (string)vals["clid"];
+                        gsidVal = (string)vals["gsessionid"];
 
                         //sid値を取得する
                         tokenSource.Token.ThrowIfCancellationRequested();
@@ -448,26 +485,22 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "clid", clidVal },
                                     //値は何でもおｋ。けど無いと死ぬ
                                     { "VER", "8" },
-                                    { "RID", "27348" },
+                                    { "RID", "64437" },
                                     //無くてもおｋ
                                     { "gsessionid", gsidVal },
+                                    { "zx", "n9igqs467cbk" },
                                     //不変値。無くてもおｋ。
                                     { "prop", "homepage" },
                                     { "CVER", "1" },
                                     { "t", "1" },
-                                    { "ec", "[1,1,0,\"chat_wcs_20131102.193042_RC3\"]" },
+                                    { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
                                 })));
                         var res = await PostStringAsync(normalClient, url, new Dictionary<string, string>() { { "count", "0" } }, tokenSource.Token);
                         var json = JToken.Parse(ConvertIntoValidJson(res.Substring(res.IndexOf("\n") + 1)));
+                        foreach (var item in json)
+                            jsonReciever(item);
 
-                        //ストリーミングapiの再接続をする際に取得済み配列が返されないようにするために
-                        //クエリとして送るAID値です。内容は今まで取得したjson配列の最終インデックス値です。
-                        //また、取得したjson配列の最後の要素に含まれるidでもあります。
-                        //ちなみに上の通信で帰ってくるjsonの最終インデックスは2。
-                        var aidVal = (int)json.Last[0];
-                        var sidVal = (string)json[0][1][1];
-                        gsidVal = (string)json[2][1][1][1][1];
-
+                        //init
                         tokenSource.Token.ThrowIfCancellationRequested();
                         //post内容が意味不明だが、無いとapiが動かないために必要
                         url = new Uri(talkBaseUrl, string.Format("talkgadget/_/channel/bind?{0}",
@@ -476,7 +509,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     //無いと死ぬ
                                     { "SID", sidVal },
                                     //値は何でもおｋ。けど無いと死ぬ
-                                    { "RID", "27349" },
+                                    { "RID", "64438" },
                                     //無くてもおｋ
                                     { "gsessionid", gsidVal },
                                     { "clid", clidVal },
@@ -486,7 +519,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "AID", aidVal.ToString() },
                                     { "t", "1" },
                                     { "zx", "7anb33bhfgp2" },
-                                    { "ec", "[1,1,0,\"chat_wcs_20131102.193042_RC3\"]" },
+                                    { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
                                 })));
                         res = await PostStringAsync(
                             normalClient, url, new Dictionary<string, string>()
@@ -521,9 +554,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "VER", "8" },
                                     { "prop", "homepage" },
                                     { "TYPE", "xmlhttp" },
-                                    { "zx", "9ngcqx5la3k" },
+                                    { "zx", "p5guamwzkeiu" },
                                     { "t", "1" },
-                                    { "ec", "[1,1,0,\"chat_wcs_20131102.193042_RC3\"]" },
+                                    { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
                                 })));
                             using (var strm = await GetStreamAsync(streamClient, url, tokenSource.Token))
                             using (var reader = new System.IO.StreamReader(strm, Encoding.UTF8))
@@ -553,19 +586,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                         foreach (var item in recieveJson)
                                         {
                                             tokenSource.Token.ThrowIfCancellationRequested();
-                                            if ((string)item[1][0] == "c")
-                                                switch ((string)item[1][1][1][0])
-                                                {
-                                                    case "ei":
-                                                        gsidVal = (string)item[1][1][1][1];
-                                                        break;
-                                                }
-
-                                            try
-                                            { subject.OnNext(item); }
-                                            catch (Exception e)
-                                            { throw new OutsideException("通知先で例外が発生しました。", e); }
-                                            aidVal++;
+                                            jsonReciever(item);
                                         }
                                     }
                                 }
@@ -664,6 +685,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "hrc", "true" },
                     { "mmoleh", "36" },
                     { "two", "https://plus.google.com" },
+
+                    { "rel", "1" },
+                    {"zx", "f0xx0w1pefal" },
                 })));
 
             //認証して読み込む
