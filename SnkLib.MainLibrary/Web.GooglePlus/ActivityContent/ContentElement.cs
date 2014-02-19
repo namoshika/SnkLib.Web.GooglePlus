@@ -97,9 +97,27 @@ namespace SunokoLibrary.Web.GooglePlus
                 else
                     switch (contentHtml[idx + 1])
                     {
-                        case 's':
-                        case 'b':
-                        case 'i':
+                        case '/':
+                            var currentEleChildren = blocks.Pop().ToArray();
+                            switch (currentEleStack.Pop())
+                            {
+                                case 'b':
+                                    blocks.Peek().Add(new StyleElement(StyleType.Bold, currentEleChildren));
+                                    break;
+                                case 'i':
+                                    blocks.Peek().Add(new StyleElement(StyleType.Italic, currentEleChildren));
+                                    break;
+                                case 's':
+                                case 'd':
+                                    blocks.Peek().Add(new StyleElement(StyleType.Middle, currentEleChildren));
+                                    break;
+                                default:
+                                    blocks.Peek().Add(new StyleElement(StyleType.Unknown, currentEleChildren));
+                                    break;
+                            }
+                            nextReadIdx = Math.Max(nextReadIdx + 1, contentHtml.IndexOf('>', idx + 2) + 1);
+                            break;
+                        default:
                             startIdx = idx + 3;
                             var closeEleIdx = contentHtml.IndexOf("</", startIdx);
                             var otherStartEleIdx = contentHtml.IndexOf("<", startIdx);
@@ -117,7 +135,11 @@ namespace SunokoLibrary.Web.GooglePlus
                                         blocks.Peek().Add(new StyleElement(StyleType.Italic, elements));
                                         break;
                                     case 's':
+                                    case 'd':
                                         blocks.Peek().Add(new StyleElement(StyleType.Middle, elements));
+                                        break;
+                                    default:
+                                        blocks.Peek().Add(new StyleElement(StyleType.Unknown, elements));
                                         break;
                                 }
                                 nextReadIdx = closeEleIdx + 4;
@@ -134,22 +156,6 @@ namespace SunokoLibrary.Web.GooglePlus
                                 currentEleStack.Push(contentHtml[idx + 1]);
                                 nextReadIdx = otherStartEleIdx;
                             }
-                            break;
-                        case '/':
-                            var currentEleChildren = blocks.Pop().ToArray();
-                            switch (currentEleStack.Pop())
-                            {
-                                case 'b':
-                                    blocks.Peek().Add(new StyleElement(StyleType.Bold, currentEleChildren));
-                                    break;
-                                case 'i':
-                                    blocks.Peek().Add(new StyleElement(StyleType.Italic, currentEleChildren));
-                                    break;
-                                case 's':
-                                    blocks.Peek().Add(new StyleElement(StyleType.Middle, currentEleChildren));
-                                    break;
-                            }
-                            nextReadIdx = Math.Max(nextReadIdx + 1, contentHtml.IndexOf('>', idx + 2) + 1);
                             break;
                     }
             }
@@ -277,5 +283,5 @@ namespace SunokoLibrary.Web.GooglePlus
     }
 
     public enum ElementType { Text, Mension, Hyperlink, Style, Break }
-    public enum StyleType { Bold = 0, Italic = 1, Middle = 2, None = 3 }
+    public enum StyleType { Bold = 0, Italic = 1, Middle = 2, None = 3, Unknown = 4 }
 }
