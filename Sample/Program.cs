@@ -18,7 +18,7 @@ namespace Sample
     {
         static void Main(string[] args)
         {
-            var generator = PlatformClient.Factory.ImportFromChrome().Result;
+            var generator = PlatformClient.Factory.ImportFromIE().Result;
             var platform = generator[0].Build().Result;
             var atVal = platform.AtValue;
             var pvtVal = platform.PvtValue;

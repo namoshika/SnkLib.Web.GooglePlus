@@ -690,7 +690,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     {"zx", "f0xx0w1pefal" },
                 })));
 
-            //認証して読み込む
+            //talkgadgetのcookieが無い場合は認証ページを噛ませる
+            //var talkCookie = checkTargetCookies.GetCookies(url);
+            //url = talkCookie != null && talkCookie.OfType<Cookie>().Any(dt => dt.Domain.Contains("talkgadget"))
+            //    ? url : await WrapTalkGadgetAuthUrl(url);
+
             var nClientHtm = await GetStringAsync(client, url);
             var bgnIdx = nClientHtm.IndexOf("\"https://talkgadget.google.com/");
             var endIdx = nClientHtm.IndexOf("gtn-roster-iframe-id\"", bgnIdx + 1);
@@ -755,6 +759,33 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 throw new ApiErrorException("アカウント一覧の読み込みに失敗しました。", ErrorType.UnknownError, accountListUrl, null, null, null);
             var json = JArray.Parse(jsonTxt);
             return json;
+        }
+        public static async Task<Uri> WrapTalkGadgetAuthUrl(Uri continueUrl)
+        {
+            const string talkgadgetGAuth = "https://talkgadget.google.com/talkgadget/gauth?{0}";
+            const string talkgadgetServiceLogin = "https://accounts.google.com/ServiceLogin?{0}";
+
+            var queryA = await MakeQuery(
+                new Dictionary<string, string>()
+                {
+                    { "redirect", "true" },
+                    { "host", continueUrl.AbsoluteUri },
+                    { "silent", "true" },
+                    { "authuser", "0" }
+                });
+            var gauthUrl = string.Format(talkgadgetGAuth, queryA);
+
+            var queryB = await MakeQuery(
+                new Dictionary<string, string>()
+                {
+                    { "service", "talk" },
+                    { "passive", "true" },
+                    { "skipvpage", "true" },
+                    { "continue", gauthUrl },
+                    { "go", "true" }
+                });
+            var serviceLoginUrl = string.Format(talkgadgetServiceLogin, queryB);
+            return new Uri(serviceLoginUrl);
         }
 
         //支援関数
