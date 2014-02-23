@@ -25,23 +25,22 @@ namespace SunokoLibrary.Web.GooglePlus
         ActivityInfo _attachedActivity;
         readonly AsyncLocker _syncerUpdateAlbum = new AsyncLocker();
         readonly AsyncLocker _syncerUpdateAlbumComments = new AsyncLocker();
-
-        public bool IsUpdatedAlbum { get { return _data.IsUpdatedAlbum; } }
-        public bool IsUpdatedAlbumComments { get { return _data.IsUpdatedAlbumComments; } }
-        public string Id { get; protected set; }
-        public string Name { get { return CheckFlag(_data.Name, "IsUpdatedAlbum", () => IsUpdatedAlbum, "trueでない"); } }
-        public Uri AlbumUrl { get { return CheckFlag(_data.AlbumUrl, "IsUpdatedAlbum", () => IsUpdatedAlbum, "trueでない"); } }
-        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "IsUpdatedAlbum", () => IsUpdatedAlbum, "trueでない").Value; } }
-        public ImageInfo[] BookCovers { get { return CheckFlag(_data.BookCovers, "IsUpdatedAlbum", () => IsUpdatedAlbum, "trueでない").Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
-        public ImageInfo[] Images { get { return CheckFlag(_data.Images, "IsUpdatedAlbum", () => IsUpdatedAlbum, "trueでない").Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
-        public ActivityInfo AttachedActivity { get { return CheckFlag(_attachedActivity, "IsUpdatedAlbumComments", () => IsUpdatedAlbumComments, "trueでない"); } }
-        public ProfileInfo Owner { get { return CheckFlag(_owner, "IsUpdatedAlbum", () => IsUpdatedAlbum, "trueでない"); } }
+        //return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag));
+        public AlbumUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
+        public string Id { get { return _data.Id; } }
+        public string Name { get { return CheckFlag(_data.Name, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Base) == AlbumUpdateApiFlag.Base, "AlbumUpdateApiFlag.Baseフラグを満たさない"); } }
+        public Uri AlbumUrl { get { return CheckFlag(_data.AlbumUrl, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Base) == AlbumUpdateApiFlag.Base, "AlbumUpdateApiFlag.Baseフラグを満たさない"); } }
+        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "AlbumUpdateApiFlag.Fullフラグを満たさない").Value; } }
+        public ImageInfo[] BookCovers { get { return CheckFlag(_data.BookCovers, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "AlbumUpdateApiFlag.Fullフラグを満たさない").Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
+        public ImageInfo[] Images { get { return CheckFlag(_data.Images, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "AlbumUpdateApiFlag.Fullフラグを満たさない").Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
+        public ActivityInfo AttachedActivity { get { return CheckFlag(_attachedActivity, "IsUpdatedAlbumComments", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "trueでない"); } }
+        public ProfileInfo Owner { get { return CheckFlag(_owner, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Base) == AlbumUpdateApiFlag.Base, "AlbumUpdateApiFlag.Baseフラグを満たさない"); } }
 
         public async Task UpdateAlbumAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
             intervalRestriction = intervalRestriction ?? TimeSpan.FromSeconds(1);
             await _syncerUpdateAlbum.LockAsync(
-                isForced, () => IsUpdatedAlbum == false, intervalRestriction,
+                isForced, () => LoadedApiTypes == AlbumUpdateApiFlag.Unloaded, intervalRestriction,
                 async () =>
                 {
                     try

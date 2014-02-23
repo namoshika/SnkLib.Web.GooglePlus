@@ -290,14 +290,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public async Task<AlbumData> GetAlbumAsync(string albumId, string profileId, IPlatformClient client)
         {
             var json = await ApiWrapper.ConnectToPhotosAlbums(client.NormalHttpClient, client.PlusBaseUrl, profileId, albumId);
-            return GenerateAlbumData(json[0][1][1]);
+            return GenerateAlbumData(json[0][1][1], AlbumUpdateApiFlag.Full);
         }
         public async Task<AlbumData[]> GetAlbumsAsync(string profileId, IPlatformClient client)
         {
             var json = await ApiWrapper.ConnectToPhotosAlbums(client.NormalHttpClient, client.PlusBaseUrl, profileId);
             var resultAlbums = new List<AlbumData>();
             foreach (var item in json[0][1][2])
-                resultAlbums.Add(GenerateAlbumData(item));
+                resultAlbums.Add(GenerateAlbumData(item, AlbumUpdateApiFlag.Base));
             return resultAlbums.ToArray();
         }
         public async Task<ImageData> GetImageAsync(string imageId, string profileId, IPlatformClient client)
@@ -307,7 +307,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var owner = new ProfileData(
                 (string)tempJson[0], (string)tempJson[3], ApiAccessorUtility.ConvertReplasableUrl((string)tempJson[4]),
                 loadedApiTypes: ProfileUpdateApiFlag.Base);
-            var albumInfo = GenerateAlbumData(json[11]);
+            var albumInfo = GenerateAlbumData(json[11], AlbumUpdateApiFlag.Base);
             var name = (string)json[8];
             tempJson = json[25];
             var imageUrl = (string)tempJson[0];
@@ -550,7 +550,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 new ProfileData(ownerId, ownerName, ownerIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
                 status);
         }
-        static AlbumData GenerateAlbumData(JToken apiResponse)
+        static AlbumData GenerateAlbumData(JToken apiResponse, AlbumUpdateApiFlag loadedApiTypes)
         {
             var id = (string)apiResponse[5];
             var name = (string)apiResponse[2];
@@ -567,7 +567,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     picLst.Add(GenerateImageData(itemA, ImageUpdateApiFlag.Base));
             var bookCovers = picLst.ToArray();
 
-            return new AlbumData(id, name, albumUrl, createDate, bookCovers, bookCovers, attachedActivityId, owner, null, null);
+            return new AlbumData(id, name, albumUrl, createDate, bookCovers, bookCovers, attachedActivityId, owner, loadedApiTypes);
         }
         static ImageData GenerateImageData(JToken apiResponse, ImageUpdateApiFlag loadedApiTypes)
         {

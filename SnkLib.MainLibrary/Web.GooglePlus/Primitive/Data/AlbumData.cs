@@ -10,7 +10,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     {
         public AlbumData(string id, string name = null, Uri albumUrl = null, DateTime? createDate = null,
             ImageData[] bookCovers = null, ImageData[] images = null, string attachedActivity = null, ProfileData owner = null,
-            bool? isUpdatedAlbum = null, bool? isUpdatedAlbumComments = null)
+            AlbumUpdateApiFlag loadedApiTypes = AlbumUpdateApiFlag.Unloaded)
         {
             Id = id;
             Name = name;
@@ -20,11 +20,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Images = images;
             AttachedActivity = attachedActivity;
             Owner = owner;
-            IsUpdatedAlbum = false;
-            IsUpdatedAlbumComments = false;
+            LoadedApiTypes = loadedApiTypes;
         }
-        public bool IsUpdatedAlbum { get; private set; }
-        public bool IsUpdatedAlbumComments { get; private set; }
+        public AlbumUpdateApiFlag LoadedApiTypes { get; private set; }
         public string Id { get; private set; }
         public string Name { get; private set; }
         public Uri AlbumUrl { get; private set; }
@@ -36,18 +34,30 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
         public static AlbumData operator +(AlbumData value1, AlbumData value2)
         {
-            var aaa = (value1 != null ? value1.IsUpdatedAlbum : false) || (value2 != null ? value2.IsUpdatedAlbumComments : false);
-            var bbb = (value1 != null ? value1.IsUpdatedAlbumComments : false) || (value2 != null ? value2.IsUpdatedAlbumComments : false);
-            return new AlbumData(
-                Merge(value1, value2, obj => obj.Id),
-                Merge(value1, value2, obj => obj.Name),
-                Merge(value1, value2, obj => obj.AlbumUrl),
-                Merge(value1, value2, obj => obj.CreateDate),
-                Merge(value1, value2, obj => obj.BookCovers),
-                Merge(value1, value2, obj => obj.Images),
-                Merge(value1, value2, obj => obj.AttachedActivity),
-                Merge(value1, value2, obj => obj.Owner),
-                aaa, bbb);
+            bool val1_isNotNull = value1 != null, val2_isNotNull = value2 != null;
+            if (val1_isNotNull && val2_isNotNull)
+            {
+                var newUpdateType =
+                    (value2 != null ? value2.LoadedApiTypes : AlbumUpdateApiFlag.Unloaded)
+                    | (value1 != null ? value1.LoadedApiTypes : AlbumUpdateApiFlag.Unloaded);
+
+                return new AlbumData(
+                    Merge(value1, value2, obj => obj.Id),
+                    Merge(value1, value2, obj => obj.Name),
+                    Merge(value1, value2, obj => obj.AlbumUrl),
+                    Merge(value1, value2, obj => obj.CreateDate),
+                    Merge(value1, value2, obj => obj.BookCovers),
+                    Merge(value1, value2, obj => obj.Images),
+                    Merge(value1, value2, obj => obj.AttachedActivity),
+                    Merge(value1, value2, obj => obj.Owner),
+                    newUpdateType);
+            }
+            else if (val2_isNotNull)
+                return value2;
+            else
+                return value1;
         }
     }
+    public enum AlbumUpdateApiFlag
+    { Unloaded = 0, Base = 1, Full = 3 }
 }

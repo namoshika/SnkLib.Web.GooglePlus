@@ -18,6 +18,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             ParseYouTube(json);
         }
         protected void ParseYouTube(JArray tmpJson)
-        { EmbedMovieUrl = new Uri((string)tmpJson[65]); }
+        { EmbedMovieUrl = tmpJson[65].Type == JTokenType.String ? new Uri((string)tmpJson[65]) : null; }
     }
 }
