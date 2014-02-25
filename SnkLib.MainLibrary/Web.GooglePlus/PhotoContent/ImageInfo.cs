@@ -25,14 +25,15 @@ namespace SunokoLibrary.Web.GooglePlus
 
         public ImageUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
         public string Id { get { return _data.Id; } }
-        public string Name { get { return CheckFlag(_data.Name, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない"); } }
-        public int Width { get { return CheckFlag(_data.Width, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない").Value; } }
-        public int Height { get { return CheckFlag(_data.Height, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない").Value; } }
-        public string ImageUrl { get { return CheckFlag(_data.ImageUrl, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない"); } }
-        public ProfileInfo Owner { get { return Client.People.InternalGetAndUpdateProfile(CheckFlag(_data.Owner, "IsUpdatedLightBox", () => LoadedApiTypes >= ImageUpdateApiFlag.Base, "trueでない")); } }
-        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.LightBox, "trueでない").Value; } }
-        public ActivityInfo IsolateActivity { get { return CheckFlag(_isolateActivity, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.LightBox, "trueでない"); } }
-        public ImageTagData[] Tags { get { return CheckFlag(_data.AttachedTags, "LoadedApiTypes", () => LoadedApiTypes >= ImageUpdateApiFlag.LightBox, "trueでない"); } }
+        public string Name { get { return CheckFlag(_data.Name, ImageUpdateApiFlag.Base); } }
+        public int Width { get { return CheckFlag(_data.Width, ImageUpdateApiFlag.Base).Value; } }
+        public int Height { get { return CheckFlag(_data.Height, ImageUpdateApiFlag.Base).Value; } }
+        public string ImageUrl { get { return CheckFlag(_data.ImageUrl, ImageUpdateApiFlag.Base); } }
+        public Uri LinkUrl { get { return CheckFlag(_data.LinkUrl, ImageUpdateApiFlag.Base); } }
+        public ProfileInfo Owner { get { return Client.People.InternalGetAndUpdateProfile(CheckFlag(_data.Owner, ImageUpdateApiFlag.Base)); } }
+        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, ImageUpdateApiFlag.LightBox).Value; } }
+        public ActivityInfo IsolateActivity { get { return CheckFlag(_isolateActivity, ImageUpdateApiFlag.LightBox); } }
+        public ImageTagData[] Tags { get { return CheckFlag(_data.AttachedTags, ImageUpdateApiFlag.LightBox); } }
 
         public async Task UpdateLightBoxAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
@@ -49,5 +50,8 @@ namespace SunokoLibrary.Web.GooglePlus
 
                 }, null);
         }
+        //重複対策関数
+        T CheckFlag<T>(T target, ImageUpdateApiFlag flag)
+        { return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag)); }
     }
 }

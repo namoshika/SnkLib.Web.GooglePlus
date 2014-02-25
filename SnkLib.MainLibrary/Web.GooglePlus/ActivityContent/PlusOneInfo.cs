@@ -50,7 +50,7 @@ namespace SunokoLibrary.Web.GooglePlus
                 if (IsPushed == status)
                     return true;
 
-                var json = await ApiWrapper.ConnectToPlusOne(Client.NormalHttpClient, Client.PlusBaseUrl, _targetId, status, Client.AtValue);
+                var json = JToken.Parse(await ApiWrapper.ConnectToPlusOne(Client.NormalHttpClient, Client.PlusBaseUrl, _targetId, status, Client.AtValue));
                 var plusJson = json[0][1][1];
                 if (plusJson != null)
                     Parse(plusJson);

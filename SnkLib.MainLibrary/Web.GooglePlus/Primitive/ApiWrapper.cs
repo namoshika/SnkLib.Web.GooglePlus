@@ -68,31 +68,31 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 }
             return isFail == false;
         }
-        public static async Task<JToken> ConnectToInitialData(HttpClient client, Uri plusBaseUrl, int key, string atVal)
+        public static async Task<string> ConnectToInitialData(HttpClient client, Uri plusBaseUrl, int key, string atVal)
         {
             var url = new Uri(plusBaseUrl, string.Format("_/initialdata?key={0}&rt=j", key));
             var jsonTxt = (await PostStringAsync(client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atVal }, })))
                 .Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            var json = ConvertIntoValidJson(jsonTxt);
             return json;
         }
-        public static async Task<JToken> ConnectToGetIdentities(HttpClient client, Uri plusBaseUrl)
+        public static async Task<string> ConnectToGetIdentities(HttpClient client, Uri plusBaseUrl)
         {
             //api error: innerEx == null
             //ses error: innerEx is WebException
             var url = new Uri(plusBaseUrl, "_/pages/getidentities/?hl=ja&rt=j");
             var jsonTxt = (await GetStringAsync(client, url)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            var json = ConvertIntoValidJson(jsonTxt);
             return json;
         }
-        public static async Task<JToken> ConnectToProfileGet(HttpClient client, Uri plusBaseUrl, string plusId)
+        public static async Task<string> ConnectToProfileGet(HttpClient client, Uri plusBaseUrl, string plusId)
         {
             var url = new Uri(plusBaseUrl, string.Format("_/profiles/get/{0}/posts?hl=ja&rt=j", plusId));
             var jsonTxt = (await GetStringAsync(client, url)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            var json = ConvertIntoValidJson(jsonTxt);
             return json;
         }
-        public static async Task<JToken> ConnectToLookupPeople(HttpClient client, Uri plusBaseUrl, string plusId, string atVal)
+        public static async Task<string> ConnectToLookupPeople(HttpClient client, Uri plusBaseUrl, string plusId, string atVal)
         {
             var jsonTxt = await PostStringAsync(
                 client,
@@ -102,30 +102,30 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         { "m", string.Format("[[[null,null,\"{0}\"]]]", plusId) },
                         { "at", atVal },
                     }));
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt.Substring(6)));
+            var json = ConvertIntoValidJson(jsonTxt.Substring(6));
             return json;
         }
-        public static async Task<JToken> ConnectToLookupCircles(HttpClient client, Uri plusBaseUrl, string atValue)
+        public static async Task<string> ConnectToLookupCircles(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var circlesUrl = new Uri(plusBaseUrl, "_/socialgraph/lookup/circles/?ct=2&m=true&rt=j");
             var jsonTxt = await PostStringAsync(client, circlesUrl, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt.Substring(6)));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string atValue)
+        public static async Task<string> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var url = new Uri(plusBaseUrl, "_/socialgraph/lookup/followers/?m=2500&rt=j");
             var jsonTxt = await PostStringAsync(
                 client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt.Substring(6)));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToLookupIgnore(HttpClient client, Uri plusBaseUrl, string atValue)
+        public static async Task<string> ConnectToLookupIgnore(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var ignoreUrl = new Uri(plusBaseUrl, "_/socialgraph/lookup/ignored/?m=5000&rt=j");
             var jsonTxt = await PostStringAsync(
                 client, ignoreUrl, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt.Substring(6)));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToLookupVisible(HttpClient client, Uri plusBaseUrl, string plusId, string atValue)
+        public static async Task<string> ConnectToLookupVisible(HttpClient client, Uri plusBaseUrl, string plusId, string atValue)
         {
             var jsonTxt = await PostStringAsync(
                 client,
@@ -136,9 +136,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                             { "rt", "j" },
                             { "at", atValue },
                         }));
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt.Substring(6)));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToLookupIncoming(HttpClient client, Uri plusBaseUrl, string plusId, int count, string atValue)
+        public static async Task<string> ConnectToLookupIncoming(HttpClient client, Uri plusBaseUrl, string plusId, int count, string atValue)
         {
             var jsonTxt = await PostStringAsync(
                 client,
@@ -151,9 +151,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                             { "rt", "j" },
                             { "at", atValue },
                         }));
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt.Substring(6)));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToGetActivities(HttpClient client, Uri plusBaseUrl, string atVal, int length = 20, string circleId = null, string plusId = null, string ct = null)
+        public static async Task<string> ConnectToGetActivities(HttpClient client, Uri plusBaseUrl, string atVal, int length = 20, string circleId = null, string plusId = null, string ct = null)
         {
             //query作成
             var query = new FormUrlEncodedContent(
@@ -175,15 +175,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
             //download
             var resStr = await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/getactivities/?rt=j"), query);
-            return JToken.Parse(ConvertIntoValidJson(resStr.Substring(6)));
+            return ConvertIntoValidJson(resStr.Substring(6));
         }
-        public static async Task<JToken> ConnectToGetActivity(HttpClient client, Uri plusBaseUrl, string id)
+        public static async Task<string> ConnectToGetActivity(HttpClient client, Uri plusBaseUrl, string id)
         {
             var resStr = await GetStringAsync(
                 client, new Uri(plusBaseUrl, string.Format("_/stream/getactivity/?updateId={0}", id)));
-            return JToken.Parse(ConvertIntoValidJson(resStr.Substring(6)));
+            return ConvertIntoValidJson(resStr.Substring(6));
         }
-        public static async Task<JToken> ConnectToPost(HttpClient client, Uri plusBaseUrl, DateTime postDate, int postCount, string plusId, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, ContentType? attachedContentType, string content, bool isDisabledComment, bool isDisabledReshare, string atVal)
+        public static async Task<string> ConnectToPost(HttpClient client, Uri plusBaseUrl, DateTime postDate, int postCount, string plusId, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, ContentType? attachedContentType, string content, bool isDisabledComment, bool isDisabledReshare, string atVal)
         {
             var postTime = string.Format("{0:X}", GetUnixTime(postDate)).ToLower();
             var postRange = new
@@ -260,10 +260,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 });
             var url = new Uri(plusBaseUrl, "_/sharebox/post/?spam=20&rt=j");
             var jsonTxt = (await PostStringAsync(client, url, parameter)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToComment(HttpClient client, Uri plusBaseUrl, string activityId, string content, DateTime postDate, string atVal)
+        public static async Task<string> ConnectToComment(HttpClient client, Uri plusBaseUrl, string activityId, string content, DateTime postDate, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/comment/?rt=j");
             var prmsStr = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -275,10 +274,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                 });
             var jsonTxt = (await PostStringAsync(client, url, prmsStr)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToEditComment(HttpClient client, Uri plusBaseUrl, string activityId, string commentId, string content, string atVal)
+        public static async Task<string> ConnectToEditComment(HttpClient client, Uri plusBaseUrl, string activityId, string commentId, string content, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/editcomment/?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -289,10 +287,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                 });
             var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToDeleteComment(HttpClient client, Uri plusBaseUrl, string commentId, string atVal)
+        public static async Task<string> ConnectToDeleteComment(HttpClient client, Uri plusBaseUrl, string commentId, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/deletecomment/?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -301,10 +298,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                 });
             var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToPlusOne(HttpClient client, Uri plusBaseUrl, string targetId, bool isPlusOned, string atVal)
+        public static async Task<string> ConnectToPlusOne(HttpClient client, Uri plusBaseUrl, string targetId, bool isPlusOned, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/plusone?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -314,9 +310,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                 });
             var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToCommonGetPeople(HttpClient client, Uri plusBaseUrl, string plusoneId, int length, string atVal)
+        public static async Task<string> ConnectToCommonGetPeople(HttpClient client, Uri plusBaseUrl, string plusoneId, int length, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/common/getpeople/?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -327,9 +323,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                 });
             var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            return JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToNotificationsData(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
+        public static async Task<string> ConnectToNotificationsData(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
         {
             var queryArray = new Dictionary<string, string>()
                 {
@@ -347,10 +343,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 });
             var query = await MakeQuery(queryArray);
             var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/getnotificationsdata?" + query), paramArray));
-            var json = JToken.Parse(ApiWrapper.ConvertIntoValidJson(jsonTxt.Substring(6)));
-            return json;
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToNotificationsFetch(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
+        public static async Task<string> ConnectToNotificationsFetch(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
         {
             //
             var queryArray = new Dictionary<string, string>()
@@ -374,10 +369,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 queryArray.Add("continuationToken", continueToken);
             var query = await MakeQuery(queryArray);
             var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/fetch?" + query), paramArray));
-            var json = JToken.Parse(ApiWrapper.ConvertIntoValidJson(jsonTxt.Substring(6)));
-            return json;
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<JToken> ConnectToNotificationsUpdateLastReadTime(HttpClient client, Uri plusBaseUrl, DateTime lastReadTime, string atValue)
+        public static async Task<string> ConnectToNotificationsUpdateLastReadTime(HttpClient client, Uri plusBaseUrl, DateTime lastReadTime, string atValue)
         {
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
             {
@@ -388,10 +382,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = (await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/notifications/updatelastreadtime?rt=j"), query)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToPhotosAlbums(HttpClient client, Uri plusBaseUrl, string plusId, string albumId = null, int offset = 0)
+        public static async Task<string> ConnectToPhotosAlbums(HttpClient client, Uri plusBaseUrl, string plusId, string albumId = null, int offset = 0)
         {
             var query = await MakeQuery(
                 new Dictionary<string, string>()
@@ -403,27 +396,24 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = (await GetStringAsync(
                 client, new Uri(plusBaseUrl, string.Format("_/photos/{0}/albums{1}{2}",
                 plusId, albumId != null ? "/" + albumId : "", query != "" ? "?" + query : "")))).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToPhotosAlbumComments(HttpClient client, Uri plusBaseUrl, string plusId, string albumId)
+        public static async Task<string> ConnectToPhotosAlbumComments(HttpClient client, Uri plusBaseUrl, string plusId, string albumId)
         {
             var jsonTxt =
                 (await GetStringAsync(
                     client, new Uri(plusBaseUrl, string.Format("_/photos/albumcomments/{0}?albumId={1}", plusId, albumId))))
                 .Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
-        public static async Task<JToken> ConnectToPhotosLightbox(HttpClient client, Uri plusBaseUrl, string plusId, string photoId)
+        public static async Task<string> ConnectToPhotosLightbox(HttpClient client, Uri plusBaseUrl, string plusId, string photoId)
         {
             //_/photos/lightbox/photo/{0}/{1}?soc-app=2&cid=0&soc-platform=1&hl=ja&_reqid=2857574&rt=j
             var jsonTxt = (await client
                 .GetStringAsync(new Uri(plusBaseUrl, string.Format("_/photos/lightbox/photo/{0}/{1}?soc-app=2&cid=0&soc-platform=1&hl=ja&_reqid=2857574&rt=j", plusId, photoId))))
                 .Substring(25);
             jsonTxt = jsonTxt.Substring(0, jsonTxt.Length - 9);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
-            return json;
+            return ConvertIntoValidJson(jsonTxt);
         }
         public static IObservable<JToken> ConnectToTalkGadgetBind(HttpClient normalClient, HttpClient streamClient, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
         {
@@ -608,7 +598,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             });
             return observable;
         }
-        public static async Task<Tuple<JToken, string>> ConnectToSearch(HttpClient client, Uri plusBaseUrl, string keyword, SearchTarget target, SearchRange range, string searchTicket, string atVal)
+        public static async Task<Tuple<string, string>> ConnectToSearch(HttpClient client, Uri plusBaseUrl, string keyword, SearchTarget target, SearchRange range, string searchTicket, string atVal)
         {
             keyword = keyword.Replace("\\", "\\\\");
             keyword = keyword.Replace("\"", "\\\"");
@@ -623,12 +613,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         { "at", atVal },
                         { "srchrp", string.Format("[[\"{0}\",{1},2,[{2}]],null,[\"{3}\"]]", keyword, (int)target, (int)range, searchTicket) }
                     });
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/query?rt=j"), query)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            var jsonTxt = ConvertIntoValidJson((await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/query?rt=j"), query)).Substring(6));
+            var json = JToken.Parse(jsonTxt);
             searchTicket = (string)json[0][1][1][1][2];
-            return Tuple.Create(json, searchTicket);
+            return Tuple.Create(jsonTxt, searchTicket);
         }
-        public static async Task<Tuple<JToken, string>> ConnectToForwardSearch(HttpClient client, Uri plusBaseUrl, string keyword, string searchTicket, string atVal)
+        public static async Task<Tuple<string, string>> ConnectToForwardSearch(HttpClient client, Uri plusBaseUrl, string keyword, string searchTicket, string atVal)
         {
             keyword = keyword.Replace("\\", "\\\\");
             keyword = keyword.Replace("\"", "\\\"");
@@ -637,10 +627,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                     { "srchrp", string.Format("[[\"{0}\",3,2],null,[\"{1}\",false]]", keyword, searchTicket) }
                 });
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/rt?rt=j"), query)).Substring(6);
-            var json = JToken.Parse(ConvertIntoValidJson(jsonTxt));
+            var jsonTxt = ConvertIntoValidJson((await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/rt?rt=j"), query)).Substring(6));
+            var json = JToken.Parse(jsonTxt);
             searchTicket = (string)json[0][1][1][1][2];
-            return Tuple.Create(json, searchTicket);
+            return Tuple.Create(jsonTxt, searchTicket);
         }
         public static async Task ConnectToMutateBlockUser(HttpClient client, Uri plusBaseUrl, Tuple<string, string>[] userIdAndNames, AccountBlockType blockType, BlockActionType status, string atVal)
         {
@@ -748,7 +738,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
             return initDtQ;
         }
-        public static async Task<JToken> LoadListAccounts(HttpClient client)
+        public static async Task<string> LoadListAccounts(HttpClient client)
         {
             var accountListUrl = new Uri("https://accounts.google.com/b/0/ListAccounts?listPages=0&origin=https%3A%2F%2Fplus.google.com");
             var regex = new System.Text.RegularExpressions.Regex("window.parent.postMessage\\([^\"]*\"(?<jsonTxt>(?:[^\"])*)\"");
@@ -757,8 +747,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = Uri.UnescapeDataString(regex.Match(accountListPage).Groups["jsonTxt"].Value.Replace("\\x", "%"));
             if (jsonTxt == string.Empty)
                 throw new ApiErrorException("アカウント一覧の読み込みに失敗しました。", ErrorType.UnknownError, accountListUrl, null, null, null);
-            var json = JArray.Parse(jsonTxt);
-            return json;
+            return jsonTxt;
         }
         public static async Task<Uri> WrapTalkGadgetAuthUrl(Uri continueUrl)
         {

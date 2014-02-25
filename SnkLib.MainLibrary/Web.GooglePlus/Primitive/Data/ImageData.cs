@@ -9,7 +9,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public class ImageData : DataBase
     {
         public ImageData(ImageUpdateApiFlag loadedApiType, string id, string name = null, int? width = null, int? height = null,
-            string imageUrl = null, DateTime? createDate = null, ImageTagData[] attachedTags = null,
+            string imageUrl = null, Uri linkUrl = null, DateTime? createDate = null, ImageTagData[] attachedTags = null,
             ProfileData owner = null, ActivityData isolateActivity = null)
         {
             LoadedApiTypes = loadedApiType;
@@ -18,6 +18,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Width = width;
             Height = height;
             ImageUrl = imageUrl;
+            LinkUrl = linkUrl;
             CreateDate = createDate;
             AttachedTags = attachedTags;
             Owner = owner;
@@ -28,6 +29,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public string Id { get; protected set; }
         public string Name { get; private set; }
         public string ImageUrl { get; private set; }
+        public Uri LinkUrl { get; private set; }
         public int? Width { get; private set; }
         public int? Height { get; private set; }
         public DateTime? CreateDate { get; private set; }
@@ -51,6 +53,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     Merge(value1, value2, obj => obj.Width),
                     Merge(value1, value2, obj => obj.Height),
                     Merge(value1, value2, obj => obj.ImageUrl),
+                    Merge(value1, value2, obj => obj.LinkUrl),
                     Merge(value1, value2, obj => obj.CreateDate),
                     Merge(value1, value2, obj => obj.AttachedTags),
                     Merge(value1, value2, obj => obj.Owner));

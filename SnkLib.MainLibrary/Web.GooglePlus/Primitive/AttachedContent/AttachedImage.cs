@@ -35,10 +35,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         protected void ParseImage(JArray json)
         {
-            Album = new AlbumData((string)json[37]);
+            Album = new AlbumData((string)json[37], owner: new ProfileData((string)json[26]));
             Image = new ImageData(
                 ImageUpdateApiFlag.Base, (string)json[38], (string)json[2], (int)json[20], (int)json[21], ApiAccessorUtility.ConvertReplasableUrl((string)json[1]),
-                owner: new ProfileData((string)json[26], loadedApiTypes: ProfileUpdateApiFlag.Unloaded));
+                LinkUrl, owner: new ProfileData((string)json[26], loadedApiTypes: ProfileUpdateApiFlag.Unloaded));
         }
     }
 }

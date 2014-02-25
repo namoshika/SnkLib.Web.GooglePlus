@@ -70,23 +70,18 @@ namespace SunokoLibrary.Web.GooglePlus
         }
 
         public AlbumInfo GetAlbumAsync(string albumId)
-        { return new AlbumInfo(Client, new AlbumData(albumId)); }
+        { return new AlbumInfo(Client, new AlbumData(albumId, owner: _data)); }
         public IInfoList<ActivityInfo> GetActivities()
         { return new CircleInfo.ActivityInfoList(null, this, Client, null, null); }
         public async Task<AlbumInfo[]> GetAlbumsAsync()
         {
-            await UpdateLookupProfileAsync(false);
-            if (Status == AccountStatus.Active)
-                try
-                {
-                    var resultAlbums = await Client.ServiceApi.GetAlbumsAsync(_data.Id, Client);
-                    return resultAlbums.Select(dt => new AlbumInfo(Client, dt)).ToArray();
-                }
-                catch (ApiErrorException e)
-                { throw new FailToOperationException("GetAlbumsAsync()に失敗。G+API呼び出しで例外が発生しました。", e); }
-            else
-                throw new InvalidOperationException(
-                    "GoogleProfileを作成していないユーザーからアルバムを取得する事はできません。");
+            try
+            {
+                var resultAlbums = await Client.ServiceApi.GetAlbumsAsync(_data.Id, Client);
+                return resultAlbums.Select(dt => new AlbumInfo(Client, dt)).ToArray();
+            }
+            catch (ApiErrorException e)
+            { throw new FailToOperationException("GetAlbumsAsync()に失敗。G+API呼び出しで例外が発生しました。", e); }
         }
         public async Task<ProfileInfo[]> GetFollowingProfiles()
         {

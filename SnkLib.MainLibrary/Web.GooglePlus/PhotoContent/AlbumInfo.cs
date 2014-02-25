@@ -17,24 +17,23 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             _data = data;
             _attachedActivity = _data.AttachedActivity != null ? client.Activity.GetActivityInfo(_data.AttachedActivity) : null;
-            _owner = data.Owner != null ? client.People.InternalGetAndUpdateProfile(data.Owner) : null;
+            _owner = client.People.InternalGetAndUpdateProfile(data.Owner);
         }
-
         AlbumData _data;
         ProfileInfo _owner;
         ActivityInfo _attachedActivity;
         readonly AsyncLocker _syncerUpdateAlbum = new AsyncLocker();
         readonly AsyncLocker _syncerUpdateAlbumComments = new AsyncLocker();
-        //return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag));
+        
         public AlbumUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
         public string Id { get { return _data.Id; } }
-        public string Name { get { return CheckFlag(_data.Name, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Base) == AlbumUpdateApiFlag.Base, "AlbumUpdateApiFlag.Baseフラグを満たさない"); } }
-        public Uri AlbumUrl { get { return CheckFlag(_data.AlbumUrl, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Base) == AlbumUpdateApiFlag.Base, "AlbumUpdateApiFlag.Baseフラグを満たさない"); } }
-        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "AlbumUpdateApiFlag.Fullフラグを満たさない").Value; } }
-        public ImageInfo[] BookCovers { get { return CheckFlag(_data.BookCovers, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "AlbumUpdateApiFlag.Fullフラグを満たさない").Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
-        public ImageInfo[] Images { get { return CheckFlag(_data.Images, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "AlbumUpdateApiFlag.Fullフラグを満たさない").Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
-        public ActivityInfo AttachedActivity { get { return CheckFlag(_attachedActivity, "IsUpdatedAlbumComments", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Full) == AlbumUpdateApiFlag.Full, "trueでない"); } }
-        public ProfileInfo Owner { get { return CheckFlag(_owner, "IsUpdatedAlbum", () => (_data.LoadedApiTypes & AlbumUpdateApiFlag.Base) == AlbumUpdateApiFlag.Base, "AlbumUpdateApiFlag.Baseフラグを満たさない"); } }
+        public string Name { get { return CheckFlag(_data.Name, AlbumUpdateApiFlag.Base); } }
+        public Uri AlbumUrl { get { return CheckFlag(_data.AlbumUrl, AlbumUpdateApiFlag.Base); } }
+        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, AlbumUpdateApiFlag.Full).Value; } }
+        public ImageInfo[] BookCovers { get { return CheckFlag(_data.BookCovers, AlbumUpdateApiFlag.Albums).Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
+        public ImageInfo[] Images { get { return CheckFlag(_data.Images, AlbumUpdateApiFlag.Full).Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
+        public ActivityInfo AttachedActivity { get { return CheckFlag(_attachedActivity, AlbumUpdateApiFlag.Full); } }
+        public ProfileInfo Owner { get { return _owner; } }
 
         public async Task UpdateAlbumAsync(bool isForced, TimeSpan? intervalRestriction = null)
         {
@@ -46,7 +45,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     try
                     {
                         _data = _data + await Client.ServiceApi.GetAlbumAsync(Id, Owner.Id, Client);
-                        _attachedActivity = Client.Activity.GetActivityInfo(_data.AttachedActivity);
+                        _attachedActivity = _data.AttachedActivity != null ? Client.Activity.GetActivityInfo(_data.AttachedActivity) : null;
                         _owner = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                     }
                     catch (Primitive.ApiErrorException e)
@@ -78,5 +77,9 @@ namespace SunokoLibrary.Web.GooglePlus
         //        }
         //    }
         //}
+
+        //重複対策関数
+        T CheckFlag<T>(T target, AlbumUpdateApiFlag flag)
+        { return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag)); }
     }
 }
