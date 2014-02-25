@@ -58,12 +58,11 @@ namespace SunokoLibrary.Web.GooglePlus
                     .Catch<CommentInfo, ApiErrorException>(ex => Observable.Throw(new FailToOperationException<ActivityInfo>("CommentInfoの受信中にエラーが発生しました。", this, ex), (CommentInfo)null)));
             return obs;
         }
-        public Task UpdateGetActivityAsync(bool isForced, ActivityUpdateApiFlag updaterTypes, TimeSpan? intervalRestriction = null)
+        public Task UpdateGetActivityAsync(bool isForced, ActivityUpdateApiFlag updaterTypes)
         {
             var cache = Client.Activity.InternalGetActivityCache(_data.Id);
             return cache.SyncerUpdateActivity.LockAsync(
                 isForced, () => _data.PostStatus != PostStatusType.Removed && (LoadedApiTypes & updaterTypes) != updaterTypes,
-                intervalRestriction,
                 async () =>
                 {
                     try

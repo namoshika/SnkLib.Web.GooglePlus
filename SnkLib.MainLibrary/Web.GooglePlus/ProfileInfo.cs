@@ -122,12 +122,12 @@ namespace SunokoLibrary.Web.GooglePlus
                 throw new InvalidOperationException(
                     "GoogleProfileを作成していないユーザーからアルバムを取得する事はできません。");
         }
-        public async Task UpdateLookupProfileAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public async Task UpdateLookupProfileAsync(bool isForced)
         {
             var cache = Client.People.InternalGetProfileCache(_data.Id);
             await cache.SyncerUpdateProfileSummary.LockAsync(
                 isForced, () => (cache.Value.LoadedApiTypes & ProfileUpdateApiFlag.LookupProfile) != ProfileUpdateApiFlag.LookupProfile,
-                intervalRestriction, async () =>
+                async () =>
                 {
                     try
                     {
@@ -139,12 +139,11 @@ namespace SunokoLibrary.Web.GooglePlus
                 },
                 () => _data = cache.Value);
         }
-        public async Task UpdateProfileGetAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public async Task UpdateProfileGetAsync(bool isForced)
         {
             var cache = Client.People.InternalGetProfileCache(_data.Id);
             await cache.SyncerUpdateProfileGet.LockAsync(
                 isForced, () => (cache.Value.LoadedApiTypes & ProfileUpdateApiFlag.ProfileGet) != ProfileUpdateApiFlag.ProfileGet,
-                intervalRestriction,
                 async () =>
                 {
                     try

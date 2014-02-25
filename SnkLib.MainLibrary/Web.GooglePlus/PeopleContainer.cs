@@ -68,9 +68,9 @@ namespace SunokoLibrary.Web.GooglePlus
             var cache = InternalGetProfileCache(plusId);
             return new ProfileInfo(Client, cache.Value);
         }
-        public async Task UpdateCirclesAndBlockAsync(bool isForced, CircleUpdateLevel updateLevel, TimeSpan? intervalRestriction = null)
+        public async Task UpdateCirclesAndBlockAsync(bool isForced, CircleUpdateLevel updateLevel)
         {
-            await _syncerUpdateCircleAndBlock.LockAsync(isForced, () => CirclesAndBlockStatus < updateLevel, intervalRestriction, async () =>
+            await _syncerUpdateCircleAndBlock.LockAsync(isForced, () => CirclesAndBlockStatus < updateLevel, async () =>
                 {
                     if (Client.IsLoadedHomeInitData == false)
                         throw new FailToOperationException("PlatformClient.IsLoadedHomeInitDataがfalseの状態でUpdate()する事は出来ません。", null);
@@ -126,9 +126,9 @@ namespace SunokoLibrary.Web.GooglePlus
                     OnUpdatedCirclesAndBlock(new EventArgs());
                 }, null);
         }
-        public async Task UpdateIgnoreAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public async Task UpdateIgnoreAsync(bool isForced)
         {
-            await _syncerUpdateIgnore.LockAsync(isForced, () => IsUpdatedIgnore == false, intervalRestriction, async () =>
+            await _syncerUpdateIgnore.LockAsync(isForced, () => IsUpdatedIgnore == false, async () =>
                 {
                     try
                     {
@@ -151,9 +151,9 @@ namespace SunokoLibrary.Web.GooglePlus
                     { throw new FailToOperationException<PeopleContainer>("UpdateIgnoreAsync()に失敗。G+API呼び出しで例外が発生しました。", this, e); }
                 }, null);
         }
-        public async Task UpdateFollowerAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public async Task UpdateFollowerAsync(bool isForced)
         {
-            await _syncerUpdateFollowers.LockAsync(isForced, () => IsUpdatedFollowers == false, intervalRestriction, async () =>
+            await _syncerUpdateFollowers.LockAsync(isForced, () => IsUpdatedFollowers == false, async () =>
                 {
                     try
                     {

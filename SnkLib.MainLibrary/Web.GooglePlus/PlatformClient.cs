@@ -55,9 +55,9 @@ namespace SunokoLibrary.Web.GooglePlus
         internal CircleData[] Circles
         { get { return AccessorBase.CheckFlag(_data.CircleInfos, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
 
-        public Task UpdateHomeInitDataAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public Task UpdateHomeInitDataAsync(bool isForced)
         {
-            return _updateHomeInitDataLocker.LockAsync(isForced, () => IsLoadedHomeInitData == false, intervalRestriction, async () =>
+            return _updateHomeInitDataLocker.LockAsync(isForced, () => IsLoadedHomeInitData == false, async () =>
                 {
                     try
                     {

@@ -35,9 +35,9 @@ namespace SunokoLibrary.Web.GooglePlus
         public ActivityInfo IsolateActivity { get { return CheckFlag(_isolateActivity, ImageUpdateApiFlag.LightBox); } }
         public ImageTagData[] Tags { get { return CheckFlag(_data.AttachedTags, ImageUpdateApiFlag.LightBox); } }
 
-        public async Task UpdateLightBoxAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public async Task UpdateLightBoxAsync(bool isForced)
         {
-            await _syncerUpdateLightBox.LockAsync(isForced, () => LoadedApiTypes < ImageUpdateApiFlag.LightBox, intervalRestriction,
+            await _syncerUpdateLightBox.LockAsync(isForced, () => LoadedApiTypes < ImageUpdateApiFlag.LightBox,
                 async () =>
                 {
                     try

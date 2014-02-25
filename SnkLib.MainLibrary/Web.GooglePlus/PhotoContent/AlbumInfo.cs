@@ -35,11 +35,10 @@ namespace SunokoLibrary.Web.GooglePlus
         public ActivityInfo AttachedActivity { get { return CheckFlag(_attachedActivity, AlbumUpdateApiFlag.Full); } }
         public ProfileInfo Owner { get { return _owner; } }
 
-        public async Task UpdateAlbumAsync(bool isForced, TimeSpan? intervalRestriction = null)
+        public async Task UpdateAlbumAsync(bool isForced)
         {
-            intervalRestriction = intervalRestriction ?? TimeSpan.FromSeconds(1);
             await _syncerUpdateAlbum.LockAsync(
-                isForced, () => LoadedApiTypes == AlbumUpdateApiFlag.Unloaded, intervalRestriction,
+                isForced, () => LoadedApiTypes == AlbumUpdateApiFlag.Unloaded,
                 async () =>
                 {
                     try
