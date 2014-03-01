@@ -123,20 +123,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 return value1;
         }
     }
-
-    public enum ProfileUpdateApiFlag
-    {
-        Unloaded = 0,
-        /// <summary>Id,Status,Name,IconUrlが参照可能</summary>
-        Base = 1,
-        /// <summary>Id,Status,Name,IconUrl,GreetingTextが参照可能</summary>
-        LookupProfile = 3,
-        /// <summary>Id,Status,Name,IconUrl,Circleが参照可能</summary>
-        LookupCircle = 9,
-        /// <summary>Circle以外の全てが参照可能</summary>
-        ProfileGet = 7,//Id, Name, IconUrl
-    }
-
     public class EducationInfo
     {
         internal EducationInfo(JToken json)
@@ -250,6 +236,19 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public bool Networking { get; private set; }
     }
 
+    [Flags]
+    public enum ProfileUpdateApiFlag
+    {
+        Unloaded = 0,
+        /// <summary>Id,Status,Name,IconUrlが参照可能</summary>
+        Base = 1,
+        /// <summary>Id,Status,Name,IconUrl,GreetingTextが参照可能</summary>
+        LookupProfile = 3,
+        /// <summary>Id,Status,Name,IconUrl,Circleが参照可能</summary>
+        LookupCircle = 9,
+        /// <summary>Circle以外の全てが参照可能</summary>
+        ProfileGet = 7,
+    }
     public enum ContactType
     {
         AIM = 2, MSN = 3, Yahoo = 4, Skype = 5, QQ = 6,

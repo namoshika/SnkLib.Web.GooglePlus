@@ -12,82 +12,66 @@ namespace SunokoLibrary.Web.GooglePlus
 
     public class NotificationInfoContainer : AccessorBase
     {
-        public NotificationInfoContainer(PlatformClient client, NotificationsFilter filtter = NotificationsFilter.All)
+        public NotificationInfoContainer(PlatformClient client, bool isReadedItemOnly)
             : base(client)
         {
+            _isReadedItemOnly = isReadedItemOnly;
             _notifications = new ObservableCollection<NotificationInfo>();
-            _filtter = filtter;
             Notifications = new ReadOnlyObservableCollection<NotificationInfo>(_notifications);
         }
-        NotificationsFilter _filtter;
         ObservableCollection<NotificationInfo> _notifications;
+        bool _isReadedItemOnly;
         string _continueToken;
 
-        public int UnreadItemCount { get; set; }
-        public DateTime LastReadedTime { get; private set; }
         public ReadOnlyObservableCollection<NotificationInfo> Notifications { get; private set; }
-
         public Task UpdateAsync(int length) { return PrivateUpdate(length, null); }
         public Task LoadMore(int length) { return PrivateUpdate(length, _continueToken); }
-        public async Task UpdateLatestCheckTimeAsync(DateTime? lastReadTime = null)
-        {
-            try { await Client.ServiceApi.UpdateNotificationCheckDateAsync(lastReadTime ?? DateTime.UtcNow, Client); }
-            catch (ApiErrorException e)
-            { throw new FailToOperationException<NotificationInfoContainer>("既読時間の送信に失敗しました。", this, e); }
-        }
         async Task PrivateUpdate(int length, string continueToken)
         {
             try
             {
-                var apiResult = await Client.ServiceApi.GetNotificationsAsync(_filtter, length, continueToken, Client);
-                var unreadItemCount = 0;
-                LastReadedTime = apiResult.Item2;
+                var apiResult = await Client.ServiceApi.GetNotificationsAsync(_isReadedItemOnly, length, continueToken, Client);
+                var idx = 0;
                 if (continueToken == null)
                 {
                     foreach (var item in apiResult.Item1
                         .GroupJoin(
                             _notifications,
-                            newItem => newItem.FollowingNotifications.Last().Id,
-                            oldItem => oldItem.FollowingNotifications.Last().Id,
+                            newItem => newItem.Id,
+                            oldItem => oldItem.Id,
                             (nw, old) => new { NewItem = nw, OldItem = old.DefaultIfEmpty() })
-                        .Reverse()
                         .SelectMany(
                             pair => pair.OldItem, (pair, oldItem) => new { NewData = pair.NewItem, OldInfo = oldItem }))
                     {
-                        if (LastReadedTime < item.NewData.NoticedDate)
-                            unreadItemCount++;
                         if (item.OldInfo != null)
                         {
                             var oldIdx = _notifications.IndexOf(item.OldInfo);
-                            _notifications.Move(oldIdx, 0);
+                            _notifications.Move(oldIdx, idx);
                             item.OldInfo.Update(item.NewData);
                         }
                         else
-                            if (item.NewData is NotificationDataWithActivity)
-                                _notifications.Insert(0, new NotificationInfoWithActivity((NotificationDataWithActivity)item.NewData, this, Client));
-                            else if (item.NewData is NotificationDataWithImage)
-                                _notifications.Insert(0, new NotificationInfoWithImage((NotificationDataWithImage)item.NewData, this, Client));
+                            if (item.NewData is StreamNotificationData)
+                                _notifications.Insert(idx, new NotificationInfoWithActivity((StreamNotificationData)item.NewData, this, Client));
+                            else if (item.NewData is CircleNotificationData)
+                                _notifications.Insert(idx, new NotificationInfoWithActor((CircleNotificationData)item.NewData, this, Client));
                             else
-                                _notifications.Insert(0, new NotificationInfo(item.NewData, this, Client));
+                                _notifications.Insert(idx, new NotificationInfo(item.NewData, this, Client));
+                        idx++;
                     }
-                    for (var i = length; length < _notifications.Count; i++)
-                        _notifications.RemoveAt(length);
-                    UnreadItemCount = unreadItemCount;
+                    for (; idx < _notifications.Count;)
+                        _notifications.RemoveAt(idx);
                 }
                 else
                 {
                     foreach (var item in apiResult.Item1)
                     {
-                        if (LastReadedTime < item.NoticedDate)
-                            unreadItemCount++;
-                        if (item is NotificationDataWithActivity)
-                            _notifications.Add(new NotificationInfoWithActivity((NotificationDataWithActivity)item, this, Client));
-                        else if (item is NotificationDataWithImage)
-                            _notifications.Add(new NotificationInfoWithImage((NotificationDataWithImage)item, this, Client));
+                        if (item is StreamNotificationData)
+                            _notifications.Add(new NotificationInfoWithActivity((StreamNotificationData)item, this, Client));
+                        else if (item is CircleNotificationData)
+                            _notifications.Add(new NotificationInfoWithActor((CircleNotificationData)item, this, Client));
                         else
                             _notifications.Add(new NotificationInfo(item, this, Client));
                     }
-                    UnreadItemCount += unreadItemCount;
                 }
                 _continueToken = apiResult.Item3;
             }

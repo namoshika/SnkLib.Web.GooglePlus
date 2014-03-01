@@ -58,6 +58,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 return value1;
         }
     }
+    [Flags]
     public enum AlbumUpdateApiFlag
     { Unloaded = 0, Base = 1, Albums = 2, Full = 5 }
 }

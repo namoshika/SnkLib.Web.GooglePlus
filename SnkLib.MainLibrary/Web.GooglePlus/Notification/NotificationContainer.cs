@@ -11,10 +11,16 @@ namespace SunokoLibrary.Web.GooglePlus
     public class NotificationContainer : AccessorBase
     {
         public NotificationContainer(PlatformClient client) : base(client) { }
-        public NotificationInfoContainer GetNotifications(NotificationsFilter filter)
+        public NotificationInfoContainer GetNotifications(bool isReadedItemOnly)
         {
-            var container = new NotificationInfoContainer(Client, filter);
+            var container = new NotificationInfoContainer(Client, isReadedItemOnly);
             return container;
+        }
+        public async Task<int> GetUnreadCount()
+        {
+            try { return await Client.ServiceApi.GetUnreadNotificationCountAsync(Client); }
+            catch(ApiErrorException e)
+            { throw new FailToOperationException("未読通知数取得に失敗しました。", e); }
         }
     }
 }

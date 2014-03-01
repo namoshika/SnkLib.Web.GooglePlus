@@ -345,10 +345,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/getnotificationsdata?" + query), paramArray));
             return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<string> ConnectToNotificationsFetch(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
+        public static async Task<string> ConnectToNotificationsFetch(HttpClient client, Uri plusBaseUrl, bool isFetchNewItemMode, string atVal, int maxResults = 15, string continueToken = null)
         {
-            //
-            var queryArray = new Dictionary<string, string>()
+            var queryDict = new Dictionary<string, string>()
                 {
                     { "soc-app", "1" },
                     { "cid", "0" },
@@ -357,31 +356,52 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "avw", "str:1" },
                     { "rt","j" },
                 };
-            var paramArray = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var paramDict = new FormUrlEncodedContent(new Dictionary<string, string>()
                 {
-                    //[[\"OGB\",[7]],[null,null,10,[],[1],null,\"GPLUS_APP\",[3]],[3]]
-                    { "f.req", string.Format("[{0},[],5,null,[],null,true,[],null,null,{1},null,2]", type == NotificationsFilter.All ? "null" : ((int)type).ToString(), maxResults) },
+                    { "f.req", string.Format("[[\"OGB\",[7]],[null,null,{0},[],[{1}],{2},\"GPLUS_APP\",[3]],[3]]", maxResults, isFetchNewItemMode ? "1" : "2", continueToken != null ? string.Format("\"{0}\"", continueToken) : "null") },
                     { "at", atVal }
                 });
-            if (type != NotificationsFilter.All)
-                queryArray.Add("filter", ((int)type).ToString());
-            if (continueToken != null)
-                queryArray.Add("continuationToken", continueToken);
-            var query = await MakeQuery(queryArray);
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/fetch?" + query), paramArray));
+            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/fetch?" + await MakeQuery(queryDict)), paramDict));
             return ConvertIntoValidJson(jsonTxt.Substring(6));
         }
-        public static async Task<string> ConnectToNotificationsUpdateLastReadTime(HttpClient client, Uri plusBaseUrl, DateTime lastReadTime, string atValue)
+        public static async Task<string> ConnectToMarkItemRead(HttpClient client, Uri plusBaseUrl, string activityIds, string atValue)
         {
-            var query = new FormUrlEncodedContent(new Dictionary<string, string>()
-            {
-                { "time", (GetUnixTime(lastReadTime) * 1000).ToString() },
-                { "hl", "ja" },
-                { "at", atValue }
-            });
-            var jsonTxt = (await PostStringAsync(
-                client,
-                new Uri(plusBaseUrl, "_/notifications/updatelastreadtime?rt=j"), query)).Substring(6);
+            var queryDict = new Dictionary<string, string>()
+                {
+                    { "hl", "ja" },
+                    { "avw", "str:1" },
+                    { "rt","j" },
+                };
+            var paramDict = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    { "itemIds", activityIds },
+                    { "netType", "4" },
+                    { "at", atValue }
+                });
+            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/markitemread/?" + await MakeQuery(queryDict)), paramDict));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
+        }
+        public static async Task<string> ConnectToSetReadStates(HttpClient client, Uri plusBaseUrl, string notificationIds, string rawNoticedDate, string atValue)
+        {
+            var queryDict = new Dictionary<string, string>()
+                {
+                    { "soc-app", "1" },
+                    { "cid", "0" },
+                    { "soc-platform","1" },
+                    { "rt","j" },
+                };
+            var paramDict = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    {"f.req", string.Format("[[\"OGB\",[7]],[[[\"{0}\",null,\"{1}\"]],2]]", notificationIds, rawNoticedDate) },
+                    {"at", atValue }
+                });
+            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/setreadstates?" + await MakeQuery(queryDict)), paramDict));
+            return ConvertIntoValidJson(jsonTxt.Substring(6));
+        }
+        public static async Task<string> ConnectToGsuc(HttpClient client, Uri plusBaseUrl)
+        {
+            var url = new Uri(plusBaseUrl, "_/n/gsuc");
+            var jsonTxt = (await GetStringAsync(client, url)).Substring(5);
             return ConvertIntoValidJson(jsonTxt);
         }
         public static async Task<string> ConnectToPhotosAlbums(HttpClient client, Uri plusBaseUrl, string plusId, string albumId = null, int offset = 0)

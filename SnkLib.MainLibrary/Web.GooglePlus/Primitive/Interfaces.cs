@@ -42,12 +42,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         Task<ProfileData[]> GetProfileOfPusherAsync(string plusOneId, int pushCount, IPlatformClient client);
         Task<ActivityData> GetActivityAsync(string activityId, IPlatformClient client);
         Task<Tuple<ActivityData[], string>> GetActivitiesAsync(string circleId, string profileId, string ctValue, int length, IPlatformClient client);
-        Task<Tuple<NotificationData[], DateTime, string>> GetNotificationsAsync(NotificationsFilter filter, int length, string continueToken, IPlatformClient client);
+        Task<Tuple<NotificationData[], DateTime, string>> GetNotificationsAsync(bool isFetchNewItemMode, int length, string continueToken, IPlatformClient client);
+        Task<int> GetUnreadNotificationCountAsync(IPlatformClient client);
         Task<AlbumData> GetAlbumAsync(string albumId, string profileId, IPlatformClient client);
         Task<AlbumData[]> GetAlbumsAsync(string profileId, IPlatformClient client);
         Task<ImageData> GetImageAsync(string imageId, string profileId, IPlatformClient client);
         IObservable<object> GetStreamAttacher(IPlatformClient client);
-        Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client);
+        Task MarkAsReadAsync(NotificationData target, IPlatformClient client);
         Task PostComment(string activityId, string content, IPlatformClient client);
         Task EditComment(string activityId, string commentId, string content, IPlatformClient client);
         Task DeleteComment(string commentId, IPlatformClient client);

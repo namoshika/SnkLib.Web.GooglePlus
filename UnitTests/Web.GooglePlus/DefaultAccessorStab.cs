@@ -96,7 +96,7 @@ namespace UnitTests.Web.GooglePlus
                     .Select(id => GenerateActivityData(id, ActivityUpdateApiFlag.GetActivities, Enumerable.Range(0, 3).ToArray(), "getActivities"))
                     .ToArray(), (continueToken + length).ToString()));
         }
-        public Task<Tuple<NotificationData[], DateTime, string>> GetNotificationsAsync(NotificationsFilter filter, int length, string continueToken, IPlatformClient client)
+        public Task<Tuple<NotificationData[], DateTime, string>> GetNotificationsAsync(bool isFetchNewItemMode, int length, string continueToken, IPlatformClient client)
         {
             return Task.FromResult(Tuple.Create(
                 new[] {
@@ -119,6 +119,8 @@ namespace UnitTests.Web.GooglePlus
                         })
                 }, DateTime.UtcNow, "continueToken_notify"));
         }
+        public Task<int> GetUnreadNotificationCountAsync(IPlatformClient client)
+        { return Task.FromResult(0); }
         public Task<AlbumData> GetAlbumAsync(string albumId, string profileId, IPlatformClient client)
         {
             throw new NotImplementedException();

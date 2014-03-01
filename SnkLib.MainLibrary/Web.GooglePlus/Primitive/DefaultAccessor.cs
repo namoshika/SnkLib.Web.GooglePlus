@@ -208,82 +208,34 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
             return Tuple.Create(activities.ToArray(), ctValue);
         }
-        public async Task<Tuple<NotificationData[], DateTime, string>> GetNotificationsAsync(NotificationsFilter filter, int length, string continueToken, IPlatformClient client)
+        public async Task<Tuple<NotificationData[], DateTime, string>> GetNotificationsAsync(bool isFetchNewItemMode, int length, string continueToken, IPlatformClient client)
         {
             const int MAX_RESULT_LENGTH = 30;
             var notificationList = new List<NotificationData>();
             var latestReadedItemNotifiedDate = DateTime.MinValue;
             do
             {
-                var json = JToken.Parse(await ApiWrapper.ConnectToNotificationsData(
-                    client.NormalHttpClient, client.PlusBaseUrl, client.AtValue,
-                    filter, Math.Min(length, MAX_RESULT_LENGTH), continueToken))[0][1][1];
-                continueToken = (string)json[5];
+                var apiResponse = JToken.Parse(await ApiWrapper.ConnectToNotificationsFetch(
+                    client.NormalHttpClient, client.PlusBaseUrl, isFetchNewItemMode, client.AtValue,
+                    Math.Min(length, MAX_RESULT_LENGTH), continueToken))[0][1];
+                continueToken = apiResponse[2].Type == JTokenType.Array ? (string)apiResponse[2][5] : null;
                 if (latestReadedItemNotifiedDate == DateTime.MinValue)
-                    latestReadedItemNotifiedDate = ApiWrapper.GetDateTime((ulong)json[1] / 1000);
-                foreach (var item in json[0])
+                    latestReadedItemNotifiedDate = ApiWrapper.GetDateTime((ulong)apiResponse[4] / 1000);
+                foreach (var item in apiResponse[1])
                 {
                     length--;
-                    var notificationTypeId = (uint)item[4];
-                    var subItemB = item[2][0][1];
-                    var chainedItems = new List<ChainingNotificationData>();
-                    foreach (var childNotification in subItemB)
-                    {
-                        string iconUrl = ApiAccessorUtility.ConvertReplasableUrl((string)childNotification[2][2]);
-                        chainedItems.Add(new ChainingNotificationData(
-                            (string)childNotification[0], new ProfileData((string)childNotification[2][3], (string)childNotification[2][0], iconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
-                            ApiWrapper.GetDateTime((ulong)childNotification[3] / 1000)));
-                    }
-                    var datas = new Dictionary<string, string>();
-                    foreach (var propInfo in item[5])
-                        datas.Add((string)propInfo[0], (string)propInfo[1]);
-                    switch (notificationTypeId)
-                    {
-                        case (int)NotificationsFilter.PostIntoYou:
-                        case (int)NotificationsFilter.Mension:
-                        case (int)NotificationsFilter.OtherPost:
-                            var existsDetailInfo = ((JArray)item[18]).Count >= 1;
-                            var subItemA = existsDetailInfo ? item[18][0] : null;
-                            var activity = existsDetailInfo && subItemA[0].Type == JTokenType.Array
-                                ? GenerateActivityData(subItemA[0], ActivityUpdateApiFlag.Notification, client)
-                                : new ActivityData((string)item[10], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.Notification);
-                            //notificationTypeに通知タイプを代入
-                            //clientAppに各通知の最新のものを発生させるのに用いられたアプリを代入
-                            var notificationType =
-                                notificationTypeId == (int)NotificationsFilter.PostIntoYou ? NotificationsFilter.PostIntoYou :
-                                notificationTypeId == (int)NotificationsFilter.Mension ? NotificationsFilter.Mension :
-                                NotificationsFilter.OtherPost;
-                            ApplicationType clientApp = null;
-                            if (datas.ContainsKey("SOURCE_APPLICATION_ID"))
-                            {
-                                clientApp = ApplicationType.Create(datas["SOURCE_APPLICATION_ID"]);
-                                if (!clientApp.IsWellKnown && System.Diagnostics.Debugger.IsAttached)
-                                    System.Diagnostics.Debugger.Break();
-                            }
-                            notificationList.Add(new NotificationDataWithActivity(
-                                activity, notificationType, chainedItems.ToArray()));
-                            break;
-                        case 65535://NotificationsType.CircleIn
-                        case (int)NotificationsFilter.CircleIn:
-                            notificationList.Add(new NotificationData(
-                                NotificationsFilter.CircleIn, chainedItems.ToArray()));
-                            break;
-                        case (int)NotificationsFilter.Game:
-                            notificationList.Add(new NotificationData(
-                                NotificationsFilter.Game, chainedItems.ToArray()));
-                            break;
-                        case (int)NotificationsFilter.TaggedImage:
-                            var images = new List<ImageData>();
-                            foreach (var childItem in item[18][1][0])
-                                images.Add(GenerateImageData(childItem, ImageUpdateApiFlag.Base, client.PlusBaseUrl));
-                            notificationList.Add(new NotificationDataWithImage(
-                                images.ToArray(), NotificationsFilter.TaggedImage, chainedItems.ToArray()));
-                            break;
-                    }
+                    var info = NotificationData.Create(item, client.PlusBaseUrl);
+                    if (info != null)
+                        notificationList.Add(info);
                 }
             }
             while (length > 0 && continueToken != null);
             return Tuple.Create(notificationList.ToArray(), latestReadedItemNotifiedDate, continueToken);
+        }
+        public async Task<int> GetUnreadNotificationCountAsync(IPlatformClient client)
+        {
+            var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToGsuc(client.NormalHttpClient, client.PlusBaseUrl));
+            return (int)json[0];
         }
         public async Task<AlbumData> GetAlbumAsync(string albumId, string profileId, IPlatformClient client)
         {
@@ -346,8 +298,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 .Where(json => (string)json[1][0] == "c")
                 .Select(json => GenerateDataFromStreamingApi(json, client));
         }
-        public Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client)
-        { return ApiWrapper.ConnectToNotificationsUpdateLastReadTime(client.NormalHttpClient, client.PlusBaseUrl, value, client.AtValue); }
+        public async Task MarkAsReadAsync(NotificationData target, IPlatformClient client)
+        {
+            await ApiWrapper.ConnectToSetReadStates(
+                client.NormalHttpClient, client.PlusBaseUrl, target.Id, target.RawNoticedDate, client.AtValue);
+            if (target is StreamNotificationData)
+                await ApiWrapper.ConnectToMarkItemRead(
+                    client.NormalHttpClient, client.PlusBaseUrl,
+                    ((StreamNotificationData)target).Target.Id, client.AtValue);
+        }
         public Task PostComment(string activityId, string content, IPlatformClient client)
         { return ApiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue); }
         public Task EditComment(string activityId, string commentId, string content, IPlatformClient client)
@@ -638,18 +597,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                             System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");
                             return rawItem;
                     }
-                //case "gb":
-                //    var notificationItem = JArray.Parse(
-                //        Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
-                //    switch ((string)notificationItem[0])
-                //    {
-                //        case "gb.n.rtn":
-                //            return new NotificationSignal(NotificationEventType.RaiseNew, (string)notificationItem[1]);
-                //        case "gb.n.sup":
-                //            return new NotificationSignal(NotificationEventType.ChangedAllRead, null);
-                //        default:
-                //            return notificationItem;
-                //    }
+                case "gb":
+                    var notificationItem = JArray.Parse(
+                        Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
+                    switch ((string)notificationItem[0])
+                    {
+                        case "gb.n.rtn":
+                            return new NotificationSignal(NotificationEventType.RaiseNew, (string)notificationItem[1]);
+                        case "gb.n.sup":
+                            return new NotificationSignal(NotificationEventType.ChangedAllRead, null);
+                        default:
+                            return notificationItem;
+                    }
                 default:
                     return rawItem;
             }

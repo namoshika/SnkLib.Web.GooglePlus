@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus
 {
@@ -14,62 +15,31 @@ namespace SunokoLibrary.Web.GooglePlus
             : base(client)
         {
             _data = data;
-            _actor = client.People.InternalGetAndUpdateProfile(data.Actor);
-            _followingNotifications = new ObservableCollection<ChainingNotificationInfo>(
-                data.FollowingNotifications.Select(dt => new ChainingNotificationInfo(this, dt, client)));
-            Container = container;
-            FollowingNotifications = new ReadOnlyObservableCollection<ChainingNotificationInfo>(_followingNotifications);
+            _container = container;
         }
         NotificationData _data;
-        ProfileInfo _actor;
-        ObservableCollection<ChainingNotificationInfo> _followingNotifications;
+        NotificationInfoContainer _container;
 
-        public NotificationInfoContainer Container { get; private set; }
-        public ReadOnlyObservableCollection<ChainingNotificationInfo> FollowingNotifications { get; private set; }
         public string Id { get { return _data.Id; } }
-        public bool IsReaded { get { return _data.NoticedDate < Container.LastReadedTime; } }
-        public NotificationsFilter Type { get { return _data.Type; } }
-        public ProfileInfo Actor { get { return _actor; } }
+        public NotificationFlag Type { get { return _data.Type; } }
         public DateTime NoticedDate { get { return _data.NoticedDate; } }
-
-        public virtual void Update(NotificationData data)
+        public async Task MarkAsReadAsync()
         {
-            var newItems = data.FollowingNotifications.TakeWhile(dt => dt.Id != _data.Id)
-                .Reverse().ToArray();
-            foreach (var item in newItems)
-                _followingNotifications.Insert(0, new ChainingNotificationInfo(this, item, Client));
-            if(_actor.Id != _followingNotifications.First().Id)
-                _actor = Client.People.InternalGetAndUpdateProfile(data.Actor);
-            if (newItems.Length > 0)
-                OnUpdated(new NotificationUpdatedEventArgs(newItems));
+            try { await Client.ServiceApi.MarkAsReadAsync(_data, Client); }
+            catch (ApiErrorException e)
+            { throw new FailToOperationException("既読化の通信に失敗しました。", e); }
         }
-        public event NotificationUpdatedEventHandler Updated;
-        protected virtual void OnUpdated(NotificationUpdatedEventArgs e)
+        internal virtual void Update(NotificationData data)
+        {
+            _data = data;
+            OnUpdated(new EventArgs());
+        }
+
+        public event EventHandler Updated;
+        protected virtual void OnUpdated(EventArgs e)
         {
             if (Updated != null)
                 Updated(this, e);
         }
-    }
-    public class ChainingNotificationInfo : AccessorBase
-    {
-        public ChainingNotificationInfo(NotificationInfo latestInfo, ChainingNotificationData data, PlatformClient client)
-            : base(client)
-        {
-            _latestInfo = latestInfo;
-            _data = data;
-        }
-        NotificationInfo _latestInfo;
-        ChainingNotificationData _data;
-
-        public bool IsReaded { get { return _data.NoticedDate < _latestInfo.Container.LastReadedTime; } }
-        public string Id { get { return _data.Id; } }
-        public ProfileInfo Actor { get { return Client.People.InternalGetAndUpdateProfile(_data.Actor); } }
-        public DateTime NoticedDate { get { return _data.NoticedDate; } }
-    }
-    public delegate void NotificationUpdatedEventHandler(object sender, NotificationUpdatedEventArgs e);
-    public class NotificationUpdatedEventArgs : EventArgs
-    {
-        public NotificationUpdatedEventArgs(ChainingNotificationData[] items) { Notifications = items; }
-        public ChainingNotificationData[] Notifications { get; private set; }
     }
 }

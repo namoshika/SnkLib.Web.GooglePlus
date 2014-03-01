@@ -64,6 +64,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 return value1;
             }
     }
+    [Flags]
     public enum ImageUpdateApiFlag
     { Unloaded = 0, Base = 1, LightBox = 3, }
 }
