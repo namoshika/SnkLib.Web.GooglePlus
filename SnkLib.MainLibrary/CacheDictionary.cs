@@ -65,9 +65,11 @@ namespace SunokoLibrary.Collection.Generic
                     if (_usedKeyLog.Count > _cacheSize)
                         for (var i = 0; i < _cacheOutSize; i++)
                         {
+                            var obj = _values[_usedKeyLog.Last.Value];
                             _keyNodeDict.Remove(_usedKeyLog.Last.Value);
                             _values.Remove(_usedKeyLog.Last.Value);
                             _usedKeyLog.RemoveLast();
+                            OnCacheOuted(new CacheoutEventArgs<TValue>(obj.Value));
                         }
                 }
             return result;
@@ -90,6 +92,13 @@ namespace SunokoLibrary.Collection.Generic
                 else
                     throw new KeyNotFoundException();
         }
+
+        public event EventHandler<CacheoutEventArgs<TValue>> CacheOuted;
+        protected virtual void OnCacheOuted(CacheoutEventArgs<TValue> e)
+        {
+            if (CacheOuted != null)
+                CacheOuted(this, e);
+        }
     }
     public interface ICacheDictionary<TKey, TCache, TValue> where TCache : ICacheInfo<TValue>
     {
@@ -98,4 +107,10 @@ namespace SunokoLibrary.Collection.Generic
         TCache Get(TKey key);
     }
     public interface ICacheInfo<T> { T Value { get; set; } }
+
+    public class CacheoutEventArgs<T>:EventArgs
+    {
+        public CacheoutEventArgs(T value) { Value = value; }
+        public T Value { get; private set; }
+    }
 }
