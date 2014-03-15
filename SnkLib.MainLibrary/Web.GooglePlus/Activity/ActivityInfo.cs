@@ -28,7 +28,6 @@ namespace SunokoLibrary.Web.GooglePlus
         ProfileInfo _postUser;
         IAttachable _attachedContent;
         CommentInfo[] _comments;
-        readonly Dictionary<EventHandler, IDisposable> _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
 
         public ActivityUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
         public string Id { get { return _data.Id; } }
@@ -58,6 +57,11 @@ namespace SunokoLibrary.Web.GooglePlus
                     .Where(inf => inf.ParentActivity.Id == Id)
                     .Catch<CommentInfo, ApiErrorException>(ex => Observable.Throw(new FailToOperationException<ActivityInfo>("CommentInfoの受信中にエラーが発生しました。", this, ex), (CommentInfo)null)));
             return obs;
+        }
+        public IObservable<ActivityInfo> GetUpdatedActivity()
+        {
+            return Client.Activity.GetStream()
+                .OfType<ActivityInfo>().Where(info => info.Id == Id);
         }
         public Task UpdateGetActivityAsync(bool isForced, ActivityUpdateApiFlag updaterTypes)
         {
@@ -160,35 +164,6 @@ namespace SunokoLibrary.Web.GooglePlus
                     return new AttachedPost(client, (AttachedPostData)info);
                 default:
                     return info;
-            }
-        }
-
-        public event EventHandler Refreshed
-        {
-            add
-            {
-                if (value == null)
-                    return;
-                lock (_talkgadgetBindObjs)
-                    _talkgadgetBindObjs.Add(value, Client.Activity.GetStream()
-                        .OfType<ActivityInfo>()
-                        .Where(info => info.Id == Id)
-                        .Subscribe(info =>
-                            {
-                                value(this, new EventArgs());
-                                if (info != this)
-                                    _data += info._data;
-                            }));
-            }
-            remove
-            {
-                IDisposable obj;
-                lock (_talkgadgetBindObjs)
-                    if (_talkgadgetBindObjs.TryGetValue(value, out obj))
-                    {
-                        _talkgadgetBindObjs.Remove(value);
-                        obj.Dispose();
-                    }
             }
         }
     }

@@ -74,6 +74,7 @@ namespace SunokoLibrary.Web.GooglePlus
         }
         public void Dispose()
         {
+            Activity.Dispose();
             NormalHttpClient.Dispose();
             StreamHttpClient.Dispose();
         }

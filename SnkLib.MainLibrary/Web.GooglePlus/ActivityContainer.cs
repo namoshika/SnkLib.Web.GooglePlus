@@ -15,7 +15,7 @@ namespace SunokoLibrary.Web.GooglePlus
     using SunokoLibrary.Threading;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
-    public class ActivityContainer : AccessorBase
+    public class ActivityContainer : AccessorBase, IDisposable
     {
         public ActivityContainer(PlatformClient client)
             : base(client) { BeganTimeToBind = DateTime.MaxValue; }
@@ -60,26 +60,34 @@ namespace SunokoLibrary.Web.GooglePlus
                             _streamSessionRefCount++;
                             var strm = _stream.Subscribe(subject.OnNext,
                                 ex =>
-                                {
-                                    try { subject.OnError(ex); }
-                                    catch { }
-                                }, subject.OnCompleted);
-                            var disposer = (Action)(() =>
-                            {
-                                strm.Dispose();
-                                lock (_syncerStream)
-                                    if (_streamSessionRefCount > 0)
                                     {
-                                        _streamSessionRefCount = Math.Max(_streamSessionRefCount - 1, 0);
-                                        if (_streamSessionRefCount == 0)
+                                        lock (_syncerStream)
                                         {
                                             _stream = null;
+                                            _streamSessionRefCount = 0;
                                             _streamSession.Dispose();
                                             BeganTimeToBind = DateTime.MaxValue;
                                             IsConnected = false;
                                         }
-                                    }
-                            });
+                                        try { subject.OnError(ex); }
+                                        catch { }
+                                    }, subject.OnCompleted);
+                            var disposer = (Action)(() =>
+                                {
+                                    strm.Dispose();
+                                    lock (_syncerStream)
+                                        if (_streamSessionRefCount > 0)
+                                        {
+                                            _streamSessionRefCount = Math.Max(_streamSessionRefCount - 1, 0);
+                                            if (_streamSessionRefCount == 0)
+                                            {
+                                                _stream = null;
+                                                _streamSession.Dispose();
+                                                BeganTimeToBind = DateTime.MaxValue;
+                                                IsConnected = false;
+                                            }
+                                        }
+                                });
                             return disposer;
                         }
                     })
@@ -89,6 +97,12 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             var cache = InternalGetActivityCache(targetId);
             return new ActivityInfo(Client, cache.Value);
+        }
+        public void Dispose()
+        {
+            lock (_syncerStream)
+                if (_streamSession != null)
+                    _streamSession.Dispose();
         }
         internal ActivityCache InternalGetActivityCache(string targetId)
         { return _activityCache.Update(targetId, () => new ActivityData(targetId)); }
