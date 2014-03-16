@@ -33,6 +33,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 case "40154698":
                 case "39748951":
                 case "42861421":
+                case "42397230":
                     //リンク
                     content = new AttachedLink((JArray)prop.Value, plusBaseUrl);
                     break;

@@ -461,8 +461,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 var attachedElement = ContentElement.ParseHtml(attachedHtml, client) ?? ContentElement.ParseJson(apiResponse[137]);
                 attachedContent = new AttachedPostData(
                     (string)apiResponse[40], attachedHtml, attachedText, attachedElement,
-                    (string)apiResponse[43][1], (string)apiResponse[43][0],
-                    ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[43][4]),
+                    (string)apiResponse[44][1], (string)apiResponse[44][0],
+                    ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[44][4]),
                     new Uri(client.PlusBaseUrl, (string)apiResponse[77]),
                     atchCnt);
             }
