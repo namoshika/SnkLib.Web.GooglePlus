@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -426,6 +426,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var lastUpdateDate = ApiWrapper.GetDateTime((ulong)apiResponse[30] / 1000);
             var isEditable = (double)apiResponse[56] == 1.0;
             var serviceType = new ServiceType((string)apiResponse[10]);
+            var commentLength = (int)apiResponse[93];
             var comments = apiResponse[7].Select(itm => GenerateCommentData(itm)).ToArray();
 
             //初版かどうかの判定
@@ -474,7 +475,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
 
             return new ActivityData(
-                id, html, text, element, isEditable, postUrl, comments, postDate, editDate, serviceType, postStatus, attachedContent,
+                id, html, text, element, isEditable, postUrl, commentLength, comments, postDate, editDate, serviceType, postStatus, attachedContent,
                 new ProfileData(postUserId, postUserName, postUserIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
                 updateDate, loadedApiTypes);
         }

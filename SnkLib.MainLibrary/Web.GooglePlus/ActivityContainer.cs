@@ -108,8 +108,12 @@ namespace SunokoLibrary.Web.GooglePlus
                 var aData = Client.Activity.InternalGetActivityCache(cData.ActivityId).Value;
                 var info = new CommentInfo(Client, cData, aData);
                 if (cData.Status == PostStatusType.Removed)
+                {
                     aData.Comments = aData.Comments != null ? aData.Comments
                         .Where(dt => dt.CommentId != cData.CommentId).ToArray() : null;
+                    if(aData.CommentLength.HasValue)
+                        aData.CommentLength--;
+                }
                 else
                     if (aData.Comments != null)
                     {
@@ -124,11 +128,19 @@ namespace SunokoLibrary.Web.GooglePlus
                                 break;
                             }
                         if (found == false)
+                        {
                             cDatas = cDatas.Concat(new[] { cData }).ToArray();
+                            if(aData.CommentLength.HasValue)
+                                aData.CommentLength++;
+                        }
                         aData.Comments = cDatas;
                     }
                     else
+                    {
                         aData.Comments = new[] { cData };
+                        if (aData.CommentLength.HasValue)
+                            aData.CommentLength++;
+                    }
                 return info;
             }
             else

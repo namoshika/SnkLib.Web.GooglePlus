@@ -10,7 +10,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     {
         public ActivityData(
             string id, string html = null, string text = null, StyleElement parsedText = null, bool? isEditable = null, Uri postUrl = null,
-            CommentData[] comments = null, DateTime? postDate = null, DateTime? editDate = null,
+            int? commentLength = null, CommentData[] comments = null, DateTime? postDate = null, DateTime? editDate = null,
             ServiceType serviceType = null, PostStatusType? status = null, IAttachable attachedContent = null,
             ProfileData owner = null, DateTime? getActivityDate = null,
             ActivityUpdateApiFlag updaterTypes = ActivityUpdateApiFlag.Unloaded)
@@ -21,6 +21,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Html = html;
             Text = text;
             ParsedText = parsedText;
+            CommentLength = commentLength;
             Comments = comments;
             PostUrl = postUrl;
             PostDate = postDate;
@@ -43,6 +44,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public DateTime? EditDate { get; private set; }
         public DateTime? GetActivityDate { get; set; }
         public ProfileData Owner { get; private set; }
+        public int? CommentLength { get; set; }
         public CommentData[] Comments { get; set; }
         public IAttachable AttachedContent { get; private set; }
         public PostStatusType? PostStatus { get; private set; }
@@ -64,6 +66,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     Merge(value1, value2, obj => obj.ParsedText),
                     Merge(value1, value2, obj => obj.IsEditable),
                     Merge(value1, value2, obj => obj.PostUrl),
+                    Merge(value1, value2, obj => obj.CommentLength),
                     Merge(value1, value2, obj => obj.Comments),
                     Merge(value1, value2, obj => obj.PostDate),
                     Merge(value1, value2, obj => obj.EditDate),

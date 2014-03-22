@@ -30,9 +30,10 @@ namespace SunokoLibrary.Web.GooglePlus
         CommentInfo[] _comments;
         readonly Dictionary<EventHandler, IDisposable> _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
 
-        public string Id { get { return _data.Id; } }
         public ActivityUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
+        public string Id { get { return _data.Id; } }
         public bool IsEditable { get { return CheckFlag(_data.IsEditable, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
+        public int CommentLength { get { return CheckFlag(_data.CommentLength, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
         public string Html { get { return CheckFlag(_data.Html, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public string Text { get { return CheckFlag(_data.Text, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public StyleElement ParsedText { get { return CheckFlag(_data.ParsedText, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
