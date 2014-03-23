@@ -72,7 +72,29 @@ namespace SunokoLibrary.Web.GooglePlus
                 {
                     try
                     {
-                        _data = Client.Activity.InternalUpdateActivity(await Client.ServiceApi.GetActivityAsync(Id, Client));
+                        var nwData = Client.Activity.InternalUpdateActivity(await Client.ServiceApi.GetActivityAsync(Id, Client));
+                        if (_data.Comments != null)
+                        {
+                            var nwComments = from newComments in nwData.Comments
+                                             join oldComments in _data.Comments on newComments.CommentId equals oldComments.CommentId into c
+                                             from d in c.DefaultIfEmpty()
+                                             where d == null
+                                             select newComments;
+                            var rmComments = from oldComments in _data.Comments
+                                             join newComments in nwData.Comments on oldComments.CommentId equals newComments.CommentId into c
+                                             from d in c.DefaultIfEmpty()
+                                             where d == null
+                                             select new CommentData(
+                                                 oldComments.CommentId, oldComments.ActivityId, oldComments.Html,
+                                                 oldComments.PostDate, oldComments.EditDate, oldComments.Owner,
+                                                 PostStatusType.Removed);
+                            foreach (var item in nwComments.Concat(rmComments))
+                                Client.Activity.InternalSendObjectToStream(item);
+                        }
+                        else
+                            foreach (var item in nwData.Comments)
+                                Client.Activity.InternalSendObjectToStream(item);
+                        _data = nwData;
                         _postUser = Client.People.InternalGetAndUpdateProfile(_data.Owner);
                         _attachedContent = _data.AttachedContent != null ? AttachedContentDecorator(_data.AttachedContent, Client) : null;
                         _comments = _data.Comments.Select(dt => new CommentInfo(Client, dt, _data, this)).ToArray();
@@ -99,7 +121,8 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             try
             {
-                await Client.ServiceApi.PostComment(Id, content, Client);
+                var commeData = await Client.ServiceApi.PostComment(Id, content, Client);
+                Client.Activity.InternalSendObjectToStream(commeData);
                 return true;
             }
             catch (ApiErrorException e)
@@ -118,7 +141,8 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             try
             {
-                await Client.ServiceApi.EditComment(Id, commentId, content, Client);
+                var commeData = await Client.ServiceApi.EditComment(Id, commentId, content, Client);
+                Client.Activity.InternalSendObjectToStream(commeData);
                 return true;
             }
             catch (ApiErrorException e)

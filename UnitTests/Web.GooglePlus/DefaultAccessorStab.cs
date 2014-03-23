@@ -138,11 +138,13 @@ namespace UnitTests.Web.GooglePlus
             return Observable.Return(GenerateActivityData(1, ActivityUpdateApiFlag.Unloaded, new int[] { }, "getStreamAttacher"));
         }
         public Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client) { return Task.Factory.StartNew(() => { }); }
-        public Task PostComment(string activityId, string content, IPlatformClient client)
-        { return Task.Run(() => { }); }
-        public Task EditComment(string activityId, string commentId, string content, IPlatformClient client)
-        { return Task.Run(() => { }); }
+        public Task<CommentData> PostComment(string activityId, string content, IPlatformClient client)
+        { return Task.FromResult(GenerateCommentData(0, 0, "postComment")); }
+        public Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client)
+        { return Task.FromResult(GenerateCommentData(0, 0, "editComment")); }
         public Task DeleteComment(string commentId, IPlatformClient client)
+        { return Task.Run(() => { }); }
+        public Task MarkAsReadAsync(NotificationData target, IPlatformClient client)
         { return Task.Run(() => { }); }
 
         ActivityData GenerateActivityData(int id, ActivityUpdateApiFlag flagMode, int[] commentIds, string marking)

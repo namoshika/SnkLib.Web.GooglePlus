@@ -219,7 +219,7 @@ namespace UnitTests.Web.GooglePlus
         public async Task GetNotificationDatasTest()
         {
             var target = new DefaultAccessor();
-            var result = await target.GetNotificationsAsync(NotificationsFilter.All, 10, null, clientStabA);
+            var result = await target.GetNotificationsAsync(true, 10, null, clientStabA);
         }
         //[TestMethod, TestCategory("DefaultAccessor")]
         //public async Task GetStreamAttacherTest()

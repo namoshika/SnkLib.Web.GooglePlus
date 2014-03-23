@@ -48,10 +48,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         Task<AlbumData[]> GetAlbumsAsync(string profileId, IPlatformClient client);
         Task<ImageData> GetImageAsync(string imageId, string profileId, IPlatformClient client);
         IObservable<object> GetStreamAttacher(IPlatformClient client);
-        Task MarkAsReadAsync(NotificationData target, IPlatformClient client);
-        Task PostComment(string activityId, string content, IPlatformClient client);
-        Task EditComment(string activityId, string commentId, string content, IPlatformClient client);
+        Task<CommentData> PostComment(string activityId, string content, IPlatformClient client);
+        Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client);
         Task DeleteComment(string commentId, IPlatformClient client);
+        Task MarkAsReadAsync(NotificationData target, IPlatformClient client);
     }
 
     /// <summary>APIが所定の目的を果たせずエラーを返した時に使用されます。</summary>

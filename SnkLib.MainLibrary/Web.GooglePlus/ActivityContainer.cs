@@ -23,6 +23,7 @@ namespace SunokoLibrary.Web.GooglePlus
         readonly object _syncerStream = new object();
         readonly ICacheDictionary<string, ActivityCache, ActivityData> _activityCache =
             new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt });
+        readonly Subject<object> _streamObserver = new Subject<object>();
         bool _isConnected;
         int _streamSessionRefCount;
         IDisposable _streamSession;
@@ -52,7 +53,8 @@ namespace SunokoLibrary.Web.GooglePlus
                         {
                             if (_stream == null)
                             {
-                                _stream = Client.ServiceApi.GetStreamAttacher(Client).Select(ConvertDataToInfo).Publish();
+                                _stream = Client.ServiceApi.GetStreamAttacher(Client)
+                                    .Merge(_streamObserver).Select(ConvertDataToInfo).Publish();
                                 _streamSession = _stream.Connect();
                                 BeganTimeToBind = DateTime.UtcNow;
                                 IsConnected = true;
@@ -103,6 +105,12 @@ namespace SunokoLibrary.Web.GooglePlus
             lock (_syncerStream)
                 if (_streamSession != null)
                     _streamSession.Dispose();
+        }
+        internal void InternalSendObjectToStream(object item)
+        {
+            lock (_syncerStream)
+                if (_streamObserver != null)
+                    _streamObserver.OnNext(item);
         }
         internal ActivityCache InternalGetActivityCache(string targetId)
         { return _activityCache.Update(targetId, () => new ActivityData(targetId)); }

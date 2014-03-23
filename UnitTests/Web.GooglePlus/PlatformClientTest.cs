@@ -147,7 +147,7 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("NotificationContainer"), Priority(0)]
         public async Task GetNotificationsTest()
         {
-            var target = client.Notification.GetNotifications(NotificationsFilter.All);
+            var target = client.Notification.GetNotifications(true);
             await target.UpdateAsync(15);
             await target.UpdateAsync(15);
         }

@@ -307,10 +307,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     client.NormalHttpClient, client.PlusBaseUrl,
                     ((StreamNotificationData)target).Target.Id, client.AtValue);
         }
-        public Task PostComment(string activityId, string content, IPlatformClient client)
-        { return ApiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue); }
-        public Task EditComment(string activityId, string commentId, string content, IPlatformClient client)
-        { return ApiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue); }
+        public async Task<CommentData> PostComment(string activityId, string content, IPlatformClient client)
+        {
+            var apiResponse = JToken.Parse(
+                await ApiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue));
+            return GenerateCommentData(apiResponse[0][1][1]);
+        }
+        public async Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client)
+        {
+            var apiResponse = JToken.Parse(
+                await ApiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue));
+            return GenerateCommentData(apiResponse[0][1][1]);
+        }
         public Task DeleteComment(string commentId, IPlatformClient client)
         { return ApiWrapper.ConnectToDeleteComment(client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue); }
 
