@@ -21,10 +21,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             switch((string)source[7])
             {
                 case "gplus_stream":
-                    data = new StreamNotificationData(source, plusBaseUrl);
+                    data = new ContentNotificationData(source, plusBaseUrl);
                     break;
                 case "gplus_circles":
-                    data = new CircleNotificationData(source, plusBaseUrl);
+                case "gplus_communities":
+                    data = new ContactNotificationData(source, plusBaseUrl);
                     break;
                 case "gplus_photos":
                     data = new PhotoNotificationData(source, plusBaseUrl);
@@ -71,6 +72,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     case "HANGOUT_INVITE":
                         Type |= NotificationFlag.InviteHangout;
                         break;
+                    case "SQUARE_INVITE":
+                        Type |= NotificationFlag.InviteCommunitiy;
+                        break;
                     case "PHOTOS_CAMERASYNC_UPLOADED":
                         Type |= NotificationFlag.CameraSyncUploaded;
                         break;
@@ -83,14 +87,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     [Flags]
     public enum NotificationFlag
     {
-        Mension = 0x00000001,
-        Response = 0x00000002,
-        Followup = 0x00000004,
-        CircleIn = 0x00000008,
-        CircleAddBack = 0x00000010,
-        TaggedImage = 0x00000020,
-        PlusOne = 0x00000040,
-        CameraSyncUploaded = 0x00000080,
-        InviteHangout = 0x00000100,
+        CameraSyncUploaded = 0x00000001,
+        CircleAddBack = 0x00000002,
+        CircleIn = 0x00000004,
+        Followup = 0x00000008,
+        InviteHangout = 0x00000010,
+        InviteCommunitiy = 0x00000020,
+        Mension = 0x00000040,
+        PlusOne = 0x00000080,
+        Response = 0x00000100,
+        TaggedImage = 0x00000200,
     }
 }

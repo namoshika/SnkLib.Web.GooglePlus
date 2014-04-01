@@ -11,7 +11,7 @@ namespace SunokoLibrary.Web.GooglePlus
 
     public class NotificationInfoWithActivity : NotificationInfoWithActor
     {
-        public NotificationInfoWithActivity(StreamNotificationData data, NotificationInfoContainer container, PlatformClient client)
+        public NotificationInfoWithActivity(ContentNotificationData data, NotificationInfoContainer container, PlatformClient client)
             : base(data, container, client) { Activity = client.Activity.InternalGetAndUpdateActivity(data.Target); }
         public ActivityInfo Activity { get; private set; }
     }

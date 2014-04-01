@@ -50,10 +50,10 @@ namespace SunokoLibrary.Web.GooglePlus
                             item.OldInfo.Update(item.NewData);
                         }
                         else
-                            if (item.NewData is StreamNotificationData)
-                                _notifications.Insert(idx, new NotificationInfoWithActivity((StreamNotificationData)item.NewData, this, Client));
-                            else if (item.NewData is CircleNotificationData)
-                                _notifications.Insert(idx, new NotificationInfoWithActor((CircleNotificationData)item.NewData, this, Client));
+                            if (item.NewData is ContentNotificationData)
+                                _notifications.Insert(idx, new NotificationInfoWithActivity((ContentNotificationData)item.NewData, this, Client));
+                            else if (item.NewData is ContactNotificationData)
+                                _notifications.Insert(idx, new NotificationInfoWithActor((ContactNotificationData)item.NewData, this, Client));
                             else
                                 _notifications.Insert(idx, new NotificationInfo(item.NewData, this, Client));
                         idx++;
@@ -65,10 +65,10 @@ namespace SunokoLibrary.Web.GooglePlus
                 {
                     foreach (var item in apiResult.Item1)
                     {
-                        if (item is StreamNotificationData)
-                            _notifications.Add(new NotificationInfoWithActivity((StreamNotificationData)item, this, Client));
-                        else if (item is CircleNotificationData)
-                            _notifications.Add(new NotificationInfoWithActor((CircleNotificationData)item, this, Client));
+                        if (item is ContentNotificationData)
+                            _notifications.Add(new NotificationInfoWithActivity((ContentNotificationData)item, this, Client));
+                        else if (item is ContactNotificationData)
+                            _notifications.Add(new NotificationInfoWithActor((ContactNotificationData)item, this, Client));
                         else
                             _notifications.Add(new NotificationInfo(item, this, Client));
                     }

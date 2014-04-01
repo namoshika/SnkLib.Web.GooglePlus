@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class StreamNotificationData : SocialNotificationData
+    public class ContentNotificationData : SocialNotificationData
     {
-        public StreamNotificationData(JToken source, Uri plusBaseUrl) : base(source, plusBaseUrl) { }
+        public ContentNotificationData(JToken source, Uri plusBaseUrl) : base(source, plusBaseUrl) { }
         public ActivityData Target { get; private set; }
 
         protected override void ParseTemplate(JToken source, Uri plusBaseUrl)
@@ -36,10 +36,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 NotificationFlag type;
                 switch ((string)item.Type)
                 {
-                    case "CIRCLE_PERSONAL_ADD":
-                    case "CIRCLE_RECIPROCATING_ADD":
-                        type = NotificationFlag.CircleIn;
-                        break;
                     case "STREAM_COMMENT_NEW":
                         type = NotificationFlag.Response;
                         break;

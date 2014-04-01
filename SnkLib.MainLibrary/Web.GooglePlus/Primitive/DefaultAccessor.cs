@@ -302,10 +302,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             await ApiWrapper.ConnectToSetReadStates(
                 client.NormalHttpClient, client.PlusBaseUrl, target.Id, target.RawNoticedDate, client.AtValue);
-            if (target is StreamNotificationData)
+            if (target is ContentNotificationData)
                 await ApiWrapper.ConnectToMarkItemRead(
                     client.NormalHttpClient, client.PlusBaseUrl,
-                    ((StreamNotificationData)target).Target.Id, client.AtValue);
+                    ((ContentNotificationData)target).Target.Id, client.AtValue);
         }
         public async Task<CommentData> PostComment(string activityId, string content, IPlatformClient client)
         {
