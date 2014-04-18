@@ -1,0 +1,3 @@
+[submodule "CookieGetterSharp"]
+	path = CookieGetterSharp
+	url = https://github.com/namoshika/CookieGetterSharp.git

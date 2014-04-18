@@ -13,13 +13,19 @@ namespace Sample
     using System.Reactive.Linq;
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
+    using Hal.CookieGetterSharp;
 
     class Program
     {
         static void Main(string[] args)
         {
-            var generator = PlatformClient.Factory.ImportFromIE().Result;
-            var platform = generator[0].Build().Result;
+            var url = new Uri("https://plus.google.com/");
+            var getterA = CookieGetter.CreateInstance(BrowserType.GoogleChrome);
+            var getterB = CookieGetter.CreateInstance(BrowserType.IESafemode);
+            var cookieA = getterA.GetCookieCollection(url);
+            var cookieB = getterB.GetCookieCollection(url);
+
+            var platform = PlatformClient.Factory.ImportFrom(getterA).Result[0].Build().Result;
             var atVal = platform.AtValue;
             var pvtVal = platform.PvtValue;
 

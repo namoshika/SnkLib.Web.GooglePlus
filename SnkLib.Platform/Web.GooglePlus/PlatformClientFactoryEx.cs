@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Hal.CookieGetterSharp;
 
 namespace SunokoLibrary.Web.GooglePlus
 {
@@ -16,47 +17,23 @@ namespace SunokoLibrary.Web.GooglePlus
 
     public static class PlatformClientFactoryEx
     {
-        public static async Task<IPlatformClientBuilder[]> ImportFromChrome(this PlatformClientFactory factory, IApiAccessor accessor = null)
+        public static Task<IPlatformClientBuilder[]> ImportFromIE(this PlatformClientFactory factory, IApiAccessor accessor = null)
         {
-            accessor = accessor ?? new DefaultAccessor();
-            return await accessor.GetAccountList(await ImportCookiesFromChrome());
+            return Task.Run(async () =>
+                {
+                    accessor = accessor ?? new DefaultAccessor();
+                    return await accessor.GetAccountList(ImportCookiesFromIE());
+                });
         }
-        public static async Task<IPlatformClientBuilder[]> ImportFromIE(this PlatformClientFactory factory, IApiAccessor accessor = null)
+        public static Task<IPlatformClientBuilder[]> ImportFrom(this PlatformClientFactory factory, ICookieGetter source, IApiAccessor accessor = null)
         {
-            accessor = accessor ?? new DefaultAccessor();
-            return await accessor.GetAccountList(ImportCookiesFromIE());
+            return Task.Run(async () =>
+                {
+                    accessor = accessor ?? new DefaultAccessor();
+                    return await accessor.GetAccountList(ImportCookiesFrom(source));
+                });
         }
 
-        static readonly string _cookiesFilePath = string.Format(@"{0}\Google\Chrome\User Data\Default\Cookies", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
-        [Obsolete]
-        public static async Task<CookieContainer> ImportCookiesFromChrome()
-        {
-            var cookies = new CookieContainer();
-            try
-            {
-                using (var dbClient = new System.Data.SQLite.SQLiteConnection(string.Format("Data Source={0}", _cookiesFilePath)))
-                {
-                    await dbClient.OpenAsync();
-                    var command = dbClient.CreateCommand();
-                    command.CommandText = "select * from cookies where host_key like \"%.google.com\"";
-                    using (var reader = await command.ExecuteReaderAsync())
-                        while (reader.Read())
-                            cookies.Add(
-                                new Cookie()
-                                {
-                                    Name = (string)reader["name"],
-                                    Value = (string)reader["value"],
-                                    Path = (string)reader["path"],
-                                    Domain = (string)reader["host_key"],
-                                    Secure = (long)reader["secure"] == 1,
-                                    HttpOnly = (long)reader["httponly"] == 1
-                                });
-                }
-                return cookies;
-            }
-            catch (System.Data.SQLite.SQLiteException e)
-            { throw new FailToOperationException("Chromeからのログイン用Cookie取得に失敗しました。", e); }
-        }
         public static CookieContainer ImportCookiesFromIE()
         {
             var cookie = new CookieContainer();
@@ -75,6 +52,21 @@ namespace SunokoLibrary.Web.GooglePlus
             plusCookie = GetProtectedModeIECookieValue(targetUrl).Replace(';', ',');
             cookie.SetCookies(new Uri(targetUrl), plusCookie);
 
+            return cookie;
+        }
+        public static CookieContainer ImportCookiesFrom(ICookieGetter source)
+        {
+            var cookie = new CookieContainer();
+            Uri targetUrl;
+            CookieCollection plusCookie;
+
+            foreach (var target in new[] {
+                "https://plus.google.com", "https://accounts.google.com", "https://talkgadget.google.com" })
+            {
+                targetUrl = new Uri(target);
+                plusCookie = source.GetCookieCollection(targetUrl);
+                cookie.Add(plusCookie);
+            }
             return cookie;
         }
 
@@ -99,23 +91,32 @@ namespace SunokoLibrary.Web.GooglePlus
             int size = 512;
             StringBuilder strBuf = new StringBuilder(size);
 
-            if ((hResult = IEGetProtectedModeCookie(url, null, strBuf, ref size, INTERNET_COOKIE_HTTPONLY)) == 0)
-                return strBuf.ToString();
-            if ((uint)hResult != 0x8007007A)
-                Marshal.ThrowExceptionForHR(hResult);
-
-            //strBufの容量が取得値より足りない場合は容量を増やして再取得する
-            strBuf.Capacity = size;
-            if ((hResult = IEGetProtectedModeCookie(url, null, strBuf, ref size, INTERNET_COOKIE_HTTPONLY)) != 0)
-                Marshal.ThrowExceptionForHR(hResult);
-            return strBuf.ToString();
+            do
+            {
+                hResult = IEGetProtectedModeCookie(url, null, strBuf, ref size, INTERNET_COOKIE_HTTPONLY);
+                switch ((uint)hResult)
+                {
+                    case 0x00000000:
+                    case 0x80070103:
+                        return strBuf.ToString();
+                    case 0x8007007A:
+                        //strBufの容量が取得値より足りない場合は容量を増やして再取得する
+                        size *= 2;
+                        strBuf.Capacity = size;
+                        break;
+                    default:
+                        Marshal.ThrowExceptionForHR(hResult);
+                        break;
+                }
+            }
+            while (true);
         }
 
         const int INTERNET_COOKIE_HTTPONLY = 0x00002000;
         [DllImport("wininet.dll", SetLastError = true)]
-        static extern bool InternetGetCookieEx(string lpszURL, string lpszCookieName, StringBuilder lpszCookieData, ref int lpdwSize, int dwFlags, IntPtr lpReserved);
+        static extern bool InternetGetCookieEx([In]string lpszURL, [In]string lpszCookieName, [In, Out]StringBuilder lpszCookieData, [In, Out]ref int lpdwSize, [In]int dwFlags, [In]IntPtr lpReserved);
         [DllImport("ieframe.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        static extern int IEGetProtectedModeCookie(String lpszURL, String lpszCookieName, StringBuilder pszCookieData, ref int pcchCookieData, int dwFlags);
+        static extern int IEGetProtectedModeCookie([In]String lpszURL, [In]String lpszCookieName, [In, Out]StringBuilder pszCookieData, [In, Out]ref int pcchCookieData, [In]int dwFlags);
     }
 #endif
 }

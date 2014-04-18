@@ -100,7 +100,7 @@ namespace UnitTests.Web.GooglePlus
         {
             return Task.FromResult(Tuple.Create(
                 new[] {
-                    new NotificationDataWithActivity(
+                    new ContentNotificationData(
                         GenerateActivityData(1, ActivityUpdateApiFlag.Notification, Enumerable.Range(1,3).ToArray(), "notify"),
                         NotificationsFilter.OtherPost, new[] {
                             new ChainingNotificationData("01", GenerateProfileData(2, ProfileUpdateApiFlag.Base, "notify"), DateTime.UtcNow),
