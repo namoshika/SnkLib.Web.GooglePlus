@@ -15,12 +15,12 @@ namespace SunokoLibrary.Web.GooglePlus
 
     public class PeopleContainer : AccessorBase
     {
-        public PeopleContainer(PlatformClient client)
+        public PeopleContainer(PlatformClient client, ICacheDictionary<string, ProfileCache, ProfileData> profileCacheStorage)
             : base(client)
         {
             _circles = new CircleInfo[] { };
             _yourCircle = new GooglePlus.YourCircle(client);
-            _profileCache = new Collection.Generic.CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, true, dt => new ProfileCache() { Value = dt });
+            _profileCache = profileCacheStorage;
             _followerCircle = new GroupContainer(client, "Follower");
             _blockCircle = new EditableGroupContainer(
                 client, "blocked", null,
@@ -36,18 +36,20 @@ namespace SunokoLibrary.Web.GooglePlus
             IsUpdatedIgnore = false;
             PublicCircle = new PostRange(Client, "anyone", "全員");
             ExtendedCircle = new PostRange(Client, "", "");
+
+            _profileCache.SetOwner(this);
         }
+        readonly ICacheDictionary<string, ProfileCache, ProfileData> _profileCache;
         readonly AsyncLocker _syncerUpdateCircleAndBlock = new AsyncLocker();
         readonly AsyncLocker _syncerUpdateFollowers = new AsyncLocker();
         readonly AsyncLocker _syncerUpdateIgnore = new AsyncLocker();
         readonly SemaphoreSlim _syncerGetProfileOfMe = new SemaphoreSlim(1, 1);
-        CircleInfo[] _circles;
-        YourCircle _yourCircle;
-        GroupContainer _followerCircle;
-        EditableGroupContainer _blockCircle;
-        EditableGroupContainer _ignoreCircle;
+        readonly YourCircle _yourCircle;
+        readonly GroupContainer _followerCircle;
+        readonly EditableGroupContainer _blockCircle;
+        readonly EditableGroupContainer _ignoreCircle;
         ProfileData _profileAboutMe;
-        ICacheDictionary<string, ProfileCache, ProfileData> _profileCache;
+        CircleInfo[] _circles;
 
         public CircleUpdateLevel CirclesAndBlockStatus { get; private set; }
         public bool IsUpdatedFollowers { get; private set; }
@@ -185,9 +187,9 @@ namespace SunokoLibrary.Web.GooglePlus
                 { throw new FailToOperationException<PeopleContainer>("GetProfileOfMeAsync()に失敗。ログインされてるユーザの情報の取得に失敗しました。", this, e); }
         }
         internal ProfileCache InternalGetProfileCache(string targetId)
-        { return _profileCache.Update(targetId, () => new ProfileData(targetId)); }
+        { return _profileCache.Update(this, targetId, () => new ProfileData(targetId)); }
         internal ProfileData InternalUpdateProfile(ProfileData newValue)
-        { return _profileCache.Update(newValue.Id, newValue).Value; }
+        { return _profileCache.Update(this, newValue.Id, newValue).Value; }
         internal ProfileInfo InternalGetAndUpdateProfile(ProfileData newValue)
         { return new ProfileInfo(Client, InternalUpdateProfile(newValue)); }
         

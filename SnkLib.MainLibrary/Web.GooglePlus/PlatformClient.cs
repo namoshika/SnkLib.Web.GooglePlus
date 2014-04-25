@@ -10,12 +10,16 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus
 {
+    using SunokoLibrary.Collection.Generic;
     using SunokoLibrary.Threading;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
     public class PlatformClient : IPlatformClient, IDisposable
     {
-        public PlatformClient(Uri plusBaseUrl, Uri talkBaseUrl, System.Net.CookieContainer cookie, IApiAccessor accessor)
+        public PlatformClient(Uri plusBaseUrl, Uri talkBaseUrl,
+            System.Net.CookieContainer cookie, IApiAccessor accessor,
+            ICacheDictionary<string, ProfileCache, ProfileData> profileCacheStorage,
+            CacheDictionary<string, ActivityCache, ActivityData> activityCacheStorage)
         {
             var handler = new System.Net.Http.HttpClientHandler() { CookieContainer = cookie };
             Cookies = cookie;
@@ -27,8 +31,8 @@ namespace SunokoLibrary.Web.GooglePlus
             StreamHttpClient = new System.Net.Http.HttpClient(handler);
             StreamHttpClient.Timeout = TimeSpan.FromMinutes(15);
             StreamHttpClient.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
-            People = new PeopleContainer(this);
-            Activity = new ActivityContainer(this);
+            People = new PeopleContainer(this, profileCacheStorage);
+            Activity = new ActivityContainer(this, activityCacheStorage);
             Notification = new NotificationContainer(this);
         }
         readonly AsyncLocker _updateHomeInitDataLocker = new AsyncLocker();
@@ -84,12 +88,17 @@ namespace SunokoLibrary.Web.GooglePlus
     }
     public class PlatformClientFactory
     {
-        public async Task<PlatformClient> Create(System.Net.CookieContainer cookie, int accountIndex, IApiAccessor accessor = null)
+        public async Task<PlatformClient> Create(System.Net.CookieContainer cookie,
+            int accountIndex, IApiAccessor accessor = null,
+            CacheDictionary<string, ProfileCache, ProfileData> profileCacheStorage = null,
+            CacheDictionary<string, ActivityCache, ActivityData> activityCacheStorage = null)
         {
             var accountPrefix = string.Format("u/{0}/", accountIndex);
             var client = new PlatformClient(
                 new Uri(PlusBaseUrl, accountPrefix),
-                new Uri(TalkBaseUrl, accountPrefix), cookie, accessor ?? new DefaultAccessor());
+                new Uri(TalkBaseUrl, accountPrefix), cookie, accessor ?? new DefaultAccessor(),
+                profileCacheStorage ?? new CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, true, dt => new ProfileCache() { Value = dt }),
+                activityCacheStorage ?? new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt }));
             try
             {
                 await client.UpdateHomeInitDataAsync(true);

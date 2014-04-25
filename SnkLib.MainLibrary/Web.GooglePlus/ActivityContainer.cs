@@ -17,12 +17,16 @@ namespace SunokoLibrary.Web.GooglePlus
 
     public class ActivityContainer : AccessorBase, IDisposable
     {
-        public ActivityContainer(PlatformClient client)
-            : base(client) { BeganTimeToBind = DateTime.MaxValue; }
+        public ActivityContainer(PlatformClient client, CacheDictionary<string, ActivityCache, ActivityData> activityCacheStorage)
+            : base(client)
+        {
+            _activityCache = activityCacheStorage;
+            _activityCache.SetOwner(this);
+            BeganTimeToBind = DateTime.MaxValue;
+        }
 
         readonly object _syncerStream = new object();
-        readonly ICacheDictionary<string, ActivityCache, ActivityData> _activityCache =
-            new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt });
+        readonly ICacheDictionary<string, ActivityCache, ActivityData> _activityCache;
         readonly Subject<object> _streamObserver = new Subject<object>();
         bool _isConnected;
         int _streamSessionRefCount;
@@ -113,9 +117,9 @@ namespace SunokoLibrary.Web.GooglePlus
                     _streamObserver.OnNext(item);
         }
         internal ActivityCache InternalGetActivityCache(string targetId)
-        { return _activityCache.Update(targetId, () => new ActivityData(targetId)); }
+        { return _activityCache.Update(this, targetId, () => new ActivityData(targetId)); }
         internal ActivityData InternalUpdateActivity(ActivityData newValue)
-        { return _activityCache.Update(newValue.Id, newValue).Value; }
+        { return _activityCache.Update(this, newValue.Id, newValue).Value; }
         internal ActivityInfo InternalGetAndUpdateActivity(ActivityData newValue)
         { return new ActivityInfo(Client, InternalUpdateActivity(newValue)); }
         object ConvertDataToInfo(object item)

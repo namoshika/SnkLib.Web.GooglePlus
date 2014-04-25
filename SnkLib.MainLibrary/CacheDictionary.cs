@@ -25,6 +25,7 @@ namespace SunokoLibrary.Collection.Generic
             _notEqualFunc = (Func<TValue, TValue, bool>)Expression.Lambda(
                 Expression.NotEqual(paramExpA, paramExpB), paramExpA, paramExpB).Compile();
         }
+        object _owner;
         bool _isAddMode;
         int _cacheSize, _cacheOutSize;
         Dictionary<TKey, TCache> _values = new Dictionary<TKey, TCache>();
@@ -34,8 +35,18 @@ namespace SunokoLibrary.Collection.Generic
         Func<TValue, TValue, bool> _notEqualFunc;
         Func<TValue, TCache> _cacheWrapGenerator;
 
-        public TCache Update(TKey key, TValue newValue)
+        public void SetOwner(object owner)
+        { _owner = owner; }
+        public TCache Update(object caller, TKey key, Func<TValue> substituteValueGenerator)
         {
+            lock (_values)
+                return _values.ContainsKey(key) ? Get(caller, key) : Update(caller, key, substituteValueGenerator());
+        }
+        public virtual TCache Update(object caller, TKey key, TValue newValue)
+        {
+            if (_owner != null && caller != _owner)
+                throw new ArgumentException("引数のcallerがコンストラクタで指定したownerと異なります。オブジェクトの使用者と所有者は統一してください。");
+
             TCache result;
             lock(_values)
                 if (_values.ContainsKey(key))
@@ -74,13 +85,10 @@ namespace SunokoLibrary.Collection.Generic
                 }
             return result;
         }
-        public TCache Update(TKey key, Func<TValue> substituteValueGenerator)
+        public virtual TCache Get(object caller, TKey key)
         {
-            lock (_values)
-                return _values.ContainsKey(key) ? Get(key) : Update(key, substituteValueGenerator());
-        }
-        public TCache Get(TKey key)
-        {
+            if (_owner != null && caller != _owner)
+                throw new ArgumentException("引数のcallerがコンストラクタで指定したownerと異なります。オブジェクトの使用者と所有者は統一してください。");
             lock (_values)
                 if (_values.ContainsKey(key))
                 {
@@ -102,9 +110,10 @@ namespace SunokoLibrary.Collection.Generic
     }
     public interface ICacheDictionary<TKey, TCache, TValue> where TCache : ICacheInfo<TValue>
     {
-        TCache Update(TKey key, TValue newValue);
-        TCache Update(TKey key, Func<TValue> substituteValueGenerator);
-        TCache Get(TKey key);
+        void SetOwner(object owner);
+        TCache Update(object caller, TKey key, TValue newValue);
+        TCache Update(object caller, TKey key, Func<TValue> substituteValueGenerator);
+        TCache Get(object caller, TKey key);
     }
     public interface ICacheInfo<T> { T Value { get; set; } }
 
