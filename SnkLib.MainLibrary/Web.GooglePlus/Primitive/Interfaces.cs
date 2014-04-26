@@ -54,6 +54,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         Task MarkAsReadAsync(NotificationData target, IPlatformClient client);
     }
 
+    /// <summary>APIから取得したデータの解析に問題が生じた時に使用されます。</summary>
+    public class InvalidDataException : Exception
+    {
+        public InvalidDataException(string message, object causeData, Exception innerException)
+            : base(message, innerException) { CauseData = causeData; }
+        public object CauseData { get; private set; }
+    }
     /// <summary>APIが所定の目的を果たせずエラーを返した時に使用されます。</summary>
     public class ApiErrorException : Exception
     {

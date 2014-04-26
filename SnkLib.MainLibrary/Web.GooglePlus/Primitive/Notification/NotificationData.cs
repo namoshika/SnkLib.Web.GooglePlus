@@ -34,7 +34,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     data = new HangoutNotificationData(source, plusBaseUrl);
                     break;
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidDataException("未知の通知データを検出。", source, null);
             }
             return data;
         }
@@ -69,6 +69,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     case "STREAM_PLUSONE_COMMENT":
                         Type |= NotificationFlag.PlusOne;
                         break;
+                    case "STREAM_POST_SHARED":
+                        Type |= NotificationFlag.DirectMessage;
+                        break;
+                    case "STREAM_RESHARE":
+                        Type |= NotificationFlag.Reshare;
+                        break;
                     case "HANGOUT_INVITE":
                         Type |= NotificationFlag.InviteHangout;
                         break;
@@ -90,12 +96,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         CameraSyncUploaded = 0x00000001,
         CircleAddBack = 0x00000002,
         CircleIn = 0x00000004,
-        Followup = 0x00000008,
-        InviteHangout = 0x00000010,
-        InviteCommunitiy = 0x00000020,
-        Mension = 0x00000040,
-        PlusOne = 0x00000080,
-        Response = 0x00000100,
-        TaggedImage = 0x00000200,
+        DirectMessage = 0x00000008,
+        Followup = 0x00000010,
+        InviteHangout = 0x00000020,
+        InviteCommunitiy = 0x00000040,
+        Mension = 0x00000080,
+        PlusOne = 0x00000100,
+        Reshare = 0x00000200,
+        Response = 0x00000400,
+        TaggedImage = 0x00000800,
     }
 }

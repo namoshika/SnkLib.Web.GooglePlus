@@ -223,10 +223,21 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     latestReadedItemNotifiedDate = ApiWrapper.GetDateTime((ulong)apiResponse[4] / 1000);
                 foreach (var item in apiResponse[1])
                 {
-                    length--;
-                    var info = NotificationData.Create(item, client.PlusBaseUrl);
-                    if (info != null)
-                        notificationList.Add(info);
+                    try
+                    {
+                        var data = NotificationData.Create(item, client.PlusBaseUrl);
+                        notificationList.Add(data);
+                        length--;
+                    }
+                    //処理の特性上、変なデータには何時でも遭遇し得る。
+                    //そのため、想定外のデータとの遭遇は想定するエラーとして黙殺する。
+                    catch (InvalidDataException)
+                    {
+                        if (System.Diagnostics.Debugger.IsAttached)
+                            System.Diagnostics.Debugger.Break();
+                        System.Diagnostics.Debug.WriteLine("未知のデータを取得: {0}", item);
+                        continue;
+                    }
                 }
             }
             while (length > 0 && continueToken != null);

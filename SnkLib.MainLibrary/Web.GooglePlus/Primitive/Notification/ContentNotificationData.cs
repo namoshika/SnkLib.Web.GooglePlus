@@ -50,6 +50,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     case "STREAM_PLUSONE_COMMENT":
                         type = NotificationFlag.PlusOne;
                         break;
+                    case "STREAM_POST_SHARED":
+                        type = NotificationFlag.DirectMessage;
+                        break;
+                    case "STREAM_RESHARE":
+                        type = NotificationFlag.Reshare;
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
