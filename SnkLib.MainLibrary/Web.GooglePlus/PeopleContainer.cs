@@ -9,7 +9,7 @@ using System.Reactive.Linq;
 
 namespace SunokoLibrary.Web.GooglePlus
 {
-    using SunokoLibrary.Collection.Generic;
+    using SunokoLibrary.Collections.Generic;
     using SunokoLibrary.Threading;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 

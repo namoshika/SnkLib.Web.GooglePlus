@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace SunokoLibrary.Collection.Generic
+namespace SunokoLibrary.Collections.Generic
 {
     public class CacheDictionary<TKey, TCache, TValue> : ICacheDictionary<TKey, TCache, TValue>
         where TCache : ICacheInfo<TValue>
