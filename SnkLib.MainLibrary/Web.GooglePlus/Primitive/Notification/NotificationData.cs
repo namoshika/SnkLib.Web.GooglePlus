@@ -85,7 +85,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         Type |= NotificationFlag.CameraSyncUploaded;
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new InvalidDataException("未知の通知データを検出。", source, null);
                 }
             }
         }

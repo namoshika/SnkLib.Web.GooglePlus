@@ -57,7 +57,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         type = NotificationFlag.Reshare;
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new InvalidDataException("未知の通知データが入力されました。", source, null);
                 }
                 actors.Add(new NotificationItemData(
                     new ProfileData((string)detailJson[1], (string)detailJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)detailJson[0]), loadedApiTypes: ProfileUpdateApiFlag.Base),
