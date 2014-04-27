@@ -13,6 +13,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public NotificationFlag Type { get; private set; }
         public string Id { get; private set; }
         public string RawNoticedDate { get; private set; }
+        public string Title { get; private set; }
+        public string Summary { get; private set; }
         public DateTime NoticedDate { get; private set; }
 
         public static NotificationData Create(JToken source, Uri plusBaseUrl)
@@ -42,10 +44,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             Id = (string)source[0];
             RawNoticedDate = ((ulong)source[9]).ToString();
+            Title = (string)source[4][0][0][2];
+            Summary = (string)source[4][0][0][3];
             NoticedDate = ApiWrapper.GetDateTime((ulong)source[9] / 1000);
 
             List<Tuple<JToken, string>> itemPairs = new List<Tuple<JToken, string>>();
-            foreach (var type in source[5].Select(item => (string)item[0]))
+            foreach (string type in source[8])
             {
                 switch (type)
                 {

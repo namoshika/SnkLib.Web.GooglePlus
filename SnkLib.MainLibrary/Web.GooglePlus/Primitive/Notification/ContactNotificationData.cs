@@ -26,16 +26,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     {
                         var tmpJson = item.Detail[0][1][0];
                         details.Add(new NotificationItemData(
-                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base),
-                            Type, ApiWrapper.GetDateTime((ulong)item.Detail[1] / 1000)));
+                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), Type, (string)tmpJson[1]));
                     }
                     break;
                 case 1:
                     {
                         var tmpJson = source[4][1][0][3];
                         details.Add(new NotificationItemData(
-                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base),
-                            Type, ApiWrapper.GetDateTime((ulong)source[4][0][1] / 1000)));
+                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), Type, (string)tmpJson[1]));
                         break;
                     }
                 default:

@@ -37,6 +37,7 @@ namespace SunokoLibrary.Web.GooglePlus
         public string GreetingText { get { return CheckFlag(_data.GreetingText, ProfileUpdateApiFlag.Base); } }
         public string NickName { get { return CheckFlag(_data.NickName, ProfileUpdateApiFlag.ProfileGet); } }
         public string IconImageUrl { get { return CheckFlag(_data.IconImageUrl, ProfileUpdateApiFlag.Base); } }
+        public Uri ProfileUrl { get { return new Uri(Client.PlusBaseUrl, _data.Id + "/"); } }
         public RelationType Relationship { get { return CheckFlag(_data.Relationship, ProfileUpdateApiFlag.ProfileGet).Value; } }
         public GenderType GenderType { get { return CheckFlag(_data.GenderType, ProfileUpdateApiFlag.ProfileGet).Value; } }
         public LookingFor LookingFor { get { return CheckFlag(_data.LookingFor, ProfileUpdateApiFlag.ProfileGet); } }

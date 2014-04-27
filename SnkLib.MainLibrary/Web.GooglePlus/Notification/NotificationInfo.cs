@@ -21,6 +21,8 @@ namespace SunokoLibrary.Web.GooglePlus
         NotificationInfoContainer _container;
 
         public string Id { get { return _data.Id; } }
+        public string Title { get { return _data.Title; } }
+        public string Summary { get { return _data.Summary; } }
         public NotificationFlag Type { get { return _data.Type; } }
         public DateTime NoticedDate { get { return _data.NoticedDate; } }
         public async Task MarkAsReadAsync()

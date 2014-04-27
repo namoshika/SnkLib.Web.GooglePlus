@@ -15,6 +15,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         protected override void ParseTemplate(JToken source, Uri plusBaseUrl)
         {
             base.ParseTemplate(source, plusBaseUrl);
+
+            //通知の発生地点となるActivityを抽出
             var activityJson = source[4][1][0];
             var activityId = (string)source[6].First(token => (int)token[0] == 1)[1];
             var activityText = (string)activityJson[1];
@@ -27,14 +29,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 activityId, null, activityText, null, status: PostStatusType.First, owner: activityActor,
                 updaterTypes: ActivityUpdateApiFlag.Notification);
 
-            var detailDatas = source[4][1][1];
+            //通知の発生に関わったメンバーを抽出
+            var actorDict = source[4][0][0][1]
+                .Select(item => new ProfileData((string)item[1], (string)item[2], ApiAccessorUtility.ConvertReplasableUrl((string)item[0]), loadedApiTypes: ProfileUpdateApiFlag.Base))
+                .ToDictionary(item => item.Id);
             var actors = new List<NotificationItemData>();
-            foreach (var item in detailDatas
-                .Select((item, idx) => new { Type = (string)source[5][idx][0], Detail = item }))
+            foreach (var item in source[5].Select(item => (string)item[1]))
             {
-                var detailJson = item.Detail[0][1][0];
+                var datas = item.Split(':');
                 NotificationFlag type;
-                switch ((string)item.Type)
+                switch (datas[1])
                 {
                     case "STREAM_COMMENT_NEW":
                         type = NotificationFlag.Response;
@@ -59,9 +63,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     default:
                         throw new InvalidDataException("未知の通知データが入力されました。", source, null);
                 }
-                actors.Add(new NotificationItemData(
-                    new ProfileData((string)detailJson[1], (string)detailJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)detailJson[0]), loadedApiTypes: ProfileUpdateApiFlag.Base),
-                    type, ApiWrapper.GetDateTime((ulong)item.Detail[1] / 1000)));
+                actors.Add(new NotificationItemData(actorDict[datas[0]], type, item));
             }
             LogItems = actors.ToArray();
         }

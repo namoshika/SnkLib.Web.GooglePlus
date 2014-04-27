@@ -26,11 +26,27 @@ namespace SunokoLibrary.Web.GooglePlus
         internal override void Update(NotificationData data)
         {
             base.Update(data);
-            var newItems = ((SocialNotificationData)data).LogItems
-                .TakeWhile(dt => dt.NoticeDate > ActionLogs.First().NoticedDate)
-                .Reverse().ToArray();
-            foreach (var item in newItems)
-                _actionLogs.Insert(0, new NotificationItemInfo(item, Client));
+
+            //新しい通知を追加し、キープされた通知を再配置する
+            var newDatas = ((SocialNotificationData)data).LogItems;
+            var oldItemInfo = _actionLogs;
+            var updatedDatas = (from nwItm in newDatas
+                     join oldItm in oldItemInfo on nwItm.RawData equals oldItm.RawData into nwOldPair
+                     from kpdItm in nwOldPair.DefaultIfEmpty()
+                     select new { NewItemData = nwItm, OldItemInfo = kpdItm }).ToArray();
+            foreach (var item in updatedDatas.Select((obj, idx) => new { Index = idx, Result = obj }))
+                if (item.Result.OldItemInfo == null)
+                    _actionLogs.Insert(item.Index, new NotificationItemInfo(item.Result.NewItemData, Client));
+                else
+                {
+                    var oldIdx = 0;
+                    if ((oldIdx = _actionLogs.IndexOf(item.Result.OldItemInfo)) >= 0 && item.Index != oldIdx)
+                        _actionLogs.Move(oldIdx, item.Index);
+                }
+            //古い通知を削除
+            for (var i = updatedDatas.Length; i < _actionLogs.Count; i++)
+                _actionLogs.RemoveAt(i);
+
             if (Actor.Id != _actionLogs.First().Actor.Id)
                 Actor = Client.People.InternalGetAndUpdateProfile(((SocialNotificationData)data).Actor);
         }
@@ -45,8 +61,8 @@ namespace SunokoLibrary.Web.GooglePlus
         }
         NotificationItemData _data;
 
+        public string RawData { get { return _data.RawData; } }
         public NotificationFlag Type { get { return _data.Type; } }
-        public DateTime NoticedDate { get { return _data.NoticeDate; } }
         public ProfileInfo Actor { get; private set; }
     }
 }

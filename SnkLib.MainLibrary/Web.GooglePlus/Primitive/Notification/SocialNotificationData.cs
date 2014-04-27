@@ -15,14 +15,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     }
     public class NotificationItemData
     {
-        public NotificationItemData(ProfileData actor, NotificationFlag type, DateTime noticeDate)
+        public NotificationItemData(ProfileData actor, NotificationFlag type, string rawData)
         {
             Actor = actor;
             Type = type;
-            NoticeDate = noticeDate;
+            RawData = rawData;
         }
         public ProfileData Actor { get; private set; }
         public NotificationFlag Type { get; private set; }
-        public DateTime NoticeDate { get; private set; }
+        public string RawData { get; private set; }
     }
 }
