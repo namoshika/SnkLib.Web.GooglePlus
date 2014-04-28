@@ -9,12 +9,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class PhotoNotificationData : NotificationData
     {
-        public PhotoNotificationData(JToken source, Uri plusBaseUrl) : base(source, plusBaseUrl) { }
+        public PhotoNotificationData(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags) : base(source, plusBaseUrl, typeFlags) { }
         public Uri LinkUrl { get; private set; }
         public string[] ImagesUrl { get; private set; }
-        protected override void ParseTemplate(JToken source, Uri plusBaseUrl)
+        protected override void ParseTemplate(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags)
         {
-            base.ParseTemplate(source, plusBaseUrl);
+            base.ParseTemplate(source, plusBaseUrl, typeFlags);
             var imgUrls = new List<string>();
             var tmp = source[4][1][0];
             var imgDatas = tmp[2];

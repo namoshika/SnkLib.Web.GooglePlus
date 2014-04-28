@@ -9,7 +9,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class SocialNotificationData : NotificationData
     {
-        public SocialNotificationData(JToken source, Uri plusBaseUrl) : base(source, plusBaseUrl) { }
+        public SocialNotificationData(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags) : base(source, plusBaseUrl, typeFlags) { }
         public ProfileData Actor { get { return LogItems.First().Actor; } }
         public NotificationItemData[] LogItems { get; protected set; }
     }

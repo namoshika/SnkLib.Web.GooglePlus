@@ -9,10 +9,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class ContactNotificationData : SocialNotificationData
     {
-        public ContactNotificationData(JToken source, Uri plusBaseUrl) : base(source, plusBaseUrl) { }
-        protected override void ParseTemplate(JToken source, Uri plusBaseUrl)
+        public ContactNotificationData(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags) : base(source, plusBaseUrl, typeFlags) { }
+        protected override void ParseTemplate(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags)
         {
-            base.ParseTemplate(source, plusBaseUrl);
+            base.ParseTemplate(source, plusBaseUrl, typeFlags);
             var details = new List<NotificationItemData>();
             switch (Type == NotificationFlag.CircleAddBack ? 1
                 : Type == NotificationFlag.InviteCommunitiy ? 0
