@@ -482,9 +482,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
                         //clid, gsidを取得する
                         tokenSource.Token.ThrowIfCancellationRequested();
-                        var vals = LoadNotifierClient(normalClient, talkBaseUrl, checkTargetCookies, pvtVal).Result;
-                        clidVal = (string)vals["clid"];
-                        gsidVal = (string)vals["gsessionid"];
+                        var vals = LoadNotifierClient(normalClient, talkBaseUrl, checkTargetCookies, pvtVal).Result["ds:4"][0];
+                        clidVal = (string)vals[7];
+                        gsidVal = (string)vals[3];
 
                         //sid値を取得する
                         tokenSource.Token.ThrowIfCancellationRequested();
@@ -664,7 +664,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             await PostStringAsync(client, blockUrl, new FormUrlEncodedContent(postVals));
         }
         //htmlパース
-        public static async Task<Dictionary<string, string>> LoadNotifierClient(HttpClient client, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
+        public static async Task<Dictionary<string, JToken>> LoadNotifierClient(HttpClient client, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
         {
             var stime = GetUnixTime(DateTime.Now);
             var xpcUrl = string.Format("{{\"cn\":\"rqlvmh\",\"tp\":1,\"ifrid\":\"gtn-roster-iframe-id\",\"pu\":\"{0}\"}}", new Uri(talkBaseUrl, "talkgadget/_/").AbsoluteUri);
@@ -706,38 +706,18 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             //    ? url : await WrapTalkGadgetAuthUrl(url);
 
             var nClientHtm = await GetStringAsync(client, url);
-            var bgnIdx = nClientHtm.IndexOf("\"https://talkgadget.google.com/");
-            var endIdx = nClientHtm.IndexOf("gtn-roster-iframe-id\"", bgnIdx + 1);
-            var prms = nClientHtm.Substring(bgnIdx, endIdx - bgnIdx);
-            var match = System.Text.RegularExpressions.Regex.Match(prms, "\"([^\"]+)\"");
-
-            string clid = null;
-            string gsessionid = null;
-            for (var i = 0; match.Success; i++)
+            var match = System.Text.RegularExpressions.Regex.Match(nClientHtm, "AF_initDataCallback\\((?<json>\\{key:[^;]+\\})\\);");
+            var resJson = new Dictionary<string, JToken>();
+            while (match.Success)
             {
-                switch (i)
-                {
-                    case 2:
-                        clid = match.Groups[1].Value;
-                        break;
-                    case 4:
-                        gsessionid = match.Groups[1].Value;
-                        break;
-                }
-                if (i < 4)
-                    match = match.NextMatch();
-                else
-                    break;
+                var jsonTxt = match.Groups["json"].Value;
+                match = match.NextMatch();
+                if (jsonTxt.Contains("data:function()"))
+                    continue;
+                var json = JContainer.Parse(ConvertIntoValidJson(jsonTxt));
+                resJson.Add((string)json["key"], json["data"]);
             }
-
-            if (string.IsNullOrEmpty(clid) || string.IsNullOrEmpty(gsessionid))
-                throw new ApiErrorException("clid, gsessionidの読み込みに失敗しました。", ErrorType.UnknownError, url, null, null, null);
-            else
-                return new Dictionary<string, string>()
-                {
-                    { "clid", clid },
-                    { "gsessionid", gsessionid}
-                };
+            return resJson;
         }
         public static async Task<Dictionary<int, JToken>> LoadHomeInitData(HttpClient client, Uri plusBaseUrl)
         {
