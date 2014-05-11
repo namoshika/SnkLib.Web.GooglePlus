@@ -106,6 +106,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 case "PHOTOS_CAMERASYNC_UPLOADED":
                     type = NotificationFlag.CameraSyncUploaded;
                     break;
+                case "PHOTOS_NEW_PHOTO_ADDED":
+                    type = NotificationFlag.NewPhotosAdded;
+                    break;
                 default:
                     throw new InvalidDataException("未知の通知データを検出。", typeTxt, null);
             }
@@ -123,10 +126,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         InviteHangout = 0x00000020,
         InviteCommunitiy = 0x00000040,
         Mension = 0x00000080,
-        SubscriptionCommunitiy = 0x00000100,
-        PlusOne = 0x00000200,
-        Reshare = 0x00000400,
-        Response = 0x00000800,
-        TaggedImage = 0x00001000,
+        NewPhotosAdded = 0x00000100,
+        SubscriptionCommunitiy = 0x00000200,
+        PlusOne = 0x00000400,
+        Reshare = 0x00000800,
+        Response = 0x00001000,
+        TaggedImage = 0x00002000,
     }
 }
