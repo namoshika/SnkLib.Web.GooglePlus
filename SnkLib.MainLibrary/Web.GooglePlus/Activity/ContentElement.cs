@@ -118,7 +118,7 @@ namespace SunokoLibrary.Web.GooglePlus
                             nextReadIdx = Math.Max(nextReadIdx + 1, contentHtml.IndexOf('>', idx + 2) + 1);
                             break;
                         default:
-                            startIdx = idx + 3;
+                            startIdx = contentHtml.IndexOf('>', idx + 1) + 1;
                             var closeEleIdx = contentHtml.IndexOf("</", startIdx);
                             var otherStartEleIdx = contentHtml.IndexOf("<", startIdx);
                             if (closeEleIdx == otherStartEleIdx)
@@ -142,7 +142,7 @@ namespace SunokoLibrary.Web.GooglePlus
                                         blocks.Peek().Add(new StyleElement(StyleType.Unknown, elements));
                                         break;
                                 }
-                                nextReadIdx = closeEleIdx + 4;
+                                nextReadIdx = contentHtml.IndexOf('>', closeEleIdx + 1) + 1;
                             }
                             else
                             {
