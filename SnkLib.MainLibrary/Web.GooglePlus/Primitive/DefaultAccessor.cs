@@ -34,9 +34,45 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         { return ApiWrapper.ConnectToServiceLoginAuth(client.NormalHttpClient, client.PlusBaseUrl, client.Cookies, email, password); }
         public async Task<InitData> GetInitDataAsync(IPlatformClient client)
         {
+            var plusPg = await Primitive.ApiWrapper.LoadHomeInitData(client.NormalHttpClient, client.PlusBaseUrl);
+
+            //apiのロケールやバージョン類を取得
+            string buildLabel = null, lang = null, afsid = null;
+            var matches = System.Text.RegularExpressions.Regex.Matches(plusPg, "(?<valName>OZ_\\w*) ?= ?(?:'|\")(?<value>[^'\"]+)(?:'|\")");
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                System.Diagnostics.Debug.WriteLineIf(match.Groups["valName"].Value == "OZ_buildLabel", match.Groups["value"].Value);
+                switch (match.Groups["valName"].Value)
+                {
+                    case "OZ_buildLabel":
+                        buildLabel = match.Groups["value"].Value;
+                        break;
+                    case "OZ_lang":
+                        lang = match.Groups["value"].Value;
+                        break;
+                    case "OZ_afsid":
+                        afsid = match.Groups["value"].Value;
+                        break;
+                }
+            }
+            if (new[] { buildLabel, lang, afsid }.Any(str => str == null))
+                throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, new Uri("https://plus.google.com"), null, null, null);
+
+            //api呼び出し用のパラメータ類を取得
+            matches = System.Text.RegularExpressions.Regex.Matches(plusPg, "\\((?<json>\\{\\s*key\\s*:(?:\"(?:\\\\\"|[^\"])*\"|[^;])*\\})\\);");
+            var hmIntDt = new Dictionary<object, JToken>();
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                var txt = match.Groups["json"].Value;
+                //移行期のマルチタイプ対策
+                if (txt.Trim('{', '}').Split(',').Select(itm => itm.Trim())
+                       .Any(itm => itm.IndexOf("data:function(){", 0, Math.Min(itm.Length, 16)) >= 0))
+                    continue;
+                var json = JToken.Parse(ApiWrapper.ConvertIntoValidJson(txt));
+                hmIntDt.Add(int.Parse((string)json["key"]), json["data"]);
+            }
             try
             {
-                var hmIntDt = await Primitive.ApiWrapper.LoadHomeInitData(client.NormalHttpClient, client.PlusBaseUrl);
                 var atVal = (string)hmIntDt[1][15];
                 var pvtVal = (string)hmIntDt[1][28];
                 var eJxVal = (string)hmIntDt[161][1][1];
@@ -45,9 +81,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     .ToArray();
                 var latestActivities = hmIntDt[161][1][7]
                     .Where(item => (string)item[0] == "1002")
-                    .Select(jsonItem => GenerateActivityData(jsonItem[1]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
+                    .Select(jsonItem => GenerateActivityData(jsonItem[6]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
                     .ToArray();
-                return new InitData(atVal, pvtVal, eJxVal, circleInfos, latestActivities); ;
+                return new InitData(atVal, pvtVal, eJxVal, buildLabel, lang, afsid, circleInfos, latestActivities); ;
             }
             catch (KeyNotFoundException e)
             { throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, new Uri("https://plus.google.com"), null, null, e); }

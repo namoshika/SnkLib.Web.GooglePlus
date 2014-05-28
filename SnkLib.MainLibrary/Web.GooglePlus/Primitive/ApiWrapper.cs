@@ -719,25 +719,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
             return resJson;
         }
-        public static async Task<Dictionary<int, JToken>> LoadHomeInitData(HttpClient client, Uri plusBaseUrl)
-        {
-            var plusPg = await GetStringAsync(client, plusBaseUrl);
-            var matches = System.Text.RegularExpressions.Regex.Matches(plusPg, "\\((?<json>\\{\\s*key\\s*:(?:\"(?:\\\\\"|[^\"])*\"|[^;])*\\})\\);");
-            var initDtQ = new Dictionary<int, JToken>();
-            foreach (System.Text.RegularExpressions.Match match in matches)
-            {
-                var txt = match.Groups["json"].Value;
-                //移行期のマルチタイプ対策
-                if (txt.Contains(", isError:  false , data:function(){return "))
-                {
-                    txt = txt.Replace(", isError:  false , data:function(){return ", ", isError:  false , data: ");
-                    txt = txt.Substring(0, txt.LastIndexOf('}'));
-                }
-                var json = JToken.Parse(ConvertIntoValidJson(txt));
-                initDtQ.Add(int.Parse((string)json["key"]), json["data"]);
-            }
-            return initDtQ;
-        }
+        public static async Task<string> LoadHomeInitData(HttpClient client, Uri plusBaseUrl)
+        { return await GetStringAsync(client, plusBaseUrl); }
         public static async Task<string> LoadListAccounts(HttpClient client)
         {
             var accountListUrl = new Uri("https://accounts.google.com/b/0/ListAccounts?listPages=0&origin=https%3A%2F%2Fplus.google.com");
