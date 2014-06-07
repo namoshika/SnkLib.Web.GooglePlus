@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class DataBase
+    public abstract class CoreData
     {
         protected static TResult Merge<T, TResult>(T baseData, T data, Func<T, TResult> accessor, bool enableAdd = false)
         {
@@ -35,4 +35,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             return func;
         }
     }
+    public class StubableAttribute : Attribute { }
+    public class IdentificationAttribute : Attribute { }
 }

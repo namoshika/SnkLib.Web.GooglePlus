@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,13 +34,27 @@ namespace SunokoLibrary.Web.GooglePlus
                 .Concat(new[] { Tuple.Create((PlatformClient)null, other.ToArray()) })
                 .ToArray();
         }
-        [System.Diagnostics.DebuggerStepThrough]
-        public static TResult CheckFlag<TResult>(TResult target, string checkTargetName, Func<bool> checkProc, string errorMessage)
+        public static TResult CheckFlag<TResult>(Func<TResult> targetGetter, Expression<Func<object>> targetNameGetter, Func<bool> checkProc, string errorMessage)
         {
             if (checkProc() == false)
+            {
+                string memberName;
+                switch (targetNameGetter.Body.NodeType)
+                {
+                    case ExpressionType.Convert:
+                        memberName = ((MemberExpression)((UnaryExpression)targetNameGetter.Body).Operand).Member.Name;
+                        break;
+                    case ExpressionType.MemberAccess:
+                        memberName = ((MemberExpression)targetNameGetter.Body).Member.Name;
+                        break;
+                    default:
+                        throw new Exception();
+                }
                 throw new InvalidOperationException(
-                    string.Format("{0}プロパティが{1}状態で各プロパティを参照する事はできません。", checkTargetName, errorMessage));
-            return target;
+                    string.Format("{0}プロパティが{1}状態で各プロパティを参照する事はできません。",
+                    memberName, errorMessage));
+            }
+            return targetGetter();
         }
     }
     public class FailToOperationException : Exception

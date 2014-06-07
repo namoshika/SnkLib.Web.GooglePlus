@@ -23,24 +23,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     }
     public class AttachedAlbumData : AttachedBase
     {
-        public AttachedAlbumData(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
-        public override ContentType Type { get { return ContentType.Album; } }
-        public AlbumData Album { get; private set; }
-        public AttachedImageData[] Pictures { get; private set; }
-
-        protected override void ParseTemplate(JArray json)
+        public AttachedAlbumData(ContentType type, Uri linkUrl,
+            AlbumData album, AttachedImageData[] pictures, Uri plusBaseUrl)
+            : base(type, linkUrl)
         {
-            base.ParseTemplate(json);
-            ParseAlbum(json);
+            Album = album;
+            Pictures = pictures;
         }
-        protected void ParseAlbum(JArray json)
-        {
-            //アルバム
-            var albumTitle = (string)json[2];
-            var albumId = (string)json[37];
-            var ownerId = (string)json[26];
-            Album = new AlbumData(albumId, albumTitle, LinkUrl, owner: new ProfileData(ownerId), loadedApiTypes: AlbumUpdateApiFlag.Base);
-            Pictures = json[41].Select(item => ((AttachedImageData)Create((JArray)item, PlusBaseUrl))).ToArray();
-        }
+        public readonly AlbumData Album;
+        public readonly AttachedImageData[] Pictures;
     }
 }

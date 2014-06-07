@@ -9,18 +9,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class HangoutNotificationData : NotificationData
     {
-        public HangoutNotificationData(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags) : base(source, plusBaseUrl, typeFlags) { }
-        public Uri LinkUrl { get; private set; }
-        public ProfileData Actor { get; private set; }
-        protected override void ParseTemplate(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags)
+        public HangoutNotificationData(
+            NotificationFlag type, string id, string rawNoticedDate, string title, string summary,
+            Uri linkUrl, ProfileData actor, DateTime noticedDate)
+            : base(type, id, rawNoticedDate, title, summary, noticedDate)
         {
-            base.ParseTemplate(source, plusBaseUrl, typeFlags);
-            var tmp = source[4][0];
-            LinkUrl = new Uri((string)tmp[2][2]);
-            tmp = tmp[0][1][0];
-            Actor = new ProfileData(
-                (string)tmp[1], (string)tmp[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmp[0]),
-                AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base);
+            LinkUrl = linkUrl;
+            Actor = actor;
         }
+        public readonly Uri LinkUrl;
+        public readonly ProfileData Actor;
     }
 }

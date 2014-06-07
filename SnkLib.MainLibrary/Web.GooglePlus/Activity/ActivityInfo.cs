@@ -31,19 +31,19 @@ namespace SunokoLibrary.Web.GooglePlus
 
         public ActivityUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
         public string Id { get { return _data.Id; } }
-        public bool IsEditable { get { return CheckFlag(_data.IsEditable, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
-        public int CommentLength { get { return CheckFlag(_data.CommentLength, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
-        public string Html { get { return CheckFlag(_data.Html, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public string Text { get { return CheckFlag(_data.Text, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public StyleElement ParsedText { get { return CheckFlag(_data.ParsedText, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public Uri PostUrl { get { return CheckFlag(_data.PostUrl, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public DateTime PostDate { get { return CheckFlag(_data.PostDate, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
-        public DateTime EditDate { get { return CheckFlag(_data.EditDate, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
-        public PostStatusType PostStatus { get { return CheckFlag(_data.PostStatus, "LoadedApiTypes", () => _data.LoadedApiTypes > ActivityUpdateApiFlag.Unloaded, "ActivityUpdateApiFlag.Unloadedである").Value; } }
-        public ProfileInfo PostUser { get { return CheckFlag(_postUser, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public IAttachable AttachedContent { get { return CheckFlag(_attachedContent, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public ServiceType ServiceType { get { return CheckFlag(_data.ServiceType, "PostStatus", () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        //public PlusOneInfo PlusOne { get { return CheckFlag(_data.AttachedContent, "PostStatus", _data.PostStatus | PostStatusType.First, PostStatusType.First); } }
+        public bool IsEditable { get { return CheckFlag(() => _data.IsEditable, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
+        public int CommentLength { get { return CheckFlag(() => _data.CommentLength, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
+        public string Html { get { return CheckFlag(() => _data.Html, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public string Text { get { return CheckFlag(() => _data.Text, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public StyleElement ParsedText { get { return CheckFlag(() => _data.ParsedText, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public Uri PostUrl { get { return CheckFlag(() => _data.PostUrl, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public DateTime PostDate { get { return CheckFlag(() => _data.PostDate, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
+        public DateTime EditDate { get { return CheckFlag(() => _data.EditDate, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない").Value; } }
+        public PostStatusType PostStatus { get { return CheckFlag(() => _data.PostStatus, () => LoadedApiTypes, () => _data.LoadedApiTypes > ActivityUpdateApiFlag.Unloaded, "ActivityUpdateApiFlag.Unloadedである").Value; } }
+        public ProfileInfo PostUser { get { return CheckFlag(() => _postUser, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public IAttachable AttachedContent { get { return CheckFlag(() => _attachedContent, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public ServiceType ServiceType { get { return CheckFlag(() => _data.ServiceType, () => PostStatus, () => _data.PostStatus >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        //public PlusOneInfo PlusOne { get { return CheckFlag(() => _data.AttachedContent, "PostStatus", _data.PostStatus | PostStatusType.First, PostStatusType.First); } }
 
         public IObservable<CommentInfo> GetComments(bool allowGetActivity, bool isInfinityEnum)
         {

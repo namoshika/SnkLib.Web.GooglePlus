@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class CommentData : DataBase
+    public class CommentData : CoreData
     {
-        public CommentData(
-            string commentId, string activityId, string html, DateTime commentDate, DateTime editDate, ProfileData owner, PostStatusType status)
+        public CommentData(string id, string activityId, string html, DateTime commentDate, DateTime editDate,
+            ProfileData owner, PostStatusType status)
         {
-            CommentId = commentId;
+            CommentId = id;
             ActivityId = activityId;
             Html = html;
             PostDate = commentDate;
@@ -19,14 +19,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Status = status;
             Owner = owner;
         }
-        public PostStatusType Status { get; protected set; }
-        public string CommentId { get; protected set; }
-        public string ActivityId { get; protected set; }
-        public string Html { get; private set; }
-        public DateTime PostDate { get; private set; }
-        public DateTime EditDate { get; private set; }
-        public ProfileData Owner { get; private set; }
-        //public PlusOneInfo PlusOne { get; private set; }
+        public readonly PostStatusType Status;
+        [Identification]
+        public readonly string CommentId;
+        [Identification]
+        public readonly string ActivityId;
+        public readonly string Html;
+        public readonly DateTime PostDate;
+        public readonly DateTime EditDate;
+        public readonly ProfileData Owner;
+        //public PlusOneInfo PlusOne;
 
         public static CommentData operator +(CommentData value1, CommentData value2)
         {

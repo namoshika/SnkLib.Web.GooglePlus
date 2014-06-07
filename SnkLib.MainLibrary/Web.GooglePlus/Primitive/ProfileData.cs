@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class ProfileData : DataBase
+    public class ProfileData : CoreData
     {
         public ProfileData(
-            string id = null, string name = null, string iconImageUrl = null, AccountStatus? status = null,
+            string id, string name = null, string iconImageUrl = null, AccountStatus? status = null,
             string firstName = null, string lastName = null, string introduction = null, string braggingRights = null,
             string occupation = null, string greetingText = null, string nickName = null, RelationType? relationship = null,
             GenderType? genderType = null, LookingFor lookingFor = null, EmploymentInfo[] employments = null,
@@ -22,7 +22,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             if (id == null)
                 throw new ArgumentNullException("ProfileDataの引数idをnullにする事はできません。");
-            if (System.Text.RegularExpressions.Regex.IsMatch(id, "^\\d+$") == false && status == AccountStatus.Active)
+            //idが数字になるならばProfileIdとして正しい。違うならばG+を始めていないアカウントのEMailAddressと見なす
+            //また、スタブモード時は先頭に"Id"の2文字が入るため、テストコード用に先頭2文字を省いてParse()する。
+            double tmp;
+            if (status == AccountStatus.Active && double.TryParse(id.Substring(2), out tmp) == false)
                 throw new ArgumentException("ProfileDataの引数idがメアド状態で引数statusをActiveにする事はできません。");
 
             LoadedApiTypes = loadedApiTypes;
@@ -38,7 +41,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             NickName = nickName;
             IconImageUrl = iconImageUrl;
             Relationship = relationship;
-            GenderType = genderType;
+            Gender = genderType;
             LookingFor = lookingFor;
             Employments = employments;
             Educations = educations;
@@ -54,32 +57,33 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             LastUpdateProfileGet = lastUpdateProfileGet ?? DateTime.MinValue;
         }
 
-        public DateTime LastUpdateLookupProfile{get;private set;}
-        public DateTime LastUpdateProfileGet { get; private set; }
-        public ProfileUpdateApiFlag LoadedApiTypes { get; private set; }
-        public AccountStatus? Status { get; private set; }
-        public string Id { get; private set; }
-        public string Name { get; private set; }
-        public string FirstName { get; private set; }
-        public string LastName { get; private set; }
-        public string Introduction { get; private set; }
-        public string BraggingRights { get; private set; }
-        public string Occupation { get; private set; }
-        public string GreetingText { get; private set; }
-        public string NickName { get; private set; }
-        public string IconImageUrl { get; private set; }
-        public RelationType? Relationship { get; private set; }
-        public GenderType? GenderType { get; private set; }
-        public LookingFor LookingFor { get; private set; }
-        public EmploymentInfo[] Employments { get; private set; }
-        public EducationInfo[] Educations { get; private set; }
-        public ContactInfo[] ContactsInHome { get; private set; }
-        public ContactInfo[] ContactsInWork { get; private set; }
-        public UrlInfo[] OtherProfileUrls { get; private set; }
-        public UrlInfo[] ContributeUrls { get; private set; }
-        public UrlInfo[] RecommendedUrls { get; private set; }
-        public string[] PlacesLived { get; private set; }
-        public string[] OtherNames { get; private set; }
+        public readonly DateTime LastUpdateLookupProfile;
+        public readonly DateTime LastUpdateProfileGet;
+        public readonly ProfileUpdateApiFlag LoadedApiTypes;
+        public readonly AccountStatus? Status;
+        [Identification]
+        public readonly string Id;
+        public readonly string Name;
+        public readonly string FirstName;
+        public readonly string LastName;
+        public readonly string Introduction;
+        public readonly string BraggingRights;
+        public readonly string Occupation;
+        public readonly string GreetingText;
+        public readonly string NickName;
+        public readonly string IconImageUrl;
+        public readonly RelationType? Relationship;
+        public readonly GenderType? Gender;
+        public readonly LookingFor LookingFor;
+        public readonly EmploymentInfo[] Employments;
+        public readonly EducationInfo[] Educations;
+        public readonly ContactInfo[] ContactsInHome;
+        public readonly ContactInfo[] ContactsInWork;
+        public readonly UrlInfo[] OtherProfileUrls;
+        public readonly UrlInfo[] ContributeUrls;
+        public readonly UrlInfo[] RecommendedUrls;
+        public readonly string[] PlacesLived;
+        public readonly string[] OtherNames;
 
         public static ProfileData operator +(ProfileData value1, ProfileData value2)
         {
@@ -102,7 +106,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     Merge(value1, value2, obj => obj.GreetingText),
                     Merge(value1, value2, obj => obj.NickName),
                     Merge(value1, value2, obj => obj.Relationship),
-                    Merge(value1, value2, obj => obj.GenderType),
+                    Merge(value1, value2, obj => obj.Gender),
                     Merge(value1, value2, obj => obj.LookingFor),
                     Merge(value1, value2, obj => obj.Employments),
                     Merge(value1, value2, obj => obj.Educations),

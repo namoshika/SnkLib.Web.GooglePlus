@@ -22,7 +22,7 @@ namespace SunokoLibrary.Web.GooglePlus
             return Task.Run(async () =>
                 {
                     accessor = accessor ?? new DefaultAccessor();
-                    return await accessor.GetAccountList(ImportCookiesFromIE());
+                    return await accessor.GetAccountListAsync(ImportCookiesFromIE());
                 });
         }
         public static Task<IPlatformClientBuilder[]> ImportFrom(this PlatformClientFactory factory, ICookieGetter source, IApiAccessor accessor = null)
@@ -30,7 +30,7 @@ namespace SunokoLibrary.Web.GooglePlus
             return Task.Run(async () =>
                 {
                     accessor = accessor ?? new DefaultAccessor();
-                    return await accessor.GetAccountList(ImportCookiesFrom(source));
+                    return await accessor.GetAccountListAsync(ImportCookiesFrom(source));
                 });
         }
 

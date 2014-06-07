@@ -59,11 +59,11 @@ namespace SunokoLibrary.Web.GooglePlus
         public EditableGroupContainer BlockList { get { return _blockCircle; } }
         public EditableGroupContainer IgnoreList { get { return _ignoreCircle; } }
         public GroupContainer FollowerList
-        { get { return CheckFlag(_followerCircle, "IsUpdatedFollowers", () => IsUpdatedFollowers, "trueでない"); } }
+        { get { return CheckFlag(() => _followerCircle, () => IsUpdatedFollowers, () => IsUpdatedFollowers, "trueでない"); } }
         public YourCircle YourCircle
-        { get { return CheckFlag(_yourCircle, "CirclesAndBlockStatus", () => CirclesAndBlockStatus >= CircleUpdateLevel.Loaded, "CircleUpdateLevel.Loaded以上でない"); } }
+        { get { return CheckFlag(() => _yourCircle, () => IsUpdatedFollowers, () => CirclesAndBlockStatus >= CircleUpdateLevel.Loaded, "CircleUpdateLevel.Loaded以上でない"); } }
         public ReadOnlyCollection<CircleInfo> Circles
-        { get { return CheckFlag(new ReadOnlyCollection<CircleInfo>(_circles), "CirclesAndBlockStatus", () => CirclesAndBlockStatus >= CircleUpdateLevel.Loaded, "CircleUpdateLevel.Loaded以上でない"); } }
+        { get { return CheckFlag(() => new ReadOnlyCollection<CircleInfo>(_circles), () => IsUpdatedFollowers, () => CirclesAndBlockStatus >= CircleUpdateLevel.Loaded, "CircleUpdateLevel.Loaded以上でない"); } }
 
         public ProfileInfo GetProfileOf(string plusId)
         {
@@ -290,12 +290,12 @@ namespace SunokoLibrary.Web.GooglePlus
         }
 
         public virtual IEnumerable<ProfileInfo> GetMembers()
-        { return CheckFlag(ProtectedMembers, "IsLoadedMember", () => IsLoadedMember, "trueでない"); }
+        { return CheckFlag(() => ProtectedMembers, () => IsLoadedMember, () => IsLoadedMember, "trueでない"); }
         public bool ContainsKey(string itemProfileId)
         {
             return CheckFlag(
-                _membersHashSet != null ? _membersHashSet.Contains(itemProfileId) : false,
-                "IsLoadedMember", () => IsLoadedMember, "trueでない");
+                () =>  _membersHashSet != null ? _membersHashSet.Contains(itemProfileId) : false,
+                () => IsLoadedMember, () => IsLoadedMember, "trueでない");
         }
         protected internal virtual void Refresh(ProfileInfo[] members)
         {

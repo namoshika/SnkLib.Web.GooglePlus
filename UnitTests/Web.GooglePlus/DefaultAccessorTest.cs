@@ -43,7 +43,6 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetInitDataTest()
         {
-            var target = new DefaultAccessor();
             var initDt = await target.GetInitDataAsync(clientStabA);
             Assert.IsNotNull(initDt.AtValue);
             Assert.IsNotNull(initDt.CircleInfos);
@@ -68,7 +67,7 @@ namespace UnitTests.Web.GooglePlus
             Assert.AreEqual("nick", result.NickName);
             Assert.AreEqual("https://lh4.googleusercontent.com/-TQ_A2CTpXVs/AAAAAAAAAAI/AAAAAAAAAAA/INNFU2-ceaU/$SIZE_SEGMENT/photo.jpg", result.IconImageUrl);
             Assert.AreEqual(RelationType.Widowed, result.Relationship);
-            Assert.AreEqual(GenderType.Other, result.GenderType);
+            Assert.AreEqual(GenderType.Other, result.Gender);
             Assert.AreEqual(true, result.LookingFor.Dating);
             Assert.AreEqual(false, result.LookingFor.Friends);
             Assert.AreEqual(true, result.LookingFor.Networking);
@@ -151,7 +150,6 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDataLiteTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetProfileLiteAsync("114365312488191371601", clientStabA);
             Assert.AreEqual("114365312488191371601", result.Id);
             Assert.AreEqual("Hiroki Saito", result.Name);
@@ -161,7 +159,6 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDataAboutMeTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetProfileAboutMeAsync(clientStabA);
             Assert.AreEqual("114365312488191371601", result.Id);
             Assert.AreEqual("Hiroki Saito", result.Name);
@@ -170,46 +167,38 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetCircleDatasTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetCircleDatasAsync(clientStabA);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetFollowingProfilesOfTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetFollowingProfilesAsync("114365312488191371601", clientStabA);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetFollowedProfilesOfTest()
         {
-            var target = new DefaultAccessor();
             var expect = 10;
             var result = await target.GetFollowedProfilesAsync("114365312488191371601", expect, clientStabA);
-            Assert.AreEqual(expect, result.Length);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDatasOfIgnoredTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetIgnoredProfilesAsync(clientStabA);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDatasOfFollowerTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetFollowingMeProfilesAsync(clientStabA);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetActivityDataOfTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetActivityAsync("z13njvfyswyrtnolr23vtrmrxyjpe1na504", clientStabA);
             Assert.AreEqual("テストアクティビティA", result.Text);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetActivityDatasOfTest()
         {
-            var target = new DefaultAccessor();
             var result = await target.GetActivitiesAsync("66f85d300cca1dcc", null, null, 20, clientStabA);
             result = await target.GetActivitiesAsync("66f85d300cca1dcc", null, result.Item2, 20, clientStabA);
             result = await target.GetActivitiesAsync(null, "114365312488191371601", null, 20, clientStabA);
@@ -218,8 +207,7 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetNotificationDatasTest()
         {
-            var target = new DefaultAccessor();
-            var result = await target.GetNotificationsAsync(true, 10, null, clientStabA);
+            var result = await target.GetNotificationsAsync(false, 10, null, clientStabA);
         }
         //[TestMethod, TestCategory("DefaultAccessor")]
         //public async Task GetStreamAttacherTest()

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Reactive.Linq;
 using System.Text;
@@ -9,12 +10,25 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    using SunokoLibrary.Web.GooglePlus.Primitive;
     using SunokoLibrary.Threading;
 
-    public class DefaultAccessor : IApiAccessor
+    public class DefaultAccessor : IApiAccessor, IDataFactoryManager
     {
-        public async Task<IPlatformClientBuilder[]> GetAccountList(CookieContainer cookies)
+        public DefaultAccessor()
+        {
+            ProfileFactory = new ProfileDataFactory(this);
+            ActivityFactory = new ActivityDataFactory(this);
+            CommentFactory = new CommentDataFactory(this);
+            AttachedFactory = new AttachedDataFactory(this);
+            NotificationFactory = new NotificationDataFactory(this);
+        }
+        public ProfileDataFactory ProfileFactory { get; private set; }
+        public ActivityDataFactory ActivityFactory { get; private set; }
+        public CommentDataFactory CommentFactory { get; private set; }
+        public AttachedDataFactory AttachedFactory { get; private set; }
+        public NotificationDataFactory NotificationFactory { get; private set; }
+
+        public async Task<IPlatformClientBuilder[]> GetAccountListAsync(CookieContainer cookies)
         {
             try
             {
@@ -81,7 +95,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     .ToArray();
                 var latestActivities = hmIntDt[161][1][7]
                     .Where(item => (string)item[0] == "1002")
-                    .Select(jsonItem => GenerateActivityData(jsonItem[6]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
+                    .Select(jsonItem => ActivityFactory.Generate(jsonItem[6]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
                     .ToArray();
                 return new InitData(atVal, pvtVal, eJxVal, buildLabel, lang, afsid, circleInfos, latestActivities); ;
             }
@@ -103,7 +117,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             foreach (var item in json[0][1][2])
             {
                 var profileId = (string)item[0].ElementAtOrDefault(2) ?? (string)item[0][0];
-                var profile = GenerateProfileData(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle);
+                var profile = ProfileFactory.Generate(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle);
                 var circleIdLst = new List<string>();
                 bool isBlockingId = false;
                 foreach (var cidItm in item[3])
@@ -126,7 +140,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             //フォローしているプロフィールのリストをつくる
             var circleWithoutBlock = resCircles.Where(dt => dt.Id != "15").ToArray();
             var resProfiles = new List<ProfileData>(json[0][1][2]
-                .Select(item => GenerateProfileData(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle)));
+                .Select(item => ProfileFactory.Generate(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle)));
 
             return Tuple.Create(resCircles.ToArray(), resProfiles.ToArray());
         }
@@ -134,13 +148,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToLookupPeople(client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue));
             var lastUpdateDate = DateTime.UtcNow;
-            return GenerateProfileData(json[0][1][2][0], lastUpdateDate, ProfileUpdateApiFlag.LookupProfile);
+            return ProfileFactory.Generate(json[0][1][2][0], lastUpdateDate, ProfileUpdateApiFlag.LookupProfile);
         }
         public async Task<ProfileData> GetProfileFullAsync(string profileId, IPlatformClient client)
         {
             var apiResponse = JToken.Parse(await ApiWrapper.ConnectToProfileGet(client.NormalHttpClient, client.PlusBaseUrl, profileId));
             var lastUpdateDate = DateTime.UtcNow;
-            return GenerateProfileData(apiResponse[0][1][1][2], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
+            return ProfileFactory.Generate(apiResponse[0][1][1][2], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData> GetProfileAboutMeAsync(IPlatformClient client)
         {
@@ -149,7 +163,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var lastUpdateDate = DateTime.UtcNow;
             if (id == null)
                 throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null, null, null, null);
-            return GenerateProfileData(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
+            return ProfileFactory.Generate(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData[]> GetFollowingProfilesAsync(string profileId, IPlatformClient client)
         {
@@ -215,7 +229,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<ActivityData> GetActivityAsync(string activityId, IPlatformClient client)
         {
-            return GenerateActivityData(
+            return ActivityFactory.Generate(
                 JToken.Parse(await ApiWrapper.ConnectToGetActivity(client.NormalHttpClient, client.PlusBaseUrl, activityId))[0][1],
                 ActivityUpdateApiFlag.GetActivity, client);
         }
@@ -233,7 +247,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 foreach (var item in apiResult[0])
                 {
                     oneSetCount++;
-                    activities.Add(GenerateActivityData(item, ActivityUpdateApiFlag.GetActivities, client));
+                    activities.Add(ActivityFactory.Generate(item, ActivityUpdateApiFlag.GetActivities, client));
                     if (++i >= length)
                         break;
                 }
@@ -261,7 +275,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 {
                     try
                     {
-                        var data = NotificationData.Create(item, client.PlusBaseUrl);
+                        var data = NotificationFactory.Generate(item, client.PlusBaseUrl);
                         notificationList.Add(data);
                         length--;
                     }
@@ -310,7 +324,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var imageUrl = (string)tempJson[0];
             var width = (int)tempJson[1];
             var height = (int)tempJson[2];
-            var isolateActivity = GenerateActivityData(json[10], ActivityUpdateApiFlag.GetActivity, client);
+            var isolateActivity = ActivityFactory.Generate(json[10], ActivityUpdateApiFlag.GetActivity, client);
             var tagArray = tempJson[6]
                 .Select(item =>
                     {
@@ -358,18 +372,151 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             var apiResponse = JToken.Parse(
                 await ApiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue));
-            return GenerateCommentData(apiResponse[0][1][1]);
+            return CommentFactory.Generate(apiResponse[0][1][1]);
         }
         public async Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client)
         {
             var apiResponse = JToken.Parse(
                 await ApiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue));
-            return GenerateCommentData(apiResponse[0][1][1]);
+            return CommentFactory.Generate(apiResponse[0][1][1]);
         }
         public Task DeleteComment(string commentId, IPlatformClient client)
         { return ApiWrapper.ConnectToDeleteComment(client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue); }
 
-        static ProfileData GenerateProfileData(JToken apiResponse, DateTime? lastUpdateDate, ProfileUpdateApiFlag apiType)
+        static AlbumData GenerateAlbumData(JToken albumApiResponse, JToken imageApiResponse, AlbumUpdateApiFlag loadedApiTypes, Uri plusBaseUrl)
+        {
+            var id = (string)albumApiResponse[5];
+            var name = (string)albumApiResponse[2];
+            var albumUrl = new Uri((string)albumApiResponse[8]);
+            var owner = new ProfileData(
+                (string)albumApiResponse[13][0], (string)albumApiResponse[13][3], ApiAccessorUtility.ConvertReplasableUrl((string)albumApiResponse[13][4]),
+                loadedApiTypes: ProfileUpdateApiFlag.Base);
+            var spltAry = ((string)albumApiResponse[7]).Split('E');
+            var createDate = ApiWrapper.GetDateTime((ulong)(double.Parse(spltAry[0]) * Math.Pow(10.0, (double.Parse(spltAry[1]) + 3))));
+            var attachedActivityId = (string)null;
+            var picLst = new List<ImageData>();
+            if (imageApiResponse != null)
+                foreach (var itemA in imageApiResponse)
+                    if (itemA != null)
+                        picLst.Add(GenerateImageData(itemA, ImageUpdateApiFlag.Base, plusBaseUrl));
+            var bookCovers = picLst.ToArray();
+
+            return new AlbumData(id, name, albumUrl, createDate, bookCovers, bookCovers, attachedActivityId, owner, loadedApiTypes);
+        }
+        static ImageData GenerateImageData(JToken apiResponse, ImageUpdateApiFlag loadedApiTypes, Uri plusBaseUrl)
+        {
+            var id = (string)apiResponse[5];
+            var name = (string)apiResponse[8];
+            var imageUrl = ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[2][0]);
+            var width = ((JArray)apiResponse[2]).Count >= 2 ? (int)apiResponse[2][1] : -1;
+            var height = ((JArray)apiResponse[2]).Count >= 3 ? (int)apiResponse[2][2] : -1;
+            var picasaUrl = new Uri((string)apiResponse[0]);
+            var createDate = ((JValue)apiResponse[15]).Value != null ? new Nullable<DateTime>(ApiWrapper.GetDateTime((ulong)apiResponse[15])) : null;
+            var owner = apiResponse[7].Type == JTokenType.Null ? null : new ProfileData(
+                (string)apiResponse[7][0], (string)apiResponse[7][3], ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[7][4]),
+                loadedApiTypes: ProfileUpdateApiFlag.Base);
+            var tags = new List<ImageTagData>();
+            foreach (var item in apiResponse[6])
+            {
+                var locationJson = item[3];
+                var leftTop = locationJson[0];
+                var rightBottom = locationJson[1];
+                var ownerJson = item[4];
+                var contentJson = item[1];
+                var tagOwner = new ProfileData(
+                    (string)ownerJson[0], (string)ownerJson[3], ApiAccessorUtility.ConvertReplasableUrl((string)ownerJson[4]),
+                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base);
+                if (contentJson[1] != null)
+                    tags.Add(new ImageMensionTagInfo(
+                        (int)leftTop[0], (int)leftTop[1], (int)rightBottom[0], (int)rightBottom[1],
+                        new ProfileData((string)contentJson[0], (string)contentJson[3], ApiAccessorUtility.ConvertReplasableUrl((string)contentJson[4])),
+                        tagOwner));
+                else
+                    tags.Add(new ImageTextTagInfo(
+                        (int)leftTop[0], (int)leftTop[1], (int)rightBottom[0],
+                        (int)rightBottom[1], (string)contentJson[3], tagOwner));
+            }
+            var attachedTags = tags.ToArray();
+            Uri linkUrl = null;
+            if (((JArray)apiResponse[64]).Count > 0)
+                linkUrl = new Uri(plusBaseUrl, (string)apiResponse[64][0][3]);
+
+            return new ImageData(loadedApiTypes, id, name, width, height, imageUrl, linkUrl, createDate, attachedTags, owner);
+        }
+        object GenerateDataFromStreamingApi(JToken rawItem, IPlatformClient client)
+        {
+            if (rawItem[1][1].Type != JTokenType.Array)
+                return rawItem;
+            var json = rawItem[1][1][1];
+            switch ((string)json[0])
+            {
+                case "tu":
+                    var shrItm = JArray.Parse(Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
+                    switch ((string)shrItm[0])
+                    {
+                        case "t.rtc":
+                            return CommentFactory.Generate(shrItm[1]);
+                        case "t.rtu":
+                            return ActivityFactory.Generate(shrItm[1], ActivityUpdateApiFlag.GetActivities, client);
+                        case "t.rtd":
+                            {
+                                if (shrItm.Count >= 3)
+                                {
+                                    var cid = (string)shrItm[2];
+                                    var aid = cid.Substring(0, cid.LastIndexOf('#'));
+                                    return (object)new CommentData(cid, aid, null, DateTime.MinValue, DateTime.MinValue, null, PostStatusType.Removed);
+                                }
+                                else
+                                    return (object)new ActivityData((string)shrItm[1], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivities);
+                            }
+                        default:
+                            System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");
+                            return rawItem;
+                    }
+                case "gb":
+                    var notificationItem = JArray.Parse(
+                        Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
+                    switch ((string)notificationItem[0])
+                    {
+                        case "gb.n.rtn":
+                            return new NotificationSignal(NotificationEventType.RaiseNew, (string)notificationItem[1]);
+                        case "gb.n.sup":
+                            return new NotificationSignal(NotificationEventType.ChangedAllRead, null);
+                        default:
+                            return notificationItem;
+                    }
+                default:
+                    return rawItem;
+            }
+        }
+        static string GetProfileId(JToken apiResponse, ProfileUpdateApiFlag apiType)
+        {
+            switch (apiType)
+            {
+                case ProfileUpdateApiFlag.LookupProfile:
+                case ProfileUpdateApiFlag.LookupCircle:
+                    {
+                        var profileJson = apiResponse[2];
+                        var status = ((JValue)profileJson[10]).Value != null ? AccountStatus.Active : AccountStatus.MailOnly;
+                        if (apiResponse[0].ElementAtOrDefault(2) == null && status != AccountStatus.MailOnly)
+                            throw new ArgumentException("引数json内にProfileInfo.Idの情報が含まれていないものを指定することはできません。");
+
+                        return (string)apiResponse[0].ElementAtOrDefault(2) ?? (string)apiResponse[0][0];
+                    }
+                case ProfileUpdateApiFlag.ProfileGet:
+                    {
+                        var tmpJsonA = apiResponse[4];
+                        return (string)apiResponse[30];
+                    }
+                default:
+                    throw new ArgumentException("引数apiTypeに予想外の値が代入されていました。");
+            }
+        }
+    }
+    public class ProfileDataFactory : DataFactory<ProfileData>
+    {
+        public ProfileDataFactory(IDataFactoryManager accessor) : base(accessor) { }
+        public ProfileData Generate(JToken apiResponse, DateTime? lastUpdateDate, ProfileUpdateApiFlag apiType)
         {
             switch (apiType)
             {
@@ -469,7 +616,20 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     throw new ArgumentException("引数apiTypeに予想外の値が代入されていました。");
             }
         }
-        static ActivityData GenerateActivityData(JToken apiResponse, ActivityUpdateApiFlag loadedApiTypes, IPlatformClient client)
+        public override void GetStubModeConfig(Dictionary<Expression<Func<ProfileData, object>>, object> config, string marker)
+        {
+            config.Add(dt => dt.Status, AccountStatus.Active);
+            config.Add(dt => dt.Status, AccountStatus.Active);
+            config.Add(dt => dt.LoadedApiTypes, ProfileUpdateApiFlag.Base);
+            config.Add(dt => dt.Relationship, RelationType.Engaged);
+            config.Add(dt => dt.Gender, GenderType.Other);
+            base.GetStubModeConfig(config, marker);
+        }
+    }
+    public class ActivityDataFactory : DataFactory<ActivityData>
+    {
+        public ActivityDataFactory(IDataFactoryManager accessor) : base(accessor) { }
+        public ActivityData Generate(JToken apiResponse, ActivityUpdateApiFlag loadedApiTypes, IPlatformClient client)
         {
             var updateDate = DateTime.UtcNow;
             var id = (string)apiResponse[8];
@@ -482,7 +642,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var isEditable = (double)apiResponse[56] == 1.0;
             var serviceType = new ServiceType((string)apiResponse[10]);
             var commentLength = (int)apiResponse[93];
-            var comments = apiResponse[7].Select(itm => GenerateCommentData(itm)).ToArray();
+            var comments = apiResponse[7].Select(itm => Manager.CommentFactory.Generate(itm)).ToArray();
 
             //初版かどうかの判定
             DateTime editDate;
@@ -501,7 +661,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             //添付されたコンテンツの判定
             //IAttachable atchCnt = null;
             IAttachable atchCnt = apiResponse[97].Type == JTokenType.Array && ((JArray)apiResponse[97]).Count > 0
-                ? AttachedBase.Create((JArray)apiResponse[97], client.PlusBaseUrl) : null;
+                ? Manager.AttachedFactory.Generate((JArray)apiResponse[97], client.PlusBaseUrl) : null;
             //再共有投稿の場合はデータの並びが一部異なるため、処理を分ける
             string html, text;
             StyleElement element;
@@ -515,11 +675,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 var attachedText = (string)apiResponse[20];
                 var attachedElement = ContentElement.ParseHtml(attachedHtml, client) ?? ContentElement.ParseJson(apiResponse[137]);
                 attachedContent = new AttachedPostData(
-                    (string)apiResponse[40], attachedHtml, attachedText, attachedElement,
+                    ContentType.Reshare, (string)apiResponse[40], attachedHtml, attachedText, attachedElement,
                     (string)apiResponse[44][1], (string)apiResponse[44][0],
                     ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[44][4]),
-                    new Uri(client.PlusBaseUrl, (string)apiResponse[77]),
-                    atchCnt);
+                    new Uri(client.PlusBaseUrl, (string)apiResponse[77]), atchCnt);
             }
             else
             {
@@ -534,7 +693,23 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 new ProfileData(postUserId, postUserName, postUserIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
                 updateDate, loadedApiTypes);
         }
-        static CommentData GenerateCommentData(JToken apiResponse)
+        public override void GetStubModeConfig(Dictionary<Expression<Func<ActivityData, object>>, object> config, string marker)
+        {
+            config.Add(dt => dt.LoadedApiTypes, ActivityUpdateApiFlag.Unloaded);
+            config.Add(dt => dt.IsEditable, false);
+            config.Add(dt => dt.PostDate, new DateTime(2014, 1, 23));
+            config.Add(dt => dt.EditDate, new DateTime(2014, 1, 24));
+            config.Add(dt => dt.GetActivityDate, new DateTime(2014, 1, 25));
+            config.Add(dt => dt.PostStatus, PostStatusType.First);
+            config.Add(dt => dt.ServiceType, ServiceType.Desktop);
+            config.Add(dt => dt.CommentLength, 8);
+            base.GetStubModeConfig(config, marker);
+        }
+    }
+    public class CommentDataFactory : DataFactory<CommentData>
+    {
+        public CommentDataFactory(IDataFactoryManager accessor) : base(accessor) { }
+        public CommentData Generate(JToken apiResponse)
         {
             var cid = (string)apiResponse[4];
             var aid = (string)apiResponse[7];
@@ -563,134 +738,408 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 new ProfileData(ownerId, ownerName, ownerIconUrl, loadedApiTypes: ProfileUpdateApiFlag.Base),
                 status);
         }
-        static AlbumData GenerateAlbumData(JToken albumApiResponse, JToken imageApiResponse, AlbumUpdateApiFlag loadedApiTypes, Uri plusBaseUrl)
+        public override void GetStubModeConfig(Dictionary<Expression<Func<CommentData, object>>, object> config, string marker)
         {
-            var id = (string)albumApiResponse[5];
-            var name = (string)albumApiResponse[2];
-            var albumUrl = new Uri((string)albumApiResponse[8]);
-            var owner = new ProfileData(
-                (string)albumApiResponse[13][0], (string)albumApiResponse[13][3], ApiAccessorUtility.ConvertReplasableUrl((string)albumApiResponse[13][4]),
-                loadedApiTypes: ProfileUpdateApiFlag.Base);
-            var spltAry = ((string)albumApiResponse[7]).Split('E');
-            var createDate = ApiWrapper.GetDateTime((ulong)(double.Parse(spltAry[0]) * Math.Pow(10.0, (double.Parse(spltAry[1]) + 3))));
-            var attachedActivityId = (string)null;
-            var picLst = new List<ImageData>();
-            if (imageApiResponse != null)
-                foreach (var itemA in imageApiResponse)
-                    if (itemA != null)
-                        picLst.Add(GenerateImageData(itemA, ImageUpdateApiFlag.Base, plusBaseUrl));
-            var bookCovers = picLst.ToArray();
-
-            return new AlbumData(id, name, albumUrl, createDate, bookCovers, bookCovers, attachedActivityId, owner, loadedApiTypes);
+            config.Add(dt => dt.PostDate, DateTime.UtcNow);
+            config.Add(dt => dt.EditDate, DateTime.MinValue);
+            config.Add(dt => dt.Status, PostStatusType.First);
+            base.GetStubModeConfig(config, marker);
         }
-        static ImageData GenerateImageData(JToken apiResponse, ImageUpdateApiFlag loadedApiTypes, Uri plusBaseUrl)
+    }
+    public class AttachedDataFactory : DataFactory<AttachedBase>
+    {
+        public AttachedDataFactory(IDataFactoryManager accessor) : base(accessor) { }
+        public virtual AttachedBase Generate(JArray attachedContentJson, Uri plusBaseUrl)
         {
-            var id = (string)apiResponse[5];
-            var name = (string)apiResponse[8];
-            var imageUrl = ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[2][0]);
-            var width = ((JArray)apiResponse[2]).Count >= 2 ? (int)apiResponse[2][1] : -1;
-            var height = ((JArray)apiResponse[2]).Count >= 3 ? (int)apiResponse[2][2] : -1;
-            var picasaUrl = new Uri((string)apiResponse[0]);
-            var createDate = ((JValue)apiResponse[15]).Value != null ? new Nullable<DateTime>(ApiWrapper.GetDateTime((ulong)apiResponse[15])) : null;
-            var owner = apiResponse[7].Type == JTokenType.Null ? null : new ProfileData(
-                (string)apiResponse[7][0], (string)apiResponse[7][3], ApiAccessorUtility.ConvertReplasableUrl((string)apiResponse[7][4]),
-                loadedApiTypes: ProfileUpdateApiFlag.Base);
-            var tags = new List<ImageTagData>();
-            foreach (var item in apiResponse[6])
+            AttachedBase content;
+            var prop = GetContentBody(attachedContentJson);
+            var body = (JArray)prop.Value;
+            switch (prop.Name)
             {
-                var locationJson = item[3];
-                var leftTop = locationJson[0];
-                var rightBottom = locationJson[1];
-                var ownerJson = item[4];
-                var contentJson = item[1];
-                var tagOwner = new ProfileData(
-                    (string)ownerJson[0], (string)ownerJson[3], ApiAccessorUtility.ConvertReplasableUrl((string)ownerJson[4]),
-                    status: AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base);
-                if (contentJson[1] != null)
-                    tags.Add(new ImageMensionTagInfo(
-                        (int)leftTop[0], (int)leftTop[1], (int)rightBottom[0], (int)rightBottom[1],
-                        new ProfileData((string)contentJson[0], (string)contentJson[3], ApiAccessorUtility.ConvertReplasableUrl((string)contentJson[4])),
-                        tagOwner));
-                else
-                    tags.Add(new ImageTextTagInfo(
-                        (int)leftTop[0], (int)leftTop[1], (int)rightBottom[0],
-                        (int)rightBottom[1], (string)contentJson[3], tagOwner));
+                case "40154698":
+                case "39748951":
+                case "42861421":
+                case "42397230":
+                    //リンク
+                    content = new AttachedLink(ContentType.Link,
+                        ParseTitle(body), ParseSummary(body), ParseLinkUrl(body, plusBaseUrl), ParseFaviconUrl(body),
+                        ParseOriginalThumbnailUrl(body), ParseThumbnailUrl(body), ParseThumbnailWidth(body),
+                        ParseThumbnailHeight(body));
+                    break;
+                case "41561070":
+                    //インタラクティブ
+                    content = new AttachedInteractiveLink(ContentType.InteractiveLink,
+                        ParseTitle(body), ParseSummary(body), ParseLinkUrl(body, plusBaseUrl), ParseProviderName(body),
+                        ParseProviderUrl(body), ParseProviderLogoUrl(body), ParseActionUrl(body), ParseLabel(body),
+                        ParseFaviconUrl(body), ParseOriginalThumbnailUrl(body), ParseThumbnailUrl(body),
+                        ParseThumbnailWidth(body), ParseThumbnailHeight(body), plusBaseUrl);
+                    break;
+                case "40655821":
+                    //写真
+                    content = new AttachedImageData(ContentType.Image,
+                        ParseTitle(body), ParseSummary(body), ParseLinkUrl(body, plusBaseUrl), ParseFaviconUrl(body),
+                        ParseOriginalThumbnailUrl(body), ParseThumbnailUrl(body), ParseThumbnailWidth(body),
+                        ParseThumbnailHeight(body), ParseImage(body, plusBaseUrl), ParseAlbum(body, plusBaseUrl),
+                        plusBaseUrl);
+                    break;
+                case "40842909":
+                    //アルバム
+                    content = new AttachedAlbumData(ContentType.Album,
+                        ParseLinkUrl(body, plusBaseUrl), ParseAlbum(body, plusBaseUrl),
+                        ParsePictures(body, plusBaseUrl), plusBaseUrl);
+                    break;
+                case "41186541":
+                    //youtube
+                    content = new AttachedYouTube(ContentType.YouTube,
+                        ParseTitle(body), ParseSummary(body), ParseLinkUrl(body, plusBaseUrl), ParseEmbedMovieUrl(body),
+                        ParseFaviconUrl(body), ParseOriginalThumbnailUrl(body), ParseThumbnailUrl(body),
+                        ParseThumbnailWidth(body), ParseThumbnailHeight(body), plusBaseUrl);
+                    break;
+                case "41359510":
+                    //現在地共有
+                    content = null;
+                    break;
+                default:
+                    content = null;
+                    System.Diagnostics.Debug.WriteLine(string.Format("未確認の添付コンテンツが発見されました。JSON:{0}", attachedContentJson));
+                    break;
             }
-            var attachedTags = tags.ToArray();
-            Uri linkUrl = null;
-            if (((JArray)apiResponse[64]).Count > 0)
-                linkUrl = new Uri(plusBaseUrl, (string)apiResponse[64][0][3]);
-
-            return new ImageData(loadedApiTypes, id, name, width, height, imageUrl, linkUrl, createDate, attachedTags, owner);
+            return content;
         }
-        static object GenerateDataFromStreamingApi(JToken rawItem, IPlatformClient client)
+        static JProperty GetContentBody(JArray attachedContentJson)
         {
-            if (rawItem[1][1].Type != JTokenType.Array)
-                return rawItem;
-            var json = rawItem[1][1][1];
-            switch ((string)json[0])
+            JObject json = (JObject)(
+                attachedContentJson.Count > 7 && attachedContentJson[7].Type == JTokenType.Object ? attachedContentJson[7] :
+                attachedContentJson.Count > 6 && attachedContentJson[6].Type == JTokenType.Object ? attachedContentJson[6] :
+                attachedContentJson.Count > 5 && attachedContentJson[5].Type == JTokenType.Object ? attachedContentJson[5] :
+                attachedContentJson.Count > 4 && attachedContentJson[4].Type == JTokenType.Object ? attachedContentJson[4] :
+                attachedContentJson.Count > 2 && attachedContentJson[2].Type == JTokenType.Object ? attachedContentJson[2] :
+                attachedContentJson.Count > 1 && attachedContentJson[1].Type == JTokenType.Object ? attachedContentJson[1] :
+                null);
+            if (json == null)
+                throw new Exception("添付コンテンツの読み取りに予想外のデータが入ってきました。");
+            var prop = json.Properties().First();
+            return prop;
+        }
+
+        //Base
+        static Uri ParseLinkUrl(JArray json, Uri plusBaseUrl)
+        {
+            string tmp;
+            return string.IsNullOrEmpty(tmp = (string)json[0])
+                ? null
+                : tmp[0] == '/' ? new Uri(plusBaseUrl, tmp) : new Uri(tmp);
+        }
+        //Link
+        static string ParseTitle(JArray json) { return (string)json[2]; }
+        static string ParseSummary(JArray json)
+        {
+            string tmp;
+            return string.IsNullOrEmpty(tmp = (string)json[3]) ? null : tmp;
+        }
+        static Uri ParseFaviconUrl(JArray json)
+        {
+            string tmp;
+            return string.IsNullOrEmpty(tmp = (string)json[6])
+                ? null : new Uri(ApiAccessorUtility.ComplementUrl(tmp, null));
+        }
+        static Uri ParseOriginalThumbnailUrl(JArray json)
+        {
+            var thumbJson = json[5].Type == JTokenType.Array ? (JArray)json[5] : null;
+            if (thumbJson == null)
+                return null;
+            return new Uri((string)json[1]);
+        }
+        static string ParseThumbnailUrl(JArray json)
+        {
+            var thumbJson = json[5].Type == JTokenType.Array ? (JArray)json[5] : null;
+            if (thumbJson == null)
+                return null;
+            return System.Text.RegularExpressions.Regex.Replace(
+                ApiAccessorUtility.ComplementUrl((string)thumbJson[0], null), "w\\d+-h\\d+(-[^-]+)*", "$SIZE_SEGMENT");
+        }
+        static int ParseThumbnailWidth(JArray json)
+        {
+            var thumbJson = json[5].Type == JTokenType.Array ? (JArray)json[5] : null;
+            if (thumbJson == null)
+                return -1;
+            return (int)thumbJson[1];
+        }
+        static int ParseThumbnailHeight(JArray json)
+        {
+            var thumbJson = json[5].Type == JTokenType.Array ? (JArray)json[5] : null;
+            if (thumbJson == null)
+                return -1;
+            return (int)thumbJson[2];
+        }
+        //Album
+        AttachedImageData[] ParsePictures(JArray json, Uri plusBaseUrl)
+        { return json[41].Select(item => ((AttachedImageData)Generate((JArray)item, plusBaseUrl))).ToArray(); }
+        static AlbumData ParseAlbum(JArray json, Uri plusBaseUrl)
+        {
+            //アルバム
+            var albumTitle = (string)json[2];
+            var albumId = (string)json[37];
+            var ownerId = (string)json[26];
+            return new AlbumData(albumId, albumTitle, ParseLinkUrl(json, plusBaseUrl), owner: new ProfileData(ownerId), loadedApiTypes: AlbumUpdateApiFlag.Base);
+        }
+        static ImageData ParseImage(JArray json, Uri plusBaseUrl)
+        {
+            return new ImageData(
+                ImageUpdateApiFlag.Base, (string)json[38], (string)json[2], (int)json[20], (int)json[21],
+                ApiAccessorUtility.ConvertReplasableUrl((string)json[1]), ParseLinkUrl(json, plusBaseUrl),
+                owner: new ProfileData((string)json[26], loadedApiTypes: ProfileUpdateApiFlag.Unloaded));
+        }
+        //Interactive
+        static string ParseProviderName(JArray json)
+        {
+            var workJson = (JArray)json[75];
+            if (json[77].Type == JTokenType.Array)
             {
-                case "tu":
-                    var shrItm = JArray.Parse(Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
-                    switch ((string)shrItm[0])
+                workJson = (JArray)json[77];
+                return (string)workJson[0];
+            }
+            else return null;
+        }
+        static Uri ParseProviderUrl(JArray json)
+        {
+            var workJson = (JArray)json[75];
+            if (json[77].Type == JTokenType.Array)
+            {
+                workJson = (JArray)json[77];
+                return new Uri((string)workJson[1]);
+            }
+            else return null;
+        }
+        static Uri ParseProviderLogoUrl(JArray json)
+        {
+            var workJson = (JArray)json[75];
+            if (json[77].Type == JTokenType.Array)
+            {
+                workJson = (JArray)json[77];
+                return new Uri((string)workJson[2]);
+            }
+            else return null;
+        }
+        static Uri ParseActionUrl(JArray json)
+        {
+            var workJson = (JArray)json[75];
+            return new Uri((string)workJson[0][3]);
+        }
+        static LabelType ParseLabel(JArray json)
+        {
+            var workJson = (JArray)json[75];
+            LabelType tmp;
+            var labelTypeStr = string.Join(string.Empty, ((string)workJson[2]).Split(' ').Select(str => str[0].ToString().ToUpper() + str.Substring(1)));
+            if (Enum.TryParse(labelTypeStr, out tmp) == false)
+                tmp = LabelType.Unknown;
+            return tmp;
+        }
+        //YouTube
+        static Uri ParseEmbedMovieUrl(JArray tmpJson)
+        { return tmpJson[65].Type == JTokenType.String ? new Uri((string)tmpJson[65]) : null; }
+    }
+    public class NotificationDataFactory : DataFactory<NotificationData>
+    {
+        public NotificationDataFactory(IDataFactoryManager accessor) : base(accessor) { }
+        public virtual NotificationData Generate(JToken source, Uri plusBaseUrl)
+        {
+            var id = (string)source[0];
+            var title = (string)source[4][0][0][2];
+            var summary = (string)source[4][0][0][3];
+            var rawNoticedDate = ((ulong)source[9]).ToString();
+            var noticedDate = ApiWrapper.GetDateTime((ulong)source[9] / 1000);
+            var type = default(NotificationFlag);
+            foreach (string typeTxt in source[8])
+                type |= ConvertFlags(typeTxt);
+
+            NotificationData data;
+            switch ((string)source[7])
+            {
+                case "gplus_circles":
+                    data = new SocialNotificationData(
+                        type, id, rawNoticedDate, title, summary,
+                        ParseActors(source, plusBaseUrl, type), noticedDate);
+                    break;
+                case "gplus_communities":
+                    //true: 招待通知であり、それ以外のフラグが立っていない場合、
+                    //false: 招待通知ではなく、購読フラグが立っている場合、
+                    //これらに該当しないデータが存在している場合は完全に予想外。
+                    if (type == NotificationFlag.InviteCommunitiy)
+                        data = new SocialNotificationData(
+                            type, id, rawNoticedDate, title, summary,
+                            ParseActors(source, plusBaseUrl, type), noticedDate);
+                    else if (type.HasFlag(NotificationFlag.InviteCommunitiy) == false && type.HasFlag(NotificationFlag.SubscriptionCommunitiy))
+                        data = new ContentNotificationData(
+                            type, id, rawNoticedDate, title, summary,
+                            ParseActivity(source, plusBaseUrl, type),
+                            ParseActors(source, plusBaseUrl, type), noticedDate);
+                    else
+                        throw new InvalidDataException("未知の通知データを検出。", source, null);
+                    break;
+                case "gplus_hangout":
+                    Uri hangoutLinkUrl;
+                    ProfileData hangoutInviter;
+                    ParseHangout(source, plusBaseUrl, type, out hangoutLinkUrl, out hangoutInviter);
+                    data = new HangoutNotificationData(
+                        type, id, rawNoticedDate, title, summary, hangoutLinkUrl, hangoutInviter, noticedDate);
+                    break;
+                case "gplus_stream":
+                    data = new ContentNotificationData(
+                        type, id, rawNoticedDate, title, summary,
+                        ParseActivity(source, plusBaseUrl, type),
+                        ParseActors(source, plusBaseUrl, type), noticedDate);
+                    break;
+                case "gplus_photos":
+                    Uri albumLinkUrl;
+                    string[] imageUrls;
+                    ParsePhoto(source, plusBaseUrl, type, out albumLinkUrl, out imageUrls);
+                    data = new PhotoNotificationData(
+                        type, id, rawNoticedDate, title, summary, albumLinkUrl, imageUrls, noticedDate);
+                    break;
+                default:
+                    throw new InvalidDataException("未知の通知データを検出。", source, null);
+            }
+            return data;
+        }
+
+        static NotificationItemData[] ParseActors(JToken source, Uri plusBaseUrl, NotificationFlag type)
+        {
+            var details = new List<NotificationItemData>();
+            switch (type == NotificationFlag.CircleAddBack ? 1
+                : type == NotificationFlag.InviteCommunitiy ? 0
+                : (int)source[2])
+            {
+                case 0:
+                case 2:
+                    var detailDatas = source[4][1][1];
+                    foreach (var item in detailDatas
+                        .Select((item, idx) => new { Type = (string)source[5][idx][0], Detail = item }))
                     {
-                        case "t.rtc":
-                            return GenerateCommentData(shrItm[1]);
-                        case "t.rtu":
-                            return GenerateActivityData(shrItm[1], ActivityUpdateApiFlag.GetActivities, client);
-                        case "t.rtd":
-                            {
-                                if (shrItm.Count >= 3)
-                                {
-                                    var cid = (string)shrItm[2];
-                                    var aid = cid.Substring(0, cid.LastIndexOf('#'));
-                                    return (object)new CommentData(cid, aid, null, DateTime.MinValue, DateTime.MinValue, null, PostStatusType.Removed);
-                                }
-                                else
-                                    return (object)new ActivityData((string)shrItm[1], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivities);
-                            }
-                        default:
-                            System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");
-                            return rawItem;
+                        var tmpJson = item.Detail[0][1][0];
+                        details.Add(new NotificationItemData(
+                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)tmpJson[1]));
                     }
-                case "gb":
-                    var notificationItem = JArray.Parse(
-                        Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
-                    switch ((string)notificationItem[0])
+                    break;
+                case 1:
                     {
-                        case "gb.n.rtn":
-                            return new NotificationSignal(NotificationEventType.RaiseNew, (string)notificationItem[1]);
-                        case "gb.n.sup":
-                            return new NotificationSignal(NotificationEventType.ChangedAllRead, null);
-                        default:
-                            return notificationItem;
+                        var tmpJson = source[4][1][0][3];
+                        details.Add(new NotificationItemData(
+                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)tmpJson[1]));
+                        break;
                     }
                 default:
-                    return rawItem;
+                    System.Diagnostics.Debug.WriteLine("通知JSONで未確認の値を確認(source[2]: {0})。", (int)source[2]);
+                    break;
             }
+            return details.ToArray();
         }
-        static string GetProfileId(JToken apiResponse, ProfileUpdateApiFlag apiType)
+        static ActivityData ParseActivity(JToken source, Uri plusBaseUrl, NotificationFlag type)
         {
-            switch (apiType)
-            {
-                case ProfileUpdateApiFlag.LookupProfile:
-                case ProfileUpdateApiFlag.LookupCircle:
-                    {
-                        var profileJson = apiResponse[2];
-                        var status = ((JValue)profileJson[10]).Value != null ? AccountStatus.Active : AccountStatus.MailOnly;
-                        if (apiResponse[0].ElementAtOrDefault(2) == null && status != AccountStatus.MailOnly)
-                            throw new ArgumentException("引数json内にProfileInfo.Idの情報が含まれていないものを指定することはできません。");
+            //通知の発生地点となるActivityを抽出
+            var activityJson = source[4][1][0];
+            var activityId = (string)source[6].First(token => (int)token[0] == 1)[1];
 
-                        return (string)apiResponse[0].ElementAtOrDefault(2) ?? (string)apiResponse[0][0];
-                    }
-                case ProfileUpdateApiFlag.ProfileGet:
-                    {
-                        var tmpJsonA = apiResponse[4];
-                        return (string)apiResponse[30];
-                    }
-                default:
-                    throw new ArgumentException("引数apiTypeに予想外の値が代入されていました。");
+            //コミュ新着通知の場合はActivity本体の情報がほとんど含まれない
+            if (type.HasFlag(NotificationFlag.SubscriptionCommunitiy))
+                return new ActivityData(activityId);
+            else
+            {
+                var activityText = (string)activityJson[1];
+                var profileJson = activityJson[3];
+                var activityActor = new ProfileData(
+                    (string)profileJson[1], (string)profileJson[2],
+                    ApiAccessorUtility.ConvertReplasableUrl((string)profileJson[0]),
+                    loadedApiTypes: ProfileUpdateApiFlag.Base);
+                return new ActivityData(
+                    activityId, null, activityText, null, status: PostStatusType.First, owner: activityActor,
+                    updaterTypes: ActivityUpdateApiFlag.Notification);
             }
         }
+        static void ParsePhoto(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags, out Uri linkUrl, out string[] imagesUrl)
+        {
+            var imgUrls = new List<string>();
+            var tmp = source[4][1][0];
+            var imgDatas = tmp[2];
+            linkUrl = new Uri((string)tmp[4][0][0][2]);
+            foreach (var item in imgDatas)
+                imgUrls.Add(ApiAccessorUtility.ConvertReplasableUrl((string)item[0][0]));
+            imagesUrl = imgUrls.ToArray();
+        }
+        static void ParseHangout(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags, out Uri linkUrl, out ProfileData actor)
+        {
+            var tmp = source[4][0];
+            linkUrl = new Uri((string)tmp[2][2]);
+            tmp = tmp[0][1][0];
+            actor = new ProfileData(
+                (string)tmp[1], (string)tmp[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmp[0]),
+                AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base);
+        }
+        static NotificationFlag ConvertFlags(string typeTxt)
+        {
+            NotificationFlag type;
+            switch (typeTxt)
+            {
+                case "CIRCLE_PERSONAL_ADD":
+                    type = NotificationFlag.CircleIn;
+                    break;
+                case "CIRCLE_RECIPROCATING_ADD":
+                    type = NotificationFlag.CircleAddBack;
+                    break;
+                case "HANGOUT_INVITE":
+                    type = NotificationFlag.InviteHangout;
+                    break;
+                case "STREAM_COMMENT_NEW":
+                    type = NotificationFlag.Response;
+                    break;
+                case "STREAM_COMMENT_FOLLOWUP":
+                    type = NotificationFlag.Followup;
+                    break;
+                case "STREAM_POST_AT_REPLY":
+                case "STREAM_COMMENT_AT_REPLY":
+                    type = NotificationFlag.Mension;
+                    break;
+                case "STREAM_PLUSONE_POST":
+                case "STREAM_PLUSONE_COMMENT":
+                    type = NotificationFlag.PlusOne;
+                    break;
+                case "STREAM_POST_SHARED":
+                    type = NotificationFlag.DirectMessage;
+                    break;
+                case "STREAM_RESHARE":
+                    type = NotificationFlag.Reshare;
+                    break;
+                case "SQUARE_SUBSCRIPTION":
+                    type = NotificationFlag.SubscriptionCommunitiy;
+                    break;
+                case "SQUARE_INVITE":
+                    type = NotificationFlag.InviteCommunitiy;
+                    break;
+                case "PHOTOS_CAMERASYNC_UPLOADED":
+                    type = NotificationFlag.CameraSyncUploaded;
+                    break;
+                case "PHOTOS_NEW_PHOTO_ADDED":
+                    type = NotificationFlag.NewPhotosAdded;
+                    break;
+                default:
+                    throw new InvalidDataException("未知の通知データを検出。", typeTxt, null);
+            }
+            return type;
+        }
+    }
+
+    public abstract class DataFactory<T>
+    {
+        public DataFactory(IDataFactoryManager manager) { Manager = manager; }
+        public IDataFactoryManager Manager { get; private set; }
+        public virtual void GetStubModeConfig(Dictionary<Expression<Func<T, object>>, object> config, string marker) { }
+    }
+    public interface IDataFactoryManager
+    {
+        ProfileDataFactory ProfileFactory { get; }
+        ActivityDataFactory ActivityFactory { get; }
+        CommentDataFactory CommentFactory { get; }
+        AttachedDataFactory AttachedFactory { get; }
+        NotificationDataFactory NotificationFactory { get; }
     }
 }

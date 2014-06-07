@@ -46,18 +46,18 @@ namespace SunokoLibrary.Web.GooglePlus
         public System.Net.CookieContainer Cookies { get; private set; }
         public IApiAccessor ServiceApi { get; private set; }
         public string AtValue
-        { get { return AccessorBase.CheckFlag(_data.AtValue, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
+        { get { return AccessorBase.CheckFlag(() => _data.AtValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public string PvtValue
-        { get { return AccessorBase.CheckFlag(_data.PvtValue, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
+        { get { return AccessorBase.CheckFlag(() => _data.PvtValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public string EjxValue
-        { get { return AccessorBase.CheckFlag(_data.EjxValue, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
+        { get { return AccessorBase.CheckFlag(() => _data.EjxValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public PeopleContainer People { get; private set; }
         public ActivityContainer Activity { get; private set; }
         public NotificationContainer Notification { get; private set; }
         internal ActivityData[] LatestActivities
-        { get { return AccessorBase.CheckFlag(_data.LatestActivities, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
+        { get { return AccessorBase.CheckFlag(() => _data.LatestActivities, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         internal CircleData[] Circles
-        { get { return AccessorBase.CheckFlag(_data.CircleInfos, "IsLoadedHomeInitData", () => IsLoadedHomeInitData, "trueでない"); } }
+        { get { return AccessorBase.CheckFlag(() => _data.CircleInfos, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
 
         public Task UpdateHomeInitDataAsync(bool isForced)
         {

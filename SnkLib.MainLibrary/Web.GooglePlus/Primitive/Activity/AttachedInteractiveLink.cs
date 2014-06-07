@@ -9,34 +9,23 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class AttachedInteractiveLink : AttachedLink
     {
-        public AttachedInteractiveLink(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
-        public override ContentType Type { get { return ContentType.InteractiveLink; } }
-        public string ProviderName { get; private set; }
-        public Uri ProviderUrl { get; private set; }
-        public Uri ProviderLogoUrl { get; private set; }
-        public Uri ActionUrl { get; private set; }
-        public LabelType Label { get; private set; }
-
-        protected override void ParseTemplate(JArray json)
+        public AttachedInteractiveLink(ContentType type,
+            string title, string summary, Uri linkUrl, string providerName, Uri providerUrl, Uri providerLogoUrl,
+            Uri actionUrl, LabelType label, Uri faviconUrl, Uri originalThumbnailUrl, string thumbnailUrl,
+            int thumbnailWidth, int thumbnailHeight, Uri plusBaseUrl)
+            : base(type, title, summary, linkUrl, faviconUrl, originalThumbnailUrl, thumbnailUrl, thumbnailWidth, thumbnailHeight)
         {
-            var workJson = (JArray)json[75];
-            ActionUrl = new Uri((string)workJson[0][3]);
-            LabelType tmp;
-            var labelTypeStr = string.Join(string.Empty, ((string)workJson[2]).Split(' ').Select(str => str[0].ToString().ToUpper() + str.Substring(1)));
-            if (Enum.TryParse(labelTypeStr, out tmp) == false)
-                tmp = LabelType.Unknown;
-            Label = tmp;
-
-            if (json[77].Type == JTokenType.Array)
-            {
-                workJson = (JArray)json[77];
-                ProviderName = (string)workJson[0];
-                ProviderUrl = new Uri((string)workJson[1]);
-                ProviderLogoUrl = new Uri((string)workJson[2]);
-            }
-
-            base.ParseTemplate((JArray)GetContentBody((JArray)json[8]).Value);
+            ProviderName = providerName;
+            ProviderUrl = providerUrl;
+            ProviderLogoUrl = providerLogoUrl;
+            ActionUrl = actionUrl;
+            Label = label;
         }
+        public readonly string ProviderName;
+        public readonly Uri ProviderUrl;
+        public readonly Uri ProviderLogoUrl;
+        public readonly Uri ActionUrl;
+        public readonly LabelType Label;
     }
     public enum LabelType
     {

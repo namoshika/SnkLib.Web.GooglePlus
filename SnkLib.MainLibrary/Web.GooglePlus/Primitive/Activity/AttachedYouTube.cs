@@ -8,16 +8,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class AttachedYouTube : AttachedLink
     {
-        public AttachedYouTube(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
-        public override ContentType Type { get { return ContentType.YouTube; } }
-        public Uri EmbedMovieUrl { get; private set; }
-
-        protected override void ParseTemplate(JArray json)
-        {
-            base.ParseTemplate(json);
-            ParseYouTube(json);
-        }
-        protected void ParseYouTube(JArray tmpJson)
-        { EmbedMovieUrl = tmpJson[65].Type == JTokenType.String ? new Uri((string)tmpJson[65]) : null; }
+        public AttachedYouTube(ContentType type, string title, string summary, Uri linkUrl, Uri embedMovieUrl, Uri faviconUrl,
+            Uri originalThumbnailUrl, string thumbnailUrl, int thumbnailWidth, int thumbnailHeight, Uri plusBaseUrl)
+            : base(type, title, summary, linkUrl, faviconUrl, originalThumbnailUrl, thumbnailUrl, thumbnailWidth, thumbnailHeight)
+        { EmbedMovieUrl = embedMovieUrl; }
+        public readonly Uri EmbedMovieUrl;
     }
 }

@@ -70,11 +70,10 @@
     <Compile Include="Web.GooglePlus\Primitive\ApiWrapper.cs" />
     <Compile Include="Web.GooglePlus\Primitive\CircleData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Activity\CommentData.cs" />
-    <Compile Include="Web.GooglePlus\Primitive\DataBase.cs" />
+    <Compile Include="Web.GooglePlus\Primitive\CoreData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Notification\PhotoNotificationData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Notification\HangoutNotificationData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Notification\ContentNotificationData.cs" />
-    <Compile Include="Web.GooglePlus\Primitive\Notification\ContactNotificationData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Notification\SocialNotificationData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\Notification\NotificationData.cs" />
     <Compile Include="Web.GooglePlus\Primitive\DefaultAccessor.cs" />

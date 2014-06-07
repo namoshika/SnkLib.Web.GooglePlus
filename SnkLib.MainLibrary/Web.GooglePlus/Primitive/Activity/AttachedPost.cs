@@ -13,8 +13,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             AttachedContent = data.AttachedContent != null
                 ? ActivityInfo.AttachedContentDecorator(data.AttachedContent, client) : null;
         }
-        AttachedPostData _data;
-        public ContentType Type { get { return ContentType.Reshare; } }
+        readonly AttachedPostData _data;
+        public ContentType Type { get { return _data.Type; } }
         public string Id { get { return _data.Id; } }
         public string Html { get { return _data.Html; } }
         public string Text { get { return _data.Text; } }
@@ -25,31 +25,29 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public StyleElement ParsedText { get { return _data.ParsedText; } }
         public IAttachable AttachedContent { get; private set; }
     }
-    public class AttachedPostData : IAttachable
+    public class AttachedPostData : AttachedBase
     {
         public AttachedPostData(
-            string id, string html, string text, StyleElement parsedText, string ownerId, string ownerName,
-            string ownerIconUrl, Uri postUrl, IAttachable attachedContent)
+            ContentType type, string id, string html, string text, StyleElement parsedText, string ownerId,
+            string ownerName, string ownerIconUrl, Uri postUrl, IAttachable attachedContent)
+            : base(type, postUrl)
         {
             Id = id;
             Html = html;
             Text = text;
             ParsedText = parsedText;
-            LinkUrl = postUrl;
             OwnerId = ownerId;
             OwnerName = ownerName;
             OwnerIconUrl = ownerIconUrl;
             AttachedContent = attachedContent;
         }
-        public ContentType Type { get { return ContentType.Reshare; } }
-        public string Id { get; private set; }
-        public string Html { get; private set; }
-        public string Text { get; private set; }
-        public string OwnerId { get; private set; }
-        public string OwnerName { get; private set; }
-        public string OwnerIconUrl { get; private set; }
-        public Uri LinkUrl { get; private set; }
-        public StyleElement ParsedText { get; private set; }
-        public IAttachable AttachedContent { get; private set; }
+        public readonly string Id;
+        public readonly string Html;
+        public readonly string Text;
+        public readonly string OwnerId;
+        public readonly string OwnerName;
+        public readonly string OwnerIconUrl;
+        public readonly StyleElement ParsedText;
+        public readonly IAttachable AttachedContent;
     }
 }

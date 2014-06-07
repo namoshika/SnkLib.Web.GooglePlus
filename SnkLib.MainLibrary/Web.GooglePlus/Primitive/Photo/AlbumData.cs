@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class AlbumData : DataBase
+    [Stubable]
+    public class AlbumData : CoreData
     {
         public AlbumData(string id, string name = null, Uri albumUrl = null, DateTime? createDate = null,
-            ImageData[] bookCovers = null, ImageData[] images = null, string attachedActivity = null, ProfileData owner = null,
-            AlbumUpdateApiFlag loadedApiTypes = AlbumUpdateApiFlag.Unloaded)
+            ImageData[] bookCovers = null, ImageData[] images = null, string attachedActivity = null,
+            ProfileData owner = null, AlbumUpdateApiFlag loadedApiTypes = AlbumUpdateApiFlag.Unloaded)
         {
             Id = id;
             Name = name;
@@ -22,15 +23,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Owner = owner;
             LoadedApiTypes = loadedApiTypes;
         }
-        public AlbumUpdateApiFlag LoadedApiTypes { get; private set; }
-        public string Id { get; private set; }
-        public string Name { get; private set; }
-        public Uri AlbumUrl { get; private set; }
-        public DateTime? CreateDate { get; private set; }
-        public ImageData[] BookCovers { get; private set; }
-        public ImageData[] Images { get; private set; }
-        public string AttachedActivity { get; private set; }
-        public ProfileData Owner { get; private set; }
+        public readonly AlbumUpdateApiFlag LoadedApiTypes;
+        [Identification]
+        public readonly string Id;
+        public readonly string Name;
+        public readonly Uri AlbumUrl;
+        public readonly DateTime? CreateDate;
+        public readonly ImageData[] BookCovers;
+        public readonly ImageData[] Images;
+        public readonly string AttachedActivity;
+        public readonly ProfileData Owner;
 
         public static AlbumData operator +(AlbumData value1, AlbumData value2)
         {

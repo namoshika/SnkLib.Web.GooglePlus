@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class ActivityData : DataBase
+    public class ActivityData : CoreData
     {
         public ActivityData(
             string id, string html = null, string text = null, StyleElement parsedText = null, bool? isEditable = null, Uri postUrl = null,
-            int? commentLength = null, CommentData[] comments = null, DateTime? postDate = null, DateTime? editDate = null,
+            int? commentLength = null, CommentData[] comments = null,
+            DateTime? postDate = null,
+            DateTime? editDate = null,
             ServiceType serviceType = null, PostStatusType? status = null, IAttachable attachedContent = null,
             ProfileData owner = null, DateTime? getActivityDate = null,
             ActivityUpdateApiFlag updaterTypes = ActivityUpdateApiFlag.Unloaded)
@@ -33,23 +35,24 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             ServiceType = serviceType;
         }
 
-        public ActivityUpdateApiFlag LoadedApiTypes { get; private set; }
-        public bool? IsEditable { get; private set; }
-        public string Id { get; private set; }
-        public string Html { get; private set; }
-        public string Text { get; private set; }
-        public StyleElement ParsedText { get; private set; }
-        public Uri PostUrl { get; private set; }
-        public DateTime? PostDate { get; private set; }
-        public DateTime? EditDate { get; private set; }
-        public DateTime? GetActivityDate { get; set; }
-        public ProfileData Owner { get; private set; }
-        public int? CommentLength { get; set; }
-        public CommentData[] Comments { get; set; }
-        public IAttachable AttachedContent { get; private set; }
-        public PostStatusType? PostStatus { get; private set; }
-        public ServiceType ServiceType { get; private set; }
-        //public PlusOneInfo PlusOne { get; private set; }
+        public readonly ActivityUpdateApiFlag LoadedApiTypes;
+        public readonly bool? IsEditable;
+        [Identification]
+        public readonly string Id;
+        public readonly string Html;
+        public readonly string Text;
+        public readonly StyleElement ParsedText;
+        public readonly Uri PostUrl;
+        public readonly DateTime? PostDate;
+        public readonly DateTime? EditDate;
+        public readonly DateTime? GetActivityDate;
+        public readonly ProfileData Owner;
+        public readonly IAttachable AttachedContent;
+        public readonly PostStatusType? PostStatus;
+        public readonly ServiceType ServiceType;
+        public int? CommentLength;
+        public CommentData[] Comments;
+        //public PlusOneInfo PlusOne;
 
         public static ActivityData operator +(ActivityData value1, ActivityData value2)
         {
@@ -97,9 +100,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Id = id;
             Segments = segments ?? new string[] { };
         }
-        public string Id { get; private set; }
-        public string[] Segments { get; private set; }
-        public bool IsMobile { get { return Segments.Length > 1 ? Segments[1] == "updatesmobile" : false; } }
+        public readonly string Id;
+        public readonly string[] Segments;
         public override bool Equals(object obj)
         {
             var tmp = obj as ServiceType;
@@ -116,32 +118,17 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Hangout = new ServiceType("s:talk:gcomm", "s", "talk", "gcomm");
             Unknown = new ServiceType(null);
         }
-        static ServiceType _unknown;
-        public static ServiceType Desktop { get; private set; }
-        public static ServiceType Mobile { get; private set; }
-        public static ServiceType Checkins { get; private set; }
-        public static ServiceType Hangout { get; private set; }
-        public static ServiceType Unknown
-        {
-            get
-            {
-                Debug_BreakIfIsAttached();
-                return _unknown;
-            }
-            set { _unknown = value; }
-        }
+        public readonly static ServiceType Desktop;
+        public readonly static ServiceType Mobile;
+        public readonly static ServiceType Checkins;
+        public readonly static ServiceType Hangout;
+        public readonly static ServiceType Unknown;
 
         public static bool operator ==(ServiceType valueA, ServiceType valueB)
         { return (object)valueA != null && !valueA.Equals(valueB) || (object)valueA == null && (object)valueB == null; }
         public static bool operator !=(ServiceType valueA, ServiceType valueB)
         { return !(valueA == valueB); }
 
-        [System.Diagnostics.Conditional("DEBUG")]
-        static void Debug_BreakIfIsAttached()
-        {
-            if (System.Diagnostics.Debugger.IsAttached)
-                System.Diagnostics.Debugger.Break();
-        }
         string DebuggerDisplay_TypeName
         {
             get
@@ -157,11 +144,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     tmp = "Hangout";
                 else
                     tmp = "ServiceType.Unknown";
-                return string.Format("({1}){{Id = {0}, IsMobile = {2}}}", Id, tmp, IsMobile);
+                return string.Format("({1}){{Id = {0}}}", Id, tmp);
             }
         }
     }
-    [Flags]
-    public enum ActivityUpdateApiFlag { Unloaded = 0, Notification = 1, GetActivities = 3, GetActivity = 7 }
+    public enum ActivityUpdateApiFlag { Unloaded, Notification, GetActivities, GetActivity }
     public enum PostStatusType { Removed, First, Edited }
 }

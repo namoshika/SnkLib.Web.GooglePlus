@@ -23,22 +23,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     }
     public class AttachedImageData : AttachedLink
     {
-        public AttachedImageData(JArray json, Uri plusBaseUrl) : base(json, plusBaseUrl) { }
-        public override ContentType Type { get { return ContentType.Image; } }
-        public ImageData Image { get; private set; }
-        public AlbumData Album { get; private set; }
-
-        protected override void ParseTemplate(JArray json)
+        public AttachedImageData(ContentType type, string title, string summary,
+            Uri linkUrl, Uri faviconUrl, Uri originalThumbnailUrl, string thumbnailUrl, int thumbnailWidth,
+            int thumbnailHeight, ImageData image, AlbumData album, Uri plusBaseUrl)
+            : base(type, title, summary, linkUrl, faviconUrl, originalThumbnailUrl, thumbnailUrl, thumbnailWidth, thumbnailHeight)
         {
-            base.ParseTemplate(json);
-            ParseImage(json);
+            Image = image;
+            Album = album;
         }
-        protected void ParseImage(JArray json)
-        {
-            Album = new AlbumData((string)json[37], owner: new ProfileData((string)json[26]));
-            Image = new ImageData(
-                ImageUpdateApiFlag.Base, (string)json[38], (string)json[2], (int)json[20], (int)json[21], ApiAccessorUtility.ConvertReplasableUrl((string)json[1]),
-                LinkUrl, owner: new ProfileData((string)json[26], loadedApiTypes: ProfileUpdateApiFlag.Unloaded));
-        }
+        public readonly ImageData Image;
+        public readonly AlbumData Album;
     }
 }

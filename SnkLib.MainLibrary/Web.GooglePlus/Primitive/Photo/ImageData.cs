@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class ImageData : DataBase
+    [Stubable]
+    public class ImageData : CoreData
     {
-        public ImageData(ImageUpdateApiFlag loadedApiType, string id, string name = null, int? width = null, int? height = null,
-            string imageUrl = null, Uri linkUrl = null, DateTime? createDate = null, ImageTagData[] attachedTags = null,
-            ProfileData owner = null, ActivityData isolateActivity = null)
+        public ImageData(ImageUpdateApiFlag loadedApiType, string id, string name = null,
+            int? width = null, int? height = null, string imageUrl = null, Uri linkUrl = null,
+            DateTime? createDate = null, ImageTagData[] attachedTags = null, ProfileData owner = null,
+            ActivityData isolateActivity = null)
         {
             LoadedApiTypes = loadedApiType;
             Id = id;
@@ -24,19 +26,19 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Owner = owner;
             IsolateActivity = isolateActivity;
         }
-
-        public ImageUpdateApiFlag LoadedApiTypes { get; private set; }
-        public string Id { get; protected set; }
-        public string Name { get; private set; }
-        public string ImageUrl { get; private set; }
-        public Uri LinkUrl { get; private set; }
-        public int? Width { get; private set; }
-        public int? Height { get; private set; }
-        public DateTime? CreateDate { get; private set; }
-        public ImageTagData[] AttachedTags { get; private set; }
-        public ActivityData IsolateActivity { get; private set; }
-        public ProfileData Owner { get; private set; }
-        public DateTime LastUpdateLightBoxDate { get; private set; }
+        public readonly ImageUpdateApiFlag LoadedApiTypes;
+        [Identification]
+        public readonly string Id;
+        public readonly string Name;
+        public readonly string ImageUrl;
+        public readonly Uri LinkUrl;
+        public readonly int? Width;
+        public readonly int? Height;
+        public readonly DateTime? CreateDate;
+        public readonly ImageTagData[] AttachedTags;
+        public readonly ActivityData IsolateActivity;
+        public readonly ProfileData Owner;
+        public readonly DateTime LastUpdateLightBoxDate;
 
         public static ImageData operator +(ImageData value1, ImageData value2)
         {

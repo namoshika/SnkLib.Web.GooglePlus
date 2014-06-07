@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace UnitTests.Web.GooglePlus
 {
+    using SunokoLibrary.Collections.Generic;
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
@@ -14,45 +15,61 @@ namespace UnitTests.Web.GooglePlus
     public class PlatformClientTest
     {
         static PlatformClient client;
+        static DefaultAccessorStub stub = new DefaultAccessorStub();
+        public TestContext TestContext { get; set; }
 
-        [ClassInitialize]
-        public static void HardCodeMapperInitialize(TestContext testContext)
+        [TestInitialize]
+        public void TestInitialize()
         {
             client = new PlatformClient(
-                new Uri("https://plus.google.com"), new Uri("https://talkgadget.google.com"),
-                new System.Net.CookieContainer(), new DefaultAccessorStab());
+                new Uri("https://plus.google.com"), new Uri("https://talkgadget.google.com"), new System.Net.CookieContainer(), stub,
+                new CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, true, dt => new ProfileCache() { Value = dt }),
+                new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt }));
+        }
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            client.Dispose();
         }
 
         [TestMethod, TestCategory("PlatformClient")]
         public async Task UpdateHomeInitDataAsyncTest()
         {
+            Assert.AreEqual(false, client.IsLoadedHomeInitData);
+            Utility.AssertException<InvalidOperationException>(() => client.AtValue);
+            Utility.AssertException<InvalidOperationException>(() => client.EjxValue);
+            Utility.AssertException<InvalidOperationException>(() => client.PvtValue);
             await client.UpdateHomeInitDataAsync(false);
-            Assert.AreEqual("atValue_hmInit", client.AtValue);
-            Assert.AreEqual("ejxValue_hmInit", client.EjxValue);
-            Assert.AreEqual("pvtValue_hmInit", client.PvtValue);
+            Assert.AreEqual("AtValue00_GetInitDataAsync", client.AtValue);
+            Assert.AreEqual("EjxValue00_GetInitDataAsync", client.EjxValue);
+            Assert.AreEqual("PvtValue00_GetInitDataAsync", client.PvtValue);
+            Assert.AreEqual(true, client.IsLoadedHomeInitData);
         }
         [TestMethod, TestCategory("PeopleContainer")]
         public async Task UpdateCirclesAndBlockAsyncTest()
         {
             await client.UpdateHomeInitDataAsync(false);
-            await client.People.UpdateCirclesAndBlockAsync(false, CircleUpdateLevel.Loaded);
 
-            Assert.AreEqual(2, client.People.Circles.Count);
-            for (var i = 1; i <= client.People.Circles.Count; i++)
+            //Loaded
+            await client.People.UpdateCirclesAndBlockAsync(false, CircleUpdateLevel.Loaded);
+            Assert.AreEqual(5, client.People.Circles.Count);
+            for (var i = 0; i < client.People.Circles.Count; i++)
             {
-                var item = client.People.Circles[i - 1];
-                Assert.AreEqual(string.Format("cid{0:00}", i), item.Id);
-                Assert.AreEqual(string.Format("cname{0:00}_hmInit", i), item.Name);
+                var item = client.People.Circles[i];
+                Assert.AreEqual(string.Format("Id{0:00}", i), item.Id);
+                Assert.AreEqual(string.Format("Name{0:00}_GetInitDataAsync", i), item.Name);
                 Assert.AreEqual(false, item.IsLoadedMember);
+                Utility.AssertException<InvalidOperationException>(() => item.GetMembers());
             }
 
+            //LoadedWithMember
             await client.People.UpdateCirclesAndBlockAsync(true, CircleUpdateLevel.LoadedWithMembers);
             Assert.AreEqual(3, client.People.Circles.Count);
             foreach (var item in client.People.Circles.Zip(
                 new[]{
-                    new { cid = "cid02", cname = "cname02_hmInit", cmem = new string[] { "01", "02" }},
-                    new { cid = "cid03", cname = "cname03", cmem = new string[] { "02", "03" }},
-                    new { cid = "cid04", cname = "cname04", cmem = new string[] { }}
+                    new { cid = "Id01", cname = "Name01_GetInitDataAsync", cmem = new string[] { "Id00", "Id01" }},
+                    new { cid = "Id02", cname = "Name02_GetInitDataAsync", cmem = new string[] { "Id01", "Id02" }},
+                    new { cid = "Id03", cname = "Name03_GetInitDataAsync", cmem = new string[] { }}
                 },
                 (inf, expecteds) => new { Info = inf, Expecteds = expecteds }))
             {
@@ -67,9 +84,9 @@ namespace UnitTests.Web.GooglePlus
             }
             foreach(var item in client.People.YourCircle.GetMembers().Select((inf, idx) => new { Info = inf, Index = idx }))
             {
-                Assert.AreEqual(string.Format("{0:00}", item.Index + 1), item.Info.Id);
-                Assert.AreEqual(string.Format("pname{0:00}_circle", item.Index + 1), item.Info.Name);
-                Assert.AreEqual(string.Format("http://picon/s0/{0:00}_circle", item.Index + 1), item.Info.IconImageUrl);
+                Assert.AreEqual(string.Format("Id{0:00}", item.Index), item.Info.Id);
+                Assert.AreEqual(string.Format("Name{0:00}_GetCircleDatasAsync", item.Index), item.Info.Name);
+                Assert.AreEqual(string.Format("IconImageUrl{0:00}_GetCircleDatasAsync", item.Index), item.Info.IconImageUrl);
             }
         }
         [TestMethod, TestCategory("PeopleContainer")]
@@ -77,13 +94,12 @@ namespace UnitTests.Web.GooglePlus
         {
             await client.UpdateHomeInitDataAsync(false);
             await client.People.UpdateFollowerAsync(false);
-
             Assert.AreEqual(3, client.People.FollowerList.GetMembers().Count());
             foreach (var item in client.People.FollowerList.GetMembers().Zip(
                 new[]{
-                    new { cid = "02", cname = "pname02_follower" },
-                    new { cid = "03", cname = "pname03_follower" },
-                    new { cid = "04", cname = "pname04_follower" }
+                    new { cid = "Id01", cname = "Name01_GetFollowingMeProfilesAsync" },
+                    new { cid = "Id02", cname = "Name02_GetFollowingMeProfilesAsync" },
+                    new { cid = "Id03", cname = "Name03_GetFollowingMeProfilesAsync" }
                 },
                 (inf, expecteds) => new { Info = inf, Expecteds = expecteds }))
             {
@@ -100,9 +116,9 @@ namespace UnitTests.Web.GooglePlus
             Assert.AreEqual(3, client.People.IgnoreList.GetMembers().Count());
             foreach (var item in client.People.IgnoreList.GetMembers().Zip(
                 new[]{
-                    new { cid = "05", cname = "pname05_ignore" },
-                    new { cid = "06", cname = "pname06_ignore" },
-                    new { cid = "07", cname = "pname07_ignore" }
+                    new { cid = "Id04", cname = "Name04_GetIgnoredProfilesAsync" },
+                    new { cid = "Id05", cname = "Name05_GetIgnoredProfilesAsync" },
+                    new { cid = "Id06", cname = "Name06_GetIgnoredProfilesAsync" }
                 },
                 (inf, expecteds) => new { Info = inf, Expecteds = expecteds }))
             {
@@ -116,30 +132,30 @@ namespace UnitTests.Web.GooglePlus
             await client.UpdateHomeInitDataAsync(false);
             var profile = await client.People.GetProfileOfMeAsync(false);
 
-            Assert.AreEqual("00", profile.Id);
-            Assert.AreEqual("pname00_profileMe", profile.Name);
-            Assert.AreEqual("pgree00_profileMe", profile.GreetingText);
-            Assert.AreEqual("http://picon/s0/00_profileMe", profile.IconImageUrl);
+            Assert.AreEqual("Id00", profile.Id);
+            Assert.AreEqual("Name00_GetProfileAboutMeAsync", profile.Name);
+            Assert.AreEqual("GreetingText00_GetProfileAboutMeAsync", profile.GreetingText);
+            Assert.AreEqual("IconImageUrl00_GetProfileAboutMeAsync", profile.IconImageUrl);
             Assert.AreEqual(ProfileUpdateApiFlag.ProfileGet, profile.LoadedApiTypes & ProfileUpdateApiFlag.ProfileGet);
         }
         [TestMethod, TestCategory("PeopleContainer"), Priority(0)]
         public async Task GetProfileOfTest()
         {
-            var profile = client.People.GetProfileOf("99");
-            Assert.AreEqual("99", profile.Id);
+            var profile = client.People.GetProfileOf("Id99");
+            Assert.AreEqual("Id99", profile.Id);
             Assert.AreEqual(ProfileUpdateApiFlag.Unloaded, profile.LoadedApiTypes);
 
             await profile.UpdateProfileGetAsync(false);
-            Assert.AreEqual("99", profile.Id);
-            Assert.AreEqual("pname99_profileFull", profile.Name);
-            Assert.AreEqual("pfnam99_profileFull", profile.FirstName);
-            Assert.AreEqual("plnam99_profileFull", profile.LastName);
-            Assert.AreEqual("pintr99_profileFull", profile.Introduction);
-            Assert.AreEqual("pbrag99_profileFull", profile.BraggingRights);
-            Assert.AreEqual("poccu99_profileFull", profile.Occupation);
-            Assert.AreEqual("pgree99_profileFull", profile.GreetingText);
-            Assert.AreEqual("pnick99_profileFull", profile.NickName);
-            Assert.AreEqual("http://picon/s0/99_profileFull", profile.IconImageUrl);
+            Assert.AreEqual("Id99", profile.Id);
+            Assert.AreEqual("Name99_GetProfileFullAsync", profile.Name);
+            Assert.AreEqual("FirstName99_GetProfileFullAsync", profile.FirstName);
+            Assert.AreEqual("LastName99_GetProfileFullAsync", profile.LastName);
+            Assert.AreEqual("Introduction99_GetProfileFullAsync", profile.Introduction);
+            Assert.AreEqual("BraggingRights99_GetProfileFullAsync", profile.BraggingRights);
+            Assert.AreEqual("Occupation99_GetProfileFullAsync", profile.Occupation);
+            Assert.AreEqual("GreetingText99_GetProfileFullAsync", profile.GreetingText);
+            Assert.AreEqual("NickName99_GetProfileFullAsync", profile.NickName);
+            Assert.AreEqual("IconImageUrl99_GetProfileFullAsync", profile.IconImageUrl);
             Assert.AreEqual(RelationType.Engaged, profile.Relationship);
             Assert.AreEqual(GenderType.Other, profile.GenderType);
             Assert.AreEqual(ProfileUpdateApiFlag.ProfileGet, profile.LoadedApiTypes);

@@ -5,6 +5,7 @@ using System.Text;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
+    [Stubable]
     public abstract class ImageTagData
     {
         public ImageTagData(int left, int top, int right, int bottom, ProfileData owner)
@@ -15,22 +16,22 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Height = bottom - top;
             Owner = owner;
         }
-        public int Left { get; private set; }
-        public int Top { get; private set; }
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public ProfileData Owner { get; private set; }
+        public readonly int Left;
+        public readonly int Top;
+        public readonly int Width;
+        public readonly int Height;
+        public readonly ProfileData Owner;
     }
     public class ImageTextTagInfo : ImageTagData
     {
         public ImageTextTagInfo(int left, int top, int right, int bottom, string text, ProfileData owner)
             : base(left, top, right, bottom, owner) { Text = text; }
-        public string Text { get; private set; }
+        public string Text;
     }
     public class ImageMensionTagInfo : ImageTagData
     {
         public ImageMensionTagInfo(int left, int top, int right, int bottom, ProfileData target, ProfileData owner)
             : base(left, top, right, bottom, owner) { Target = target; }
-        public ProfileData Target { get; private set; }
+        public ProfileData Target;
     }
 }

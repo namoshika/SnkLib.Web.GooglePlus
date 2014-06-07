@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class InitData : DataBase
+    [Stubable]
+    public class InitData : CoreData
     {
-        public InitData(string atValue, string pvtValue, string ejxValue, string buildLevel, string lang, string afsid, CircleData[] circleInfos, ActivityData[] latestActivities)
+        public InitData(string atValue, string pvtValue, string ejxValue, string buildLevel,
+            string lang, string afsid, CircleData[] circleInfos, ActivityData[] latestActivities)
         {
             AtValue = atValue;
             PvtValue = pvtValue;
@@ -19,13 +21,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             CircleInfos = circleInfos;
             LatestActivities = latestActivities;
         }
-        public string AtValue { get; private set; }
-        public string PvtValue { get; private set; }
-        public string EjxValue { get; private set; }
-        public string BuildLevel { get; private set; }
-        public string Lang { get; private set; }
-        public string Afsid { get; private set; }
-        public CircleData[] CircleInfos { get; private set; }
-        public ActivityData[] LatestActivities { get; private set; }
+        public readonly string AtValue;
+        public readonly string PvtValue;
+        public readonly string EjxValue;
+        public readonly string BuildLevel;
+        public readonly string Lang;
+        public readonly string Afsid;
+        public readonly CircleData[] CircleInfos;
+        public readonly ActivityData[] LatestActivities;
     }
 }

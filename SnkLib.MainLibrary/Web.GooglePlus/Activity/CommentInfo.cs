@@ -42,12 +42,12 @@ namespace SunokoLibrary.Web.GooglePlus
         Dictionary<EventHandler, IDisposable> _talkgadgetBindObjs = new Dictionary<EventHandler, IDisposable>();
 
         public string Id { get { return _commentData.CommentId; } }
-        public string Html { get { return CheckFlag(_commentData.Html, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public DateTime PostDate { get { return CheckFlag(_commentData.PostDate, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public DateTime EditDate { get { return CheckFlag(_commentData.EditDate, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
-        public PostStatusType Status { get { return _commentData.Status; } }
-        public ProfileInfo Owner { get { return CheckFlag(_owner, "Status", () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public string Html { get { return CheckFlag(() => _commentData.Html, () => Status, () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public DateTime PostDate { get { return CheckFlag(() => _commentData.PostDate, () => Status, () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public DateTime EditDate { get { return CheckFlag(() => _commentData.EditDate, () => Status, () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
+        public ProfileInfo Owner { get { return CheckFlag(() => _owner, () => Status, () => _commentData.Status >= PostStatusType.First, "PostStatusType.First以上でない"); } }
         public ActivityInfo ParentActivity { get { return _parentActivity; } }
+        public PostStatusType Status { get { return _commentData.Status; } }
         //public PlusOneInfo PlusOne { get; private set; }
 
         public StyleElement GetParsedContent() { return ContentElement.ParseHtml(Html, Client); }
@@ -70,25 +70,6 @@ namespace SunokoLibrary.Web.GooglePlus
             }
             catch (ApiErrorException)
             { return false; }
-        }
-
-        public event EventHandler Refreshed
-        {
-            add
-            {
-                if (value == null)
-                    return;
-                _talkgadgetBindObjs.Add(value, Client.Activity.GetStream()
-                    .OfType<CommentInfo>()
-                    .Where(info => info.Id == Id)
-                    .Subscribe(info => value(this, new EventArgs())));
-            }
-            remove
-            {
-                IDisposable obj;
-                if (_talkgadgetBindObjs.TryGetValue(value, out obj))
-                    obj.Dispose();
-            }
         }
     }
 }

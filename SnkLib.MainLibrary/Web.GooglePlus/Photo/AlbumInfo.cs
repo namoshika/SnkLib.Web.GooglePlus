@@ -27,12 +27,12 @@ namespace SunokoLibrary.Web.GooglePlus
         
         public AlbumUpdateApiFlag LoadedApiTypes { get { return _data.LoadedApiTypes; } }
         public string Id { get { return _data.Id; } }
-        public string Name { get { return CheckFlag(_data.Name, AlbumUpdateApiFlag.Base); } }
-        public Uri AlbumUrl { get { return CheckFlag(_data.AlbumUrl, AlbumUpdateApiFlag.Base); } }
-        public DateTime CreateDate { get { return CheckFlag(_data.CreateDate, AlbumUpdateApiFlag.Full).Value; } }
-        public ImageInfo[] BookCovers { get { return CheckFlag(_data.BookCovers, AlbumUpdateApiFlag.Albums).Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
-        public ImageInfo[] Images { get { return CheckFlag(_data.Images, AlbumUpdateApiFlag.Full).Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
-        public ActivityInfo AttachedActivity { get { return CheckFlag(_attachedActivity, AlbumUpdateApiFlag.Full); } }
+        public string Name { get { return CheckFlag(() => _data.Name, AlbumUpdateApiFlag.Base); } }
+        public Uri AlbumUrl { get { return CheckFlag(() => _data.AlbumUrl, AlbumUpdateApiFlag.Base); } }
+        public DateTime CreateDate { get { return CheckFlag(() => _data.CreateDate, AlbumUpdateApiFlag.Full).Value; } }
+        public ImageInfo[] BookCovers { get { return CheckFlag(() => _data.BookCovers, AlbumUpdateApiFlag.Albums).Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
+        public ImageInfo[] Images { get { return CheckFlag(() => _data.Images, AlbumUpdateApiFlag.Full).Select(dt => new ImageInfo(Client, dt)).ToArray(); } }
+        public ActivityInfo AttachedActivity { get { return CheckFlag(() => _attachedActivity, AlbumUpdateApiFlag.Full); } }
         public ProfileInfo Owner { get { return _owner; } }
 
         public async Task UpdateAlbumAsync(bool isForced)
@@ -78,7 +78,7 @@ namespace SunokoLibrary.Web.GooglePlus
         //}
 
         //重複対策関数
-        T CheckFlag<T>(T target, AlbumUpdateApiFlag flag)
-        { return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag)); }
+        T CheckFlag<T>(Func<T> target, AlbumUpdateApiFlag flag)
+        { return CheckFlag(target, () => LoadedApiTypes, () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag)); }
     }
 }

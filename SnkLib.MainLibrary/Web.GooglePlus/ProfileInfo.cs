@@ -28,44 +28,44 @@ namespace SunokoLibrary.Web.GooglePlus
                 return _data.Status.Value;
             }
         }
-        public string Name { get { return CheckFlag(_data.Name, ProfileUpdateApiFlag.Base); } }
-        public string FirstName { get { return CheckFlag(_data.FirstName, ProfileUpdateApiFlag.ProfileGet); } }
-        public string LastName { get { return CheckFlag(_data.LastName, ProfileUpdateApiFlag.ProfileGet); } }
-        public string Introduction { get { return CheckFlag(_data.Introduction, ProfileUpdateApiFlag.ProfileGet); } }
-        public string BraggingRights { get { return CheckFlag(_data.BraggingRights, ProfileUpdateApiFlag.ProfileGet); } }
-        public string Occupation { get { return CheckFlag(_data.Occupation, ProfileUpdateApiFlag.ProfileGet); } }
-        public string GreetingText { get { return CheckFlag(_data.GreetingText, ProfileUpdateApiFlag.Base); } }
-        public string NickName { get { return CheckFlag(_data.NickName, ProfileUpdateApiFlag.ProfileGet); } }
-        public string IconImageUrl { get { return CheckFlag(_data.IconImageUrl, ProfileUpdateApiFlag.Base); } }
+        public string Name { get { return CheckFlag(() => _data.Name, ProfileUpdateApiFlag.Base); } }
+        public string FirstName { get { return CheckFlag(() => _data.FirstName, ProfileUpdateApiFlag.ProfileGet); } }
+        public string LastName { get { return CheckFlag(() => _data.LastName, ProfileUpdateApiFlag.ProfileGet); } }
+        public string Introduction { get { return CheckFlag(() => _data.Introduction, ProfileUpdateApiFlag.ProfileGet); } }
+        public string BraggingRights { get { return CheckFlag(() => _data.BraggingRights, ProfileUpdateApiFlag.ProfileGet); } }
+        public string Occupation { get { return CheckFlag(() => _data.Occupation, ProfileUpdateApiFlag.ProfileGet); } }
+        public string GreetingText { get { return CheckFlag(() => _data.GreetingText, ProfileUpdateApiFlag.Base); } }
+        public string NickName { get { return CheckFlag(() => _data.NickName, ProfileUpdateApiFlag.ProfileGet); } }
+        public string IconImageUrl { get { return CheckFlag(() => _data.IconImageUrl, ProfileUpdateApiFlag.Base); } }
         public Uri ProfileUrl { get { return new Uri(Client.PlusBaseUrl, _data.Id + "/"); } }
-        public RelationType Relationship { get { return CheckFlag(_data.Relationship, ProfileUpdateApiFlag.ProfileGet).Value; } }
-        public GenderType GenderType { get { return CheckFlag(_data.GenderType, ProfileUpdateApiFlag.ProfileGet).Value; } }
-        public LookingFor LookingFor { get { return CheckFlag(_data.LookingFor, ProfileUpdateApiFlag.ProfileGet); } }
+        public RelationType Relationship { get { return CheckFlag(() => _data.Relationship, ProfileUpdateApiFlag.ProfileGet).Value; } }
+        public GenderType GenderType { get { return CheckFlag(() => _data.Gender, ProfileUpdateApiFlag.ProfileGet).Value; } }
+        public LookingFor LookingFor { get { return CheckFlag(() => _data.LookingFor, ProfileUpdateApiFlag.ProfileGet); } }
         public ReadOnlyCollection<EmploymentInfo> Employments
-        { get { return new ReadOnlyCollection<EmploymentInfo>(CheckFlag(_data.Employments, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<EmploymentInfo>(CheckFlag(() => _data.Employments, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<EducationInfo> Educations
-        { get { return new ReadOnlyCollection<EducationInfo>(CheckFlag(_data.Educations, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<EducationInfo>(CheckFlag(() => _data.Educations, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<ContactInfo> ContactsInHome
-        { get { return new ReadOnlyCollection<ContactInfo>(CheckFlag(_data.ContactsInHome, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<ContactInfo>(CheckFlag(() => _data.ContactsInHome, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<ContactInfo> ContactsInWork
-        { get { return new ReadOnlyCollection<ContactInfo>(CheckFlag(_data.ContactsInWork, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<ContactInfo>(CheckFlag(() => _data.ContactsInWork, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<UrlInfo> OtherProfileUrls
-        { get { return new ReadOnlyCollection<UrlInfo>(CheckFlag(_data.OtherProfileUrls, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<UrlInfo>(CheckFlag(() => _data.OtherProfileUrls, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<UrlInfo> ContributeUrls
-        { get { return new ReadOnlyCollection<UrlInfo>(CheckFlag(_data.ContributeUrls, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<UrlInfo>(CheckFlag(() => _data.ContributeUrls, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<UrlInfo> RecommendedUrls
-        { get { return new ReadOnlyCollection<UrlInfo>(CheckFlag(_data.RecommendedUrls, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<UrlInfo>(CheckFlag(() => _data.RecommendedUrls, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<string> PlacesLived
-        { get { return new ReadOnlyCollection<string>(CheckFlag(_data.PlacesLived, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<string>(CheckFlag(() => _data.PlacesLived, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<string> OtherNames
-        { get { return new ReadOnlyCollection<string>(CheckFlag(_data.OtherNames, ProfileUpdateApiFlag.ProfileGet)); } }
+        { get { return new ReadOnlyCollection<string>(CheckFlag(() => _data.OtherNames, ProfileUpdateApiFlag.ProfileGet)); } }
         public ReadOnlyCollection<CircleInfo> Circles
         {
             get
             {
                 if (Client.People.CirclesAndBlockStatus != CircleUpdateLevel.LoadedWithMembers)
                     throw new InvalidOperationException("サークル情報が初期化されていません。UpdateLookupCircleAsync()を呼び出して初期化してください。");
-                return new ReadOnlyCollection<CircleInfo>(CheckFlag(
+                return new ReadOnlyCollection<CircleInfo>(CheckFlag(() => 
                     Client.People.Circles.Where(inf => inf.ContainsKey(Id)).ToList(), ProfileUpdateApiFlag.LookupCircle));
             }
         }
@@ -158,12 +158,11 @@ namespace SunokoLibrary.Web.GooglePlus
                 () => _data = cache.Value);
         }
 
-        //重複対策関数
-        T CheckFlag<T>(T target, ProfileUpdateApiFlag flag)
+        T CheckFlag<T>(Func<T> target, ProfileUpdateApiFlag flag)
         {
             if (_data.Status == AccountStatus.MailOnly)
                 throw new InvalidOperationException("StatusプロパティがMailOnlyの状態で各プロパティを参照する事はできません。");
-            return CheckFlag(target, "LoadedApiTypes", () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag));
+            return CheckFlag(target, () => LoadedApiTypes, () => (_data.LoadedApiTypes & flag) == flag, string.Format("{0}フラグを満たさない", flag));
         }
     }
     public class ProfileEqualityComparer : IEqualityComparer<ProfileInfo>

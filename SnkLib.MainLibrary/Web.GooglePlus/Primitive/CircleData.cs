@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public class CircleData
+    [Stubable]
+    public class CircleData : CoreData
     {
         public CircleData(string id, string name, ProfileData[] members)
         {
@@ -14,6 +15,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             Name = name;
             Members = members;
         }
+        [Identification]
         public readonly string Id;
         public readonly string Name;
         public readonly ProfileData[] Members;

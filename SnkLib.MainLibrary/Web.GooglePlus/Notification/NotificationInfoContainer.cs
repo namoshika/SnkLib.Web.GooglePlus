@@ -52,8 +52,8 @@ namespace SunokoLibrary.Web.GooglePlus
                         else
                             if (item.NewData is ContentNotificationData)
                                 _notifications.Insert(idx, new NotificationInfoWithActivity((ContentNotificationData)item.NewData, this, Client));
-                            else if (item.NewData is ContactNotificationData)
-                                _notifications.Insert(idx, new NotificationInfoWithActor((ContactNotificationData)item.NewData, this, Client));
+                            else if (item.NewData is SocialNotificationData)
+                                _notifications.Insert(idx, new NotificationInfoWithActor((SocialNotificationData)item.NewData, this, Client));
                             else
                                 _notifications.Insert(idx, new NotificationInfo(item.NewData, this, Client));
                         idx++;
@@ -67,8 +67,8 @@ namespace SunokoLibrary.Web.GooglePlus
                     {
                         if (item is ContentNotificationData)
                             _notifications.Add(new NotificationInfoWithActivity((ContentNotificationData)item, this, Client));
-                        else if (item is ContactNotificationData)
-                            _notifications.Add(new NotificationInfoWithActor((ContactNotificationData)item, this, Client));
+                        else if (item is SocialNotificationData)
+                            _notifications.Add(new NotificationInfoWithActor((SocialNotificationData)item, this, Client));
                         else
                             _notifications.Add(new NotificationInfo(item, this, Client));
                     }
