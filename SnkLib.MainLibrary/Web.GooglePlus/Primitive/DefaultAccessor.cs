@@ -36,7 +36,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 client.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
                 var json = JArray.Parse(await ApiWrapper.LoadListAccounts(client));
                 var generators = json[1]
-                    .Select(item => new PlatformClientBuilder((string)item[3], (string)item[2], ApiAccessorUtility.ConvertReplasableUrl((string)item[4]), (int)item[7], cookies, this))
+                    .Select(item => new PlatformClientBuilder((string)item[3], (string)item[2], ApiAccessorUtility.ConvertReplasableUrl((string)item[4]), (int)item[7], cookies))
                     .ToArray();
                 return generators;
             }

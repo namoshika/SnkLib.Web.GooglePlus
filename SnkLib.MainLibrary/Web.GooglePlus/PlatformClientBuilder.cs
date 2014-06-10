@@ -11,23 +11,21 @@ namespace SunokoLibrary.Web.GooglePlus
 
     public class PlatformClientBuilder : IPlatformClientBuilder
     {
-        public PlatformClientBuilder(string email, string name, string iconUrl, int accountIndex, CookieContainer cookies, IApiAccessor accessor)
+        public PlatformClientBuilder(string email, string name, string iconUrl, int accountIndex, CookieContainer cookies)
         {
+            _cookies = cookies;
             Email = email;
             Name = name;
             IconUrl = iconUrl;
             AccountIndex = accountIndex;
-            _accessor = accessor;
-            _cookies = cookies;
         }
-        IApiAccessor _accessor;
         CookieContainer _cookies;
 
         public int AccountIndex { get; private set; }
         public string Name { get; private set; }
         public string Email { get; private set; }
         public string IconUrl { get; private set; }
-        public Task<PlatformClient> Build()
-        { return PlatformClient.Factory.Create(_cookies, AccountIndex, _accessor); }
+        public Task<PlatformClient> Build(IApiAccessor[] accessors = null)
+        { return PlatformClient.Factory.Create(_cookies, AccountIndex, accessors); }
     }
 }

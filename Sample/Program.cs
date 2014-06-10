@@ -25,7 +25,7 @@ namespace Sample
             var cookieA = getterA.GetCookieCollection(url);
             var cookieB = getterB.GetCookieCollection(url);
 
-            var platform = PlatformClient.Factory.ImportFrom(getterA).Result[0].Build().Result;
+            var platform = PlatformClient.Factory.ImportFrom(getterA).Result[0].Build(null).Result;
             var atVal = platform.AtValue;
             var pvtVal = platform.PvtValue;
 

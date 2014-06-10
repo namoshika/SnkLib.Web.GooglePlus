@@ -89,26 +89,30 @@ namespace SunokoLibrary.Web.GooglePlus
     public class PlatformClientFactory
     {
         public async Task<PlatformClient> Create(System.Net.CookieContainer cookie,
-            int accountIndex, IApiAccessor accessor = null,
+            int accountIndex, IApiAccessor[] accessors = null,
             CacheDictionary<string, ProfileCache, ProfileData> profileCacheStorage = null,
             CacheDictionary<string, ActivityCache, ActivityData> activityCacheStorage = null)
         {
             var accountPrefix = string.Format("u/{0}/", accountIndex);
-            var client = new PlatformClient(
-                new Uri(PlusBaseUrl, accountPrefix),
-                new Uri(TalkBaseUrl, accountPrefix), cookie, accessor ?? new DefaultAccessor(),
-                profileCacheStorage ?? new CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, true, dt => new ProfileCache() { Value = dt }),
-                activityCacheStorage ?? new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt }));
-            try
+            accessors = accessors ?? new IApiAccessor[] { new DefaultAccessor() };
+            //accessors内で使えるものを検索
+            //G+apiバージョンで降順にしたIApiAccessor配列が用いられることを想定してる
+            foreach (var item in accessors)
             {
-                await client.UpdateHomeInitDataAsync(true);
-                return client;
+                var client = new PlatformClient(
+                    new Uri(PlusBaseUrl, accountPrefix),
+                    new Uri(TalkBaseUrl, accountPrefix), cookie, item,
+                    profileCacheStorage ?? new CacheDictionary<string, ProfileCache, ProfileData>(1200, 400, true, dt => new ProfileCache() { Value = dt }),
+                    activityCacheStorage ?? new CacheDictionary<string, ActivityCache, ActivityData>(1200, 400, true, dt => new ActivityCache() { Value = dt }));
+                try
+                {
+                    await client.UpdateHomeInitDataAsync(true);
+                    return client;
+                }
+                catch (FailToOperationException)
+                { client.Dispose(); }
             }
-            catch (FailToOperationException e)
-            {
-                client.Dispose();
-                throw new FailToOperationException("Create()に失敗。ログイン後の初期化処理に失敗しました。", e);
-            }
+            throw new FailToOperationException("Create()に失敗。使用できるIApiAccessorがありませんでした。", null);
         }
 
         public static readonly Uri PlusBaseUrl = new Uri("https://plus.google.com/");

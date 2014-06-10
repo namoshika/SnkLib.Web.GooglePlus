@@ -13,7 +13,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         string Email { get; }
         string Name { get; }
         string IconUrl { get; }
-        Task<PlatformClient> Build();
+        Task<PlatformClient> Build(IApiAccessor[] accessors = null);
     }
     public interface IPlatformClient
     {
