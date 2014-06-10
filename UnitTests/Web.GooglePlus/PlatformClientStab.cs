@@ -16,8 +16,8 @@ namespace UnitTests.Web.GooglePlus
         public PlatformClientStab(System.Net.CookieContainer cookie)
         {
             var handler = new System.Net.Http.HttpClientHandler() { CookieContainer = cookie };
-            PlusBaseUrl = new Uri("https://plus.google.com/");
-            TalkBaseUrl = new Uri("https://talkgadget.google.com/");
+            PlusBaseUrl = new Uri("https://plus.google.com/u/0/");
+            TalkBaseUrl = new Uri("https://talkgadget.google.com/u/0/");
             Cookies = cookie;
             NormalHttpClient = new System.Net.Http.HttpClient(handler);
             NormalHttpClient.DefaultRequestHeaders.Add(

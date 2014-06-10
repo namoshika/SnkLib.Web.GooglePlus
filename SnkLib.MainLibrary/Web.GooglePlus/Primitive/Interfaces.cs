@@ -48,9 +48,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         Task<AlbumData[]> GetAlbumsAsync(string profileId, IPlatformClient client);
         Task<ImageData> GetImageAsync(string imageId, string profileId, IPlatformClient client);
         IObservable<object> GetStreamAttacher(IPlatformClient client);
+        Task<ActivityData> PostActivity(string content, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, bool isDisabledComment, bool isDisabledReshare, IPlatformClient client);
         Task<CommentData> PostComment(string activityId, string content, IPlatformClient client);
         Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client);
         Task DeleteComment(string commentId, IPlatformClient client);
+        Task MutateBlockUser(Tuple<string, string>[] userIdAndNames, AccountBlockType blockType, BlockActionType status, IPlatformClient client);
         Task MarkAsReadAsync(NotificationData target, IPlatformClient client);
     }
 
@@ -141,7 +143,230 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             }
             return urlText;
         }
+        public static string ConvertIntoValidJson(string jsonText)
+        {
+            jsonText = jsonText.Substring(jsonText.IndexOfAny(new[] { '(', '[', '{' }));
+            var builder = new StringBuilder((int)(jsonText.Length * 1.3));
+            var ndTypStk = new Stack<NodeType>();
+            ndTypStk.Push(NodeType.None);
+            var sngl = false;
+            for (var i = 0; i < jsonText.Length; i++)
+            {
+                var chr = jsonText[i];
 
+                switch (ndTypStk.Peek())
+                {
+                    case NodeType.Array:
+                        switch (chr)
+                        {
+                            case '"':
+                            case '\'':
+                                ndTypStk.Push(NodeType.ValStr);
+                                builder.Append('"');
+                                sngl = chr == '\'';
+                                break;
+                            case ',':
+                                switch (jsonText[i - 1])
+                                {
+                                    case '[':
+                                    case ',':
+                                        builder.Append("null");
+                                        break;
+                                }
+                                builder.Append(chr);
+                                break;
+                            case '{':
+                                ndTypStk.Push(NodeType.DictKey);
+                                builder.Append(chr);
+                                break;
+                            case '[':
+                                ndTypStk.Push(NodeType.Array);
+                                builder.Append(chr);
+                                break;
+                            case ']':
+                                switch (jsonText[i - 1])
+                                {
+                                    //case '[':
+                                    case ',':
+                                        builder.Append("null");
+                                        break;
+                                }
+                                ndTypStk.Pop();
+                                builder.Append(chr);
+                                break;
+                            case ' ':
+                            case '\r':
+                            case '\n':
+                                builder.Append(chr);
+                                break;
+                            case '0':
+                            case '1':
+                            case '2':
+                            case '3':
+                            case '4':
+                            case '5':
+                            case '6':
+                            case '7':
+                            case '8':
+                            case '9':
+                            case 'n'://null
+                            case '-'://負の数
+                            case 'f'://false
+                            case 't'://true
+                                ndTypStk.Push(NodeType.ValNum);
+                                i--;
+                                break;
+                            default:
+                                throw new ArgumentException("引数jsonには書式異常があります。");
+                        }
+                        break;
+                    case NodeType.DictKey:
+                        switch (chr)
+                        {
+                            case '"':
+                            case '\'':
+                                ndTypStk.Push(NodeType.KeyStr);
+                                builder.Append('"');
+                                sngl = chr == '\'';
+                                break;
+                            case ' ':
+                                builder.Append(chr);
+                                break;
+                            case ':':
+                                builder.Append(chr);
+                                ndTypStk.Pop();
+                                ndTypStk.Push(NodeType.DictVal);
+                                break;
+                            //case '0':
+                            //case '1':
+                            //case '2':
+                            //case '3':
+                            //case '4':
+                            //case '5':
+                            //case '6':
+                            //case '7':
+                            //case '8':
+                            //case '9':
+                            //    ndTypStk.Push(NodeType.KeyNum);
+                            //    builder.Append("\"idx");
+                            //    i--;
+                            //    sngl = false;
+                            //    break;
+                            default:
+                                ndTypStk.Push(NodeType.KeyNum);
+                                builder.Append("\"");
+                                i--;
+                                sngl = false;
+                                break;
+                        }
+                        break;
+                    case NodeType.DictVal:
+                        switch (chr)
+                        {
+                            case '"':
+                            case '\'':
+                                ndTypStk.Push(NodeType.ValStr);
+                                builder.Append('"');
+                                sngl = chr == '\'';
+                                break;
+                            case ' ':
+                            case '\r':
+                            case '\n':
+                                builder.Append(chr);
+                                break;
+                            case ',':
+                                builder.Append(chr);
+                                ndTypStk.Pop();
+                                ndTypStk.Push(NodeType.DictKey);
+                                break;
+                            case '0':
+                            case '1':
+                            case '2':
+                            case '3':
+                            case '4':
+                            case '5':
+                            case '6':
+                            case '7':
+                            case '8':
+                            case '9':
+                            case 'n'://null
+                            case '-'://負の数
+                            case 'f'://false
+                            case 't'://true
+                                ndTypStk.Push(NodeType.ValNum);
+                                i--;
+                                break;
+                            case '[':
+                                ndTypStk.Push(NodeType.Array);
+                                builder.Append(chr);
+                                break;
+                            case '{':
+                                ndTypStk.Push(NodeType.DictKey);
+                                builder.Append(chr);
+                                break;
+                            case '}':
+                                ndTypStk.Pop();
+                                builder.Append(chr);
+                                break;
+                            default:
+                                throw new ArgumentException("引数jsonには書式異常があります。");
+                        }
+                        break;
+                    case NodeType.KeyStr:
+                    case NodeType.ValStr:
+                        var j = i;
+                        while (true)
+                        {
+                            j = sngl ? jsonText.IndexOf('\'', j) : jsonText.IndexOf('"', j);
+                            var l = 0;
+                            for (; jsonText[j - l - 1] == '\\'; l++) ;
+                            if (l % 2 == 0)
+                            {
+                                builder.Append(string.Concat(jsonText.Substring(i, j - i), '"'));
+                                ndTypStk.Pop();
+                                i = j;
+                                break;
+                            }
+                            j++;
+                        }
+                        break;
+                    case NodeType.KeyNum:
+                    case NodeType.ValNum:
+                        char[] ptrn = ndTypStk.Peek() == NodeType.KeyNum
+                            ? new char[] { ':' }
+                            : new char[] { ',', ']', '}' };
+
+                        var k = jsonText.IndexOfAny(ptrn, i);
+                        builder.Append(jsonText.Substring(i, k - i));
+                        i = k - 1;
+                        if (ndTypStk.Pop() == NodeType.KeyNum)
+                            builder.Append('"');
+                        break;
+                    case NodeType.None:
+                        switch (chr)
+                        {
+                            case '[':
+                                ndTypStk.Push(NodeType.Array);
+                                builder.Append(chr);
+                                break;
+                            case '{':
+                                ndTypStk.Push(NodeType.DictKey);
+                                builder.Append(chr);
+                                break;
+                            case '\r':
+                            case '\n':
+                                builder.Append(chr);
+                                break;
+                            default:
+                                throw new ArgumentException("引数jsonには書式異常があります。");
+                        }
+                        break;
+                }
+            }
+            return builder.ToString();
+        }
+
+        enum NodeType { DictKey, DictVal, Array, KeyStr, KeyNum, ValNum, ValStr, None, }
         //文字実体参照対照表
         static Dictionary<string, int> entityPairs = new Dictionary<string, int>() {
         #region

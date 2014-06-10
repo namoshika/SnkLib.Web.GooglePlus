@@ -22,16 +22,10 @@ namespace SunokoLibrary.Web.GooglePlus
             _yourCircle = new GooglePlus.YourCircle(client);
             _profileCache = profileCacheStorage;
             _followerCircle = new GroupContainer(client, "Follower");
-            _blockCircle = new EditableGroupContainer(
-                client, "blocked", null,
-                (opType, infos) => ApiWrapper.ConnectToMutateBlockUser(
-                    client.NormalHttpClient, client.PlusBaseUrl, infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(),
-                    Primitive.AccountBlockType.Block, opType, client.AtValue));
-            _ignoreCircle = new EditableGroupContainer(
-                client, "ignored", null,
-                (opType, infos) => ApiWrapper.ConnectToMutateBlockUser(
-                    client.NormalHttpClient, client.PlusBaseUrl, infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(),
-                    Primitive.AccountBlockType.Ignore, opType, client.AtValue));
+            _blockCircle = new EditableGroupContainer(client, "blocked", null, (opType, infos) => Client.ServiceApi
+                .MutateBlockUser(infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(), Primitive.AccountBlockType.Block, opType, client));
+            _ignoreCircle = new EditableGroupContainer(client, "ignored", null, (opType, infos) => Client.ServiceApi
+                .MutateBlockUser(infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(), Primitive.AccountBlockType.Ignore, opType, client));
             CirclesAndBlockStatus = CircleUpdateLevel.Unloaded;
             IsUpdatedIgnore = false;
             PublicCircle = new PostRange(Client, "anyone", "全員");
@@ -260,10 +254,9 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             try
             {
-                await ApiWrapper.ConnectToPost(
-                    Client.NormalHttpClient, Client.PlusBaseUrl, DateTime.Now, 0, (await Client.People.GetProfileOfMeAsync(false)).Id,
-                    new Dictionary<string, string> { { Id, Name } }, new Dictionary<string, string> { },
-                    null, content, false, false, Client.AtValue);
+                await Client.ServiceApi.PostActivity(
+                    content, new Dictionary<string, string> { { Id, Name } }, new Dictionary<string, string> { },
+                    false, false, Client);
                 return true;
             }
             catch (ApiErrorException)

@@ -55,7 +55,7 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             try
             {
-                await ApiWrapper.ConnectToEditComment(Client.NormalHttpClient, Client.PlusBaseUrl, ParentActivity.Id, Id, content, Client.AtValue);
+                await Client.ServiceApi.EditComment(ParentActivity.Id, Id, content, Client);
                 return true;
             }
             catch (ApiErrorException)
@@ -65,7 +65,7 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             try
             {
-                await ApiWrapper.ConnectToDeleteComment(Client.NormalHttpClient, Client.PlusBaseUrl, Id, Client.AtValue);
+                await Client.ServiceApi.DeleteComment(Id, Client);
                 return true;
             }
             catch (ApiErrorException)

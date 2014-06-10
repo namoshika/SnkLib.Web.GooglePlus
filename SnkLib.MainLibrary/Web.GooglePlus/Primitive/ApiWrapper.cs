@@ -12,12 +12,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     using Newtonsoft.Json.Linq;
 
-    public static class ApiWrapper
+    public class ApiWrapper
     {
+        public static readonly ApiWrapper Default = new ApiWrapper();
         static readonly DateTime DateUnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         [Obsolete("このメソッドはGoogleサーバー側に不正アクセスと誤認識される事があるため、使用すべきではありません。")]
-        public static async Task<bool> ConnectToServiceLoginAuth(HttpClient client, Uri plusBaseUrl, System.Net.CookieContainer responseCheckTarget, string email, string password)
+        public async Task<bool> ConnectToServiceLoginAuth(HttpClient client, Uri plusBaseUrl, System.Net.CookieContainer responseCheckTarget, string email, string password)
         {
             const string loginPageUrl = "https://accounts.google.com/ServiceLogin";
             const string authPageUrl = "https://accounts.google.com/ServiceLoginAuth";
@@ -68,31 +69,28 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 }
             return isFail == false;
         }
-        public static async Task<string> ConnectToInitialData(HttpClient client, Uri plusBaseUrl, int key, string atVal)
+        public async Task<string> ConnectToInitialData(HttpClient client, Uri plusBaseUrl, int key, string atVal)
         {
             var url = new Uri(plusBaseUrl, string.Format("_/initialdata?key={0}&rt=j", key));
-            var jsonTxt = (await PostStringAsync(client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atVal }, })))
-                .Substring(6);
-            var json = ConvertIntoValidJson(jsonTxt);
-            return json;
+            var jsonTxt = await PostStringAsync(
+                client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atVal }, }));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToGetIdentities(HttpClient client, Uri plusBaseUrl)
+        public async Task<string> ConnectToGetIdentities(HttpClient client, Uri plusBaseUrl)
         {
             //api error: innerEx == null
             //ses error: innerEx is WebException
             var url = new Uri(plusBaseUrl, "_/pages/getidentities/?hl=ja&rt=j");
-            var jsonTxt = (await GetStringAsync(client, url)).Substring(6);
-            var json = ConvertIntoValidJson(jsonTxt);
-            return json;
+            var jsonTxt = await GetStringAsync(client, url);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToProfileGet(HttpClient client, Uri plusBaseUrl, string plusId)
+        public async Task<string> ConnectToProfileGet(HttpClient client, Uri plusBaseUrl, string plusId)
         {
             var url = new Uri(plusBaseUrl, string.Format("_/profiles/get/{0}/posts?hl=ja&rt=j", plusId));
-            var jsonTxt = (await GetStringAsync(client, url)).Substring(6);
-            var json = ConvertIntoValidJson(jsonTxt);
-            return json;
+            var jsonTxt = await GetStringAsync(client, url);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToLookupPeople(HttpClient client, Uri plusBaseUrl, string plusId, string atVal)
+        public async Task<string> ConnectToLookupPeople(HttpClient client, Uri plusBaseUrl, string plusId, string atVal)
         {
             var jsonTxt = await PostStringAsync(
                 client,
@@ -102,58 +100,57 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         { "m", string.Format("[[[null,null,\"{0}\"]]]", plusId) },
                         { "at", atVal },
                     }));
-            var json = ConvertIntoValidJson(jsonTxt.Substring(6));
-            return json;
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToLookupCircles(HttpClient client, Uri plusBaseUrl, string atValue)
+        public async Task<string> ConnectToLookupCircles(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var circlesUrl = new Uri(plusBaseUrl, "_/socialgraph/lookup/circles/?ct=2&m=true&rt=j");
             var jsonTxt = await PostStringAsync(client, circlesUrl, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string atValue)
+        public async Task<string> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var url = new Uri(plusBaseUrl, "_/socialgraph/lookup/followers/?m=2500&rt=j");
             var jsonTxt = await PostStringAsync(
                 client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToLookupIgnore(HttpClient client, Uri plusBaseUrl, string atValue)
+        public async Task<string> ConnectToLookupIgnore(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var ignoreUrl = new Uri(plusBaseUrl, "_/socialgraph/lookup/ignored/?m=5000&rt=j");
             var jsonTxt = await PostStringAsync(
                 client, ignoreUrl, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToLookupVisible(HttpClient client, Uri plusBaseUrl, string plusId, string atValue)
+        public async Task<string> ConnectToLookupVisible(HttpClient client, Uri plusBaseUrl, string plusId, string atValue)
         {
             var jsonTxt = await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/socialgraph/lookup/visible/"),
                 new FormUrlEncodedContent(new Dictionary<string, string>()
-                        {
-                            { "o", string.Format("[null,null,\"{0}\"]", plusId) },
-                            { "rt", "j" },
-                            { "at", atValue },
-                        }));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+                    {
+                        { "o", string.Format("[null,null,\"{0}\"]", plusId) },
+                        { "rt", "j" },
+                        { "at", atValue },
+                    }));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToLookupIncoming(HttpClient client, Uri plusBaseUrl, string plusId, int count, string atValue)
+        public async Task<string> ConnectToLookupIncoming(HttpClient client, Uri plusBaseUrl, string plusId, int count, string atValue)
         {
             var jsonTxt = await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/socialgraph/lookup/incoming/"),
                 new FormUrlEncodedContent(new Dictionary<string, string>()
-                        {
-                            { "o", string.Format("[null,null,\"{0}\"]", plusId) },
-                            { "s", "true" },
-                            { "n", count.ToString() },
-                            { "rt", "j" },
-                            { "at", atValue },
-                        }));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+                    {
+                        { "o", string.Format("[null,null,\"{0}\"]", plusId) },
+                        { "s", "true" },
+                        { "n", count.ToString() },
+                        { "rt", "j" },
+                        { "at", atValue },
+                    }));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToGetActivities(HttpClient client, Uri plusBaseUrl, string atVal, int length = 20, string circleId = null, string plusId = null, string ct = null)
+        public async Task<string> ConnectToGetActivities(HttpClient client, Uri plusBaseUrl, string atVal, int length = 20, string circleId = null, string plusId = null, string ct = null)
         {
             //query作成
             var query = new FormUrlEncodedContent(
@@ -175,15 +172,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
             //download
             var resStr = await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/getactivities/?rt=j"), query);
-            return ConvertIntoValidJson(resStr.Substring(6));
+            return resStr;
         }
-        public static async Task<string> ConnectToGetActivity(HttpClient client, Uri plusBaseUrl, string id)
+        public async Task<string> ConnectToGetActivity(HttpClient client, Uri plusBaseUrl, string id)
         {
             var resStr = await GetStringAsync(
                 client, new Uri(plusBaseUrl, string.Format("_/stream/getactivity/?updateId={0}", id)));
-            return ConvertIntoValidJson(resStr.Substring(6));
+            return resStr;
         }
-        public static async Task<string> ConnectToPost(HttpClient client, Uri plusBaseUrl, DateTime postDate, int postCount, string plusId, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, ContentType? attachedContentType, string content, bool isDisabledComment, bool isDisabledReshare, string atVal)
+        public async Task<string> ConnectToPost(HttpClient client, Uri plusBaseUrl, DateTime postDate, int postCount, string plusId, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, ContentType? attachedContentType, string content, bool isDisabledComment, bool isDisabledReshare, string atVal)
         {
             var postTime = string.Format("{0:X}", GetUnixTime(postDate)).ToLower();
             var postRange = new
@@ -259,10 +256,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal }
                 });
             var url = new Uri(plusBaseUrl, "_/sharebox/post/?spam=20&rt=j");
-            var jsonTxt = (await PostStringAsync(client, url, parameter)).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await PostStringAsync(client, url, parameter);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToComment(HttpClient client, Uri plusBaseUrl, string activityId, string content, DateTime postDate, string atVal)
+        public async Task<string> ConnectToComment(HttpClient client, Uri plusBaseUrl, string activityId, string content, DateTime postDate, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/comment/?rt=j");
             var prmsStr = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -273,10 +270,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "timestamp_msec", GetUnixTime(postDate).ToString() },
                     { "at", atVal },
                 });
-            var jsonTxt = (await PostStringAsync(client, url, prmsStr)).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await PostStringAsync(client, url, prmsStr);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToEditComment(HttpClient client, Uri plusBaseUrl, string activityId, string commentId, string content, string atVal)
+        public async Task<string> ConnectToEditComment(HttpClient client, Uri plusBaseUrl, string activityId, string commentId, string content, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/editcomment/?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -286,10 +283,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "text", content },
                     { "at", atVal },
                 });
-            var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await PostStringAsync(client, url, query);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToDeleteComment(HttpClient client, Uri plusBaseUrl, string commentId, string atVal)
+        public async Task<string> ConnectToDeleteComment(HttpClient client, Uri plusBaseUrl, string commentId, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/deletecomment/?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -297,10 +294,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "commentId", commentId },
                     { "at", atVal },
                 });
-            var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await PostStringAsync(client, url, query);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToPlusOne(HttpClient client, Uri plusBaseUrl, string targetId, bool isPlusOned, string atVal)
+        public async Task<string> ConnectToPlusOne(HttpClient client, Uri plusBaseUrl, string targetId, bool isPlusOned, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/plusone?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -309,10 +306,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "set", isPlusOned ? "true" : "false" },
                     { "at", atVal },
                 });
-            var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await PostStringAsync(client, url, query);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToCommonGetPeople(HttpClient client, Uri plusBaseUrl, string plusoneId, int length, string atVal)
+        public async Task<string> ConnectToCommonGetPeople(HttpClient client, Uri plusBaseUrl, string plusoneId, int length, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/common/getpeople/?rt=j");
             var query = new FormUrlEncodedContent(new Dictionary<string, string>()
@@ -322,10 +319,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "hl", "ja" },
                     { "at", atVal },
                 });
-            var jsonTxt = (await PostStringAsync(client, url, query)).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await PostStringAsync(client, url, query);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToNotificationsData(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
+        public async Task<string> ConnectToNotificationsData(HttpClient client, Uri plusBaseUrl, string atVal, NotificationsFilter type = NotificationsFilter.All, int maxResults = 15, string continueToken = null)
         {
             var queryArray = new Dictionary<string, string>()
                 {
@@ -342,10 +339,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal }
                 });
             var query = await MakeQuery(queryArray);
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/getnotificationsdata?" + query), paramArray));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/getnotificationsdata?" + query), paramArray);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToNotificationsFetch(HttpClient client, Uri plusBaseUrl, bool isFetchNewItemMode, string atVal, int maxResults = 15, string continueToken = null)
+        public async Task<string> ConnectToNotificationsFetch(HttpClient client, Uri plusBaseUrl, bool isFetchNewItemMode, string atVal, int maxResults = 15, string continueToken = null)
         {
             var queryDict = new Dictionary<string, string>()
                 {
@@ -361,10 +358,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "f.req", string.Format("[[\"OGB\",[7]],[null,null,{0},[],[{1}],{2},\"GPLUS_APP\",[3]],[3]]", maxResults, isFetchNewItemMode ? "1" : "2", continueToken != null ? string.Format("\"{0}\"", continueToken) : "null") },
                     { "at", atVal }
                 });
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/fetch?" + await MakeQuery(queryDict)), paramDict));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/fetch?" + await MakeQuery(queryDict)), paramDict);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToMarkItemRead(HttpClient client, Uri plusBaseUrl, string activityIds, string atValue)
+        public async Task<string> ConnectToMarkItemRead(HttpClient client, Uri plusBaseUrl, string activityIds, string atValue)
         {
             var queryDict = new Dictionary<string, string>()
                 {
@@ -378,10 +375,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "netType", "4" },
                     { "at", atValue }
                 });
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/markitemread/?" + await MakeQuery(queryDict)), paramDict));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/markitemread/?" + await MakeQuery(queryDict)), paramDict);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToSetReadStates(HttpClient client, Uri plusBaseUrl, string notificationIds, string rawNoticedDate, string atValue)
+        public async Task<string> ConnectToSetReadStates(HttpClient client, Uri plusBaseUrl, string notificationIds, string rawNoticedDate, string atValue)
         {
             var queryDict = new Dictionary<string, string>()
                 {
@@ -395,16 +392,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     {"f.req", string.Format("[[\"OGB\",[7]],[[[\"{0}\",null,\"{1}\"]],2]]", notificationIds, rawNoticedDate) },
                     {"at", atValue }
                 });
-            var jsonTxt = (await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/setreadstates?" + await MakeQuery(queryDict)), paramDict));
-            return ConvertIntoValidJson(jsonTxt.Substring(6));
+            var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/setreadstates?" + await MakeQuery(queryDict)), paramDict);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToGsuc(HttpClient client, Uri plusBaseUrl)
+        public async Task<string> ConnectToGsuc(HttpClient client, Uri plusBaseUrl)
         {
             var url = new Uri(plusBaseUrl, "_/n/gsuc");
-            var jsonTxt = (await GetStringAsync(client, url)).Substring(5);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await GetStringAsync(client, url);
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToPhotosAlbums(HttpClient client, Uri plusBaseUrl, string plusId, string albumId = null, int offset = 0)
+        public async Task<string> ConnectToPhotosAlbums(HttpClient client, Uri plusBaseUrl, string plusId, string albumId = null, int offset = 0)
         {
             var query = await MakeQuery(
                 new Dictionary<string, string>()
@@ -413,29 +410,27 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "offset", offset.ToString() },
                     { "rt", "j" },
                 });
-            var jsonTxt = (await GetStringAsync(
+            var jsonTxt = await GetStringAsync(
                 client, new Uri(plusBaseUrl, string.Format("_/photos/{0}/albums{1}{2}",
-                plusId, albumId != null ? "/" + albumId : "", query != "" ? "?" + query : "")))).Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+                plusId, albumId != null ? "/" + albumId : "", query != "" ? "?" + query : "")));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToPhotosAlbumComments(HttpClient client, Uri plusBaseUrl, string plusId, string albumId)
+        public async Task<string> ConnectToPhotosAlbumComments(HttpClient client, Uri plusBaseUrl, string plusId, string albumId)
         {
-            var jsonTxt =
-                (await GetStringAsync(
-                    client, new Uri(plusBaseUrl, string.Format("_/photos/albumcomments/{0}?albumId={1}", plusId, albumId))))
-                .Substring(6);
-            return ConvertIntoValidJson(jsonTxt);
+            var jsonTxt = await GetStringAsync(
+                client, new Uri(plusBaseUrl, string.Format("_/photos/albumcomments/{0}?albumId={1}", plusId, albumId)));
+            return jsonTxt;
         }
-        public static async Task<string> ConnectToPhotosLightbox(HttpClient client, Uri plusBaseUrl, string plusId, string photoId)
+        public async Task<string> ConnectToPhotosLightbox(HttpClient client, Uri plusBaseUrl, string plusId, string photoId)
         {
             //_/photos/lightbox/photo/{0}/{1}?soc-app=2&cid=0&soc-platform=1&hl=ja&_reqid=2857574&rt=j
             var jsonTxt = (await client
                 .GetStringAsync(new Uri(plusBaseUrl, string.Format("_/photos/lightbox/photo/{0}/{1}?soc-app=2&cid=0&soc-platform=1&hl=ja&_reqid=2857574&rt=j", plusId, photoId))))
                 .Substring(25);
             jsonTxt = jsonTxt.Substring(0, jsonTxt.Length - 9);
-            return ConvertIntoValidJson(jsonTxt);
+            return jsonTxt;
         }
-        public static IObservable<JToken> ConnectToTalkGadgetBind(HttpClient normalClient, HttpClient streamClient, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
+        public IObservable<JToken> ConnectToTalkGadgetBind(HttpClient normalClient, HttpClient streamClient, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
         {
             var observable = Observable.Create<JToken>(subject =>
             {
@@ -506,7 +501,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
                                 })));
                         var res = await PostStringAsync(normalClient, url, new Dictionary<string, string>() { { "count", "0" } }, tokenSource.Token);
-                        var json = JToken.Parse(ConvertIntoValidJson(res.Substring(res.IndexOf("\n") + 1)));
+                        var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(res.Substring(res.IndexOf("\n") + 1)));
                         foreach (var item in json)
                             jsonReciever(item);
 
@@ -586,7 +581,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     if (length == builder.Length)
                                     {
                                         var str = builder.ToString();
-                                        var replaced = ConvertIntoValidJson(str);
+                                        var replaced = ApiAccessorUtility.ConvertIntoValidJson(str);
                                         var recieveJson = JToken.Parse(replaced);
 
                                         //後始末
@@ -618,7 +613,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             });
             return observable;
         }
-        public static async Task<Tuple<string, string>> ConnectToSearch(HttpClient client, Uri plusBaseUrl, string keyword, SearchTarget target, SearchRange range, string searchTicket, string atVal)
+        public async Task<Tuple<string, string>> ConnectToSearch(HttpClient client, Uri plusBaseUrl, string keyword, SearchTarget target, SearchRange range, string searchTicket, string atVal)
         {
             keyword = keyword.Replace("\\", "\\\\");
             keyword = keyword.Replace("\"", "\\\"");
@@ -633,12 +628,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                         { "at", atVal },
                         { "srchrp", string.Format("[[\"{0}\",{1},2,[{2}]],null,[\"{3}\"]]", keyword, (int)target, (int)range, searchTicket) }
                     });
-            var jsonTxt = ConvertIntoValidJson((await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/query?rt=j"), query)).Substring(6));
+            var jsonTxt = ApiAccessorUtility.ConvertIntoValidJson(
+                await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/query?rt=j"), query));
             var json = JToken.Parse(jsonTxt);
             searchTicket = (string)json[0][1][1][1][2];
             return Tuple.Create(jsonTxt, searchTicket);
         }
-        public static async Task<Tuple<string, string>> ConnectToForwardSearch(HttpClient client, Uri plusBaseUrl, string keyword, string searchTicket, string atVal)
+        public async Task<Tuple<string, string>> ConnectToForwardSearch(HttpClient client, Uri plusBaseUrl, string keyword, string searchTicket, string atVal)
         {
             keyword = keyword.Replace("\\", "\\\\");
             keyword = keyword.Replace("\"", "\\\"");
@@ -647,12 +643,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "at", atVal },
                     { "srchrp", string.Format("[[\"{0}\",3,2],null,[\"{1}\",false]]", keyword, searchTicket) }
                 });
-            var jsonTxt = ConvertIntoValidJson((await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/rt?rt=j"), query)).Substring(6));
+            var jsonTxt = ApiAccessorUtility.ConvertIntoValidJson(
+                await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/rt?rt=j"), query));
             var json = JToken.Parse(jsonTxt);
             searchTicket = (string)json[0][1][1][1][2];
             return Tuple.Create(jsonTxt, searchTicket);
         }
-        public static async Task ConnectToMutateBlockUser(HttpClient client, Uri plusBaseUrl, Tuple<string, string>[] userIdAndNames, AccountBlockType blockType, BlockActionType status, string atVal)
+        public async Task ConnectToMutateBlockUser(HttpClient client, Uri plusBaseUrl, Tuple<string, string>[] userIdAndNames, AccountBlockType blockType, BlockActionType status, string atVal)
         {
             var blockUrl = new Uri(plusBaseUrl, "_/socialgraph/mutate/block_user/?_reqid=8260308&rt=j");
             var param = string.Format("[[{0}],{1}]",
@@ -664,7 +661,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             await PostStringAsync(client, blockUrl, new FormUrlEncodedContent(postVals));
         }
         //htmlパース
-        public static async Task<Dictionary<string, JToken>> LoadNotifierClient(HttpClient client, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
+        public async Task<Dictionary<string, JToken>> LoadNotifierClient(HttpClient client, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
         {
             var stime = GetUnixTime(DateTime.Now);
             var xpcUrl = string.Format("{{\"cn\":\"rqlvmh\",\"tp\":1,\"ifrid\":\"gtn-roster-iframe-id\",\"pu\":\"{0}\"}}", new Uri(talkBaseUrl, "talkgadget/_/").AbsoluteUri);
@@ -714,14 +711,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 match = match.NextMatch();
                 if (jsonTxt.Contains("data:function()"))
                     continue;
-                var json = JContainer.Parse(ConvertIntoValidJson(jsonTxt));
+                var json = JContainer.Parse(ApiAccessorUtility.ConvertIntoValidJson(jsonTxt));
                 resJson.Add((string)json["key"], json["data"]);
             }
             return resJson;
         }
-        public static async Task<string> LoadHomeInitData(HttpClient client, Uri plusBaseUrl)
+        public async Task<string> LoadHomeInitData(HttpClient client, Uri plusBaseUrl)
         { return await GetStringAsync(client, plusBaseUrl); }
-        public static async Task<string> LoadListAccounts(HttpClient client)
+        public async Task<string> LoadListAccounts(HttpClient client)
         {
             var accountListUrl = new Uri("https://accounts.google.com/b/0/ListAccounts?listPages=0&origin=https%3A%2F%2Fplus.google.com");
             var regex = new System.Text.RegularExpressions.Regex("window.parent.postMessage\\([^\"]*\"(?<jsonTxt>(?:[^\"])*)\"");
@@ -732,7 +729,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 throw new ApiErrorException("アカウント一覧の読み込みに失敗しました。", ErrorType.UnknownError, accountListUrl, null, null, null);
             return jsonTxt;
         }
-        public static async Task<Uri> WrapTalkGadgetAuthUrl(Uri continueUrl)
+        public async Task<Uri> WrapTalkGadgetAuthUrl(Uri continueUrl)
         {
             const string talkgadgetGAuth = "https://talkgadget.google.com/talkgadget/gauth?{0}";
             const string talkgadgetServiceLogin = "https://accounts.google.com/ServiceLogin?{0}";
@@ -761,227 +758,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
 
         //支援関数
-        public static string ConvertIntoValidJson(string jsonText)
-        {
-            var builder = new StringBuilder((int)(jsonText.Length * 1.3));
-            var ndTypStk = new Stack<NodeType>();
-            ndTypStk.Push(NodeType.None);
-            var sngl = false;
-            for (var i = 0; i < jsonText.Length; i++)
-            {
-                var chr = jsonText[i];
-
-                switch (ndTypStk.Peek())
-                {
-                    case NodeType.Array:
-                        switch (chr)
-                        {
-                            case '"':
-                            case '\'':
-                                ndTypStk.Push(NodeType.ValStr);
-                                builder.Append('"');
-                                sngl = chr == '\'';
-                                break;
-                            case ',':
-                                switch (jsonText[i - 1])
-                                {
-                                    case '[':
-                                    case ',':
-                                        builder.Append("null");
-                                        break;
-                                }
-                                builder.Append(chr);
-                                break;
-                            case '{':
-                                ndTypStk.Push(NodeType.DictKey);
-                                builder.Append(chr);
-                                break;
-                            case '[':
-                                ndTypStk.Push(NodeType.Array);
-                                builder.Append(chr);
-                                break;
-                            case ']':
-                                switch (jsonText[i - 1])
-                                {
-                                    //case '[':
-                                    case ',':
-                                        builder.Append("null");
-                                        break;
-                                }
-                                ndTypStk.Pop();
-                                builder.Append(chr);
-                                break;
-                            case ' ':
-                            case '\r':
-                            case '\n':
-                                builder.Append(chr);
-                                break;
-                            case '0':
-                            case '1':
-                            case '2':
-                            case '3':
-                            case '4':
-                            case '5':
-                            case '6':
-                            case '7':
-                            case '8':
-                            case '9':
-                            case 'n'://null
-                            case '-'://負の数
-                            case 'f'://false
-                            case 't'://true
-                                ndTypStk.Push(NodeType.ValNum);
-                                i--;
-                                break;
-                            default:
-                                throw new ArgumentException("引数jsonには書式異常があります。");
-                        }
-                        break;
-                    case NodeType.DictKey:
-                        switch (chr)
-                        {
-                            case '"':
-                            case '\'':
-                                ndTypStk.Push(NodeType.KeyStr);
-                                builder.Append('"');
-                                sngl = chr == '\'';
-                                break;
-                            case ' ':
-                                builder.Append(chr);
-                                break;
-                            case ':':
-                                builder.Append(chr);
-                                ndTypStk.Pop();
-                                ndTypStk.Push(NodeType.DictVal);
-                                break;
-                            //case '0':
-                            //case '1':
-                            //case '2':
-                            //case '3':
-                            //case '4':
-                            //case '5':
-                            //case '6':
-                            //case '7':
-                            //case '8':
-                            //case '9':
-                            //    ndTypStk.Push(NodeType.KeyNum);
-                            //    builder.Append("\"idx");
-                            //    i--;
-                            //    sngl = false;
-                            //    break;
-                            default:
-                                ndTypStk.Push(NodeType.KeyNum);
-                                builder.Append("\"");
-                                i--;
-                                sngl = false;
-                                break;
-                        }
-                        break;
-                    case NodeType.DictVal:
-                        switch (chr)
-                        {
-                            case '"':
-                            case '\'':
-                                ndTypStk.Push(NodeType.ValStr);
-                                builder.Append('"');
-                                sngl = chr == '\'';
-                                break;
-                            case ' ':
-                            case '\r':
-                            case '\n':
-                                builder.Append(chr);
-                                break;
-                            case ',':
-                                builder.Append(chr);
-                                ndTypStk.Pop();
-                                ndTypStk.Push(NodeType.DictKey);
-                                break;
-                            case '0':
-                            case '1':
-                            case '2':
-                            case '3':
-                            case '4':
-                            case '5':
-                            case '6':
-                            case '7':
-                            case '8':
-                            case '9':
-                            case 'n'://null
-                            case '-'://負の数
-                            case 'f'://false
-                            case 't'://true
-                                ndTypStk.Push(NodeType.ValNum);
-                                i--;
-                                break;
-                            case '[':
-                                ndTypStk.Push(NodeType.Array);
-                                builder.Append(chr);
-                                break;
-                            case '{':
-                                ndTypStk.Push(NodeType.DictKey);
-                                builder.Append(chr);
-                                break;
-                            case '}':
-                                ndTypStk.Pop();
-                                builder.Append(chr);
-                                break;
-                            default:
-                                throw new ArgumentException("引数jsonには書式異常があります。");
-                        }
-                        break;
-                    case NodeType.KeyStr:
-                    case NodeType.ValStr:
-                        var j = i;
-                        while (true)
-                        {
-                            j = sngl ? jsonText.IndexOf('\'', j) : jsonText.IndexOf('"', j);
-                            var l = 0;
-                            for (; jsonText[j - l - 1] == '\\'; l++) ;
-                            if (l % 2 == 0)
-                            {
-                                builder.Append(string.Concat(jsonText.Substring(i, j - i), '"'));
-                                ndTypStk.Pop();
-                                i = j;
-                                break;
-                            }
-                            j++;
-                        }
-                        break;
-                    case NodeType.KeyNum:
-                    case NodeType.ValNum:
-                        char[] ptrn = ndTypStk.Peek() == NodeType.KeyNum
-                            ? new char[] { ':' }
-                            : new char[] { ',', ']', '}' };
-
-                        var k = jsonText.IndexOfAny(ptrn, i);
-                        builder.Append(jsonText.Substring(i, k - i));
-                        i = k - 1;
-                        if (ndTypStk.Pop() == NodeType.KeyNum)
-                            builder.Append('"');
-                        break;
-                    case NodeType.None:
-                        switch (chr)
-                        {
-                            case '[':
-                                ndTypStk.Push(NodeType.Array);
-                                builder.Append(chr);
-                                break;
-                            case '{':
-                                ndTypStk.Push(NodeType.DictKey);
-                                builder.Append(chr);
-                                break;
-                            case '\r':
-                            case '\n':
-                                builder.Append(chr);
-                                break;
-                            default:
-                                throw new ArgumentException("引数jsonには書式異常があります。");
-                        }
-                        break;
-                }
-            }
-            return builder.ToString();
-        }
         public static ulong GetUnixTime(DateTime date)
         {
             var stime = (ulong)((date - DateUnixEpoch).TotalMilliseconds);
@@ -997,9 +773,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             using (var content = new FormUrlEncodedContent(data))
                 return content.ReadAsStringAsync();
         }
-        static Task<string> PostStringAsync(HttpClient client, Uri requestUrl, Dictionary<string, string> content, System.Threading.CancellationToken? token = null)
-        { return PostStringAsync(client, requestUrl, new FormUrlEncodedContent(content), token); }
-        static async Task<string> PostStringAsync(HttpClient client, Uri requestUrl, HttpContent content, System.Threading.CancellationToken? token = null)
+        //不本意ながらモック化を意図してpublic virtualで定義している。実際はprivate staticで十分
+        public virtual async Task<string> PostStringAsync(HttpClient client, Uri requestUrl, HttpContent content, System.Threading.CancellationToken? token = null)
         {
             try
             {
@@ -1027,7 +802,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, content, null, e);
             }
         }
-        static async Task<string> GetStringAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
+        public virtual async Task<string> GetStringAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
         {
             try
             {
@@ -1055,7 +830,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, null, null, e);
             }
         }
-        static async Task<System.IO.Stream> GetStreamAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
+        public virtual async Task<System.IO.Stream> GetStreamAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
         {
             try
             {
@@ -1085,7 +860,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, null, null, e);
             }
         }
-        enum NodeType { DictKey, DictVal, Array, KeyStr, KeyNum, ValNum, ValStr, None, }
+        Task<string> PostStringAsync(HttpClient client, Uri requestUrl, Dictionary<string, string> content, System.Threading.CancellationToken? token = null)
+        { return PostStringAsync(client, requestUrl, new FormUrlEncodedContent(content), token); }
     }
     public enum NotificationsFilter { All = -1, Mension = 0, PostIntoYou = 1, OtherPost = 2, CircleIn = 3, Game = 4, TaggedImage = 6, }
     public enum AccountBlockType { Ignore, Block, }

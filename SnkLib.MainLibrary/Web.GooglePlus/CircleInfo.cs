@@ -41,10 +41,9 @@ namespace SunokoLibrary.Web.GooglePlus
         {
             try
             {
-                await ApiWrapper.ConnectToPost(
-                    Client.NormalHttpClient, Client.PlusBaseUrl, DateTime.Now, 0, (await Client.People.GetProfileOfMeAsync(false)).Id,
-                    new Dictionary<string, string> { { Id, Name } }, new Dictionary<string, string> { },
-                    null, content, false, false, Client.AtValue);
+                await Client.ServiceApi.PostActivity(content,
+                    new Dictionary<string, string> { { Id, Name } },
+                    new Dictionary<string, string> { }, false, false, Client);
                 return true;
             }
             catch (ApiErrorException)
@@ -123,10 +122,9 @@ namespace SunokoLibrary.Web.GooglePlus
                     {
                         var client = rangePairs.Item1;
                         var circles = rangePairs.Item2.Cast<IPostRange>();
-                        await ApiWrapper.ConnectToPost(
-                            client.NormalHttpClient, client.PlusBaseUrl, DateTime.Now, 0, (await client.People.GetProfileOfMeAsync(false)).Id,
-                            circles.ToDictionary(obj => obj.Id, obj => obj.Name), new Dictionary<string, string> { },
-                            null, content, false, false, client.AtValue);
+                        await client.ServiceApi.PostActivity(
+                            content, circles.ToDictionary(obj => obj.Id, obj => obj.Name),
+                            new Dictionary<string, string> { }, false, false, client);
                     }
                     else
                         foreach (var postRange in rangePairs.Item2)

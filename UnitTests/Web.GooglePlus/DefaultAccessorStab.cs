@@ -146,6 +146,8 @@ namespace UnitTests.Web.GooglePlus
             return Observable.Return(GenerateActivityData(1, ActivityUpdateApiFlag.Unloaded, new int[] { }, "getStreamAttacher"));
         }
         public Task UpdateNotificationCheckDateAsync(DateTime value, IPlatformClient client) { return Task.Factory.StartNew(() => { }); }
+        public Task<ActivityData> PostActivity(string content, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, bool isDisabledComment, bool isDisabledReshare, IPlatformClient client)
+        { return Task.Delay(500).ContinueWith(tsk => GenerateActivityData(0, ActivityUpdateApiFlag.GetActivity, new int[0], "PostComment")); }
         public Task<CommentData> PostComment(string activityId, string content, IPlatformClient client)
         { return Task.Delay(500).ContinueWith(tsk => GenerateCommentData(0, activityId,  "PostComment")); }
         public Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client)
@@ -154,6 +156,8 @@ namespace UnitTests.Web.GooglePlus
         { return Task.Delay(500); }
         public Task MarkAsReadAsync(NotificationData target, IPlatformClient client)
         { return Task.Delay(100); }
+        public Task MutateBlockUser(Tuple<string, string>[] userIdAndNames, AccountBlockType blockType, BlockActionType status, IPlatformClient client)
+        { return Task.Delay(0); }
 
         ActivityData GenerateActivityData(int id, ActivityUpdateApiFlag flagMode, int[] commentIds, string marking)
         {

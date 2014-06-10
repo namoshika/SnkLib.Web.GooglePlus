@@ -1,4 +1,5 @@
 /Data/
+/UnitTests/TestResponses/
 IGNORE_DATAS[0-9]*.xml
 
 ## Ignore Visual Studio temporary files, build results, and

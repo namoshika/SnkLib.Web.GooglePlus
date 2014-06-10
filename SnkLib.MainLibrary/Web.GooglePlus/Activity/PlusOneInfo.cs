@@ -42,25 +42,25 @@ namespace SunokoLibrary.Web.GooglePlus
 
         /// <summary>PlusOneボタンのトグル状態を変更します。</summary>
         /// <param name="status">変更後のボタンの状態</param>
-        public async Task<bool> Push(bool status)
-        {
-            try
-            {
-                await _syncerChange.WaitAsync();
-                if (IsPushed == status)
-                    return true;
+        //public async Task<bool> Push(bool status)
+        //{
+        //    try
+        //    {
+        //        await _syncerChange.WaitAsync();
+        //        if (IsPushed == status)
+        //            return true;
 
-                var json = JToken.Parse(await ApiWrapper.ConnectToPlusOne(Client.NormalHttpClient, Client.PlusBaseUrl, _targetId, status, Client.AtValue));
-                var plusJson = json[0][1][1];
-                if (plusJson != null)
-                    Parse(plusJson);
-                return true;
-            }
-            catch (ApiErrorException)
-            { return false; }
-            finally
-            { _syncerChange.Release(); }
-        }
+        //        var json = JToken.Parse(await ApiWrapper.ConnectToPlusOne(Client.NormalHttpClient, Client.PlusBaseUrl, _targetId, status, Client.AtValue));
+        //        var plusJson = json[0][1][1];
+        //        if (plusJson != null)
+        //            Parse(plusJson);
+        //        return true;
+        //    }
+        //    catch (ApiErrorException)
+        //    { return false; }
+        //    finally
+        //    { _syncerChange.Release(); }
+        //}
         /// <summary>PlusOneした人一覧を取得します。</summary>
         /// <param name="isForced">再読み込み強制の有効無効</param>
         public Task<ProfileInfo[]> GetPushMembers(bool isForced)

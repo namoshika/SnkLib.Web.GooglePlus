@@ -14,19 +14,21 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
     public class DefaultAccessor : IApiAccessor, IDataFactoryManager
     {
-        public DefaultAccessor()
+        public DefaultAccessor(ApiWrapper apiObject = null)
         {
-            ProfileFactory = new ProfileDataFactory(this);
-            ActivityFactory = new ActivityDataFactory(this);
-            CommentFactory = new CommentDataFactory(this);
-            AttachedFactory = new AttachedDataFactory(this);
-            NotificationFactory = new NotificationDataFactory(this);
+            _apiWrapper = apiObject ?? ApiWrapper.Default;
+            _profileFactory = new ProfileDataFactory(this);
+            _activityFactory = new ActivityDataFactory(this);
+            _commentFactory = new CommentDataFactory(this);
+            _attachedFactory = new AttachedDataFactory(this);
+            _notificationFactory = new NotificationDataFactory(this);
         }
-        public ProfileDataFactory ProfileFactory { get; private set; }
-        public ActivityDataFactory ActivityFactory { get; private set; }
-        public CommentDataFactory CommentFactory { get; private set; }
-        public AttachedDataFactory AttachedFactory { get; private set; }
-        public NotificationDataFactory NotificationFactory { get; private set; }
+        readonly ApiWrapper _apiWrapper;
+        readonly ProfileDataFactory _profileFactory;
+        readonly ActivityDataFactory _activityFactory;
+        readonly CommentDataFactory _commentFactory;
+        readonly AttachedDataFactory _attachedFactory;
+        readonly NotificationDataFactory _notificationFactory;
 
         public async Task<IPlatformClientBuilder[]> GetAccountListAsync(CookieContainer cookies)
         {
@@ -34,7 +36,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 var client = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler() { CookieContainer = cookies });
                 client.DefaultRequestHeaders.Add("user-agent", ApiAccessorUtility.UserAgent);
-                var json = JArray.Parse(await ApiWrapper.LoadListAccounts(client));
+                var json = JArray.Parse(ApiAccessorUtility.ConvertIntoValidJson(await _apiWrapper.LoadListAccounts(client)));
                 var generators = json[1]
                     .Select(item => new PlatformClientBuilder((string)item[3], (string)item[2], ApiAccessorUtility.ConvertReplasableUrl((string)item[4]), (int)item[7], cookies))
                     .ToArray();
@@ -45,10 +47,10 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         [Obsolete("このメソッドを使用すべきではありません。認証を使わずに外部からのCookieの取り込みを検討してください。")]
         public Task<bool> LoginAsync(string email, string password, IPlatformClient client)
-        { return ApiWrapper.ConnectToServiceLoginAuth(client.NormalHttpClient, client.PlusBaseUrl, client.Cookies, email, password); }
+        { return _apiWrapper.ConnectToServiceLoginAuth(client.NormalHttpClient, client.PlusBaseUrl, client.Cookies, email, password); }
         public async Task<InitData> GetInitDataAsync(IPlatformClient client)
         {
-            var plusPg = await Primitive.ApiWrapper.LoadHomeInitData(client.NormalHttpClient, client.PlusBaseUrl);
+            var plusPg = await _apiWrapper.LoadHomeInitData(client.NormalHttpClient, client.PlusBaseUrl);
 
             //apiのロケールやバージョン類を取得
             string buildLabel = null, lang = null, afsid = null;
@@ -82,7 +84,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 if (txt.Trim('{', '}').Split(',').Select(itm => itm.Trim())
                        .Any(itm => itm.IndexOf("data:function(){", 0, Math.Min(itm.Length, 16)) >= 0))
                     continue;
-                var json = JToken.Parse(ApiWrapper.ConvertIntoValidJson(txt));
+                var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson((txt)));
                 hmIntDt.Add(int.Parse((string)json["key"]), json["data"]);
             }
             try
@@ -95,7 +97,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     .ToArray();
                 var latestActivities = hmIntDt[161][1][7]
                     .Where(item => (string)item[0] == "1002")
-                    .Select(jsonItem => ActivityFactory.Generate(jsonItem[6]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
+                    .Select(jsonItem => _activityFactory.Generate(jsonItem[6]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
                     .ToArray();
                 return new InitData(atVal, pvtVal, eJxVal, buildLabel, lang, afsid, circleInfos, latestActivities); ;
             }
@@ -106,7 +108,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             var lookupedProfiles = new List<ProfileData>();
             var circles = new Dictionary<string, Tuple<string, List<ProfileData>>>();
-            var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToLookupCircles(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToLookupCircles(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue)));
             var lastUpdateDate = DateTime.UtcNow;
 
             //サークル一覧生成。List<ProfileInfo>の初期化と一緒にサークル名も
@@ -117,7 +120,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             foreach (var item in json[0][1][2])
             {
                 var profileId = (string)item[0].ElementAtOrDefault(2) ?? (string)item[0][0];
-                var profile = ProfileFactory.Generate(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle);
+                var profile = _profileFactory.Generate(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle);
                 var circleIdLst = new List<string>();
                 bool isBlockingId = false;
                 foreach (var cidItm in item[3])
@@ -140,35 +143,39 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             //フォローしているプロフィールのリストをつくる
             var circleWithoutBlock = resCircles.Where(dt => dt.Id != "15").ToArray();
             var resProfiles = new List<ProfileData>(json[0][1][2]
-                .Select(item => ProfileFactory.Generate(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle)));
+                .Select(item => _profileFactory.Generate(item, lastUpdateDate, ProfileUpdateApiFlag.LookupCircle)));
 
             return Tuple.Create(resCircles.ToArray(), resProfiles.ToArray());
         }
         public async Task<ProfileData> GetProfileLiteAsync(string profileId, IPlatformClient client)
         {
-            var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToLookupPeople(client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToLookupPeople(client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue)));
             var lastUpdateDate = DateTime.UtcNow;
-            return ProfileFactory.Generate(json[0][1][2][0], lastUpdateDate, ProfileUpdateApiFlag.LookupProfile);
+            return _profileFactory.Generate(json[0][1][2][0], lastUpdateDate, ProfileUpdateApiFlag.LookupProfile);
         }
         public async Task<ProfileData> GetProfileFullAsync(string profileId, IPlatformClient client)
         {
-            var apiResponse = JToken.Parse(await ApiWrapper.ConnectToProfileGet(client.NormalHttpClient, client.PlusBaseUrl, profileId));
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToProfileGet(client.NormalHttpClient, client.PlusBaseUrl, profileId)));
             var lastUpdateDate = DateTime.UtcNow;
-            return ProfileFactory.Generate(apiResponse[0][1][1][2], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
+            return _profileFactory.Generate(apiResponse[0][1][1][2], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData> GetProfileAboutMeAsync(IPlatformClient client)
         {
-            var json = JToken.Parse(await ApiWrapper.ConnectToGetIdentities(client.NormalHttpClient, client.PlusBaseUrl));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToGetIdentities(client.NormalHttpClient, client.PlusBaseUrl)));
             var id = (string)json[0][0][1];
             var lastUpdateDate = DateTime.UtcNow;
             if (id == null)
                 throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null, null, null, null);
-            return ProfileFactory.Generate(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
+            return _profileFactory.Generate(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData[]> GetFollowingProfilesAsync(string profileId, IPlatformClient client)
         {
             var results = new List<ProfileData>();
-            var json = JToken.Parse(await ApiWrapper.ConnectToLookupVisible(client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToLookupVisible(client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue)));
             foreach (var item in json[0][1][2])
                 results.Add(new ProfileData(
                     (string)item[0][2], (string)item[2][0], ApiAccessorUtility.ConvertReplasableUrl((string)item[2][8]),
@@ -178,7 +185,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public async Task<ProfileData[]> GetFollowedProfilesAsync(string profileId, int count, IPlatformClient client)
         {
             var results = new List<ProfileData>();
-            var json = JToken.Parse(await ApiWrapper.ConnectToLookupIncoming(client.NormalHttpClient, client.PlusBaseUrl, profileId, count, client.AtValue));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToLookupIncoming(client.NormalHttpClient, client.PlusBaseUrl, profileId, count, client.AtValue)));
             foreach (var item in json[0][1][2])
             {
                 var iconUrl = item[2][8].Type != JTokenType.Null ? (string)item[2][8] : null;
@@ -190,7 +198,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<ProfileData[]> GetIgnoredProfilesAsync(IPlatformClient client)
         {
-            var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToLookupIgnore(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToLookupIgnore(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue)));
             var ignoreLst = new List<ProfileData>();
             foreach (var item in json[0][1][2])
             {
@@ -203,8 +212,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<ProfileData[]> GetFollowingMeProfilesAsync(IPlatformClient client)
         {
-            var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToLookupFollowers(
-                client.NormalHttpClient, client.PlusBaseUrl, client.AtValue))[0][1];
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToLookupFollowers(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue)))[0][1];
             var followersLst = new List<ProfileData>();
             foreach (var jsonB in json.Skip(1).Take(2))
                 foreach (var item in jsonB)
@@ -219,8 +228,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public async Task<ProfileData[]> GetProfileOfPusherAsync(string plusOneId, int pushCount, IPlatformClient client)
         {
             var resLst = new List<ProfileData>();
-            var json = JToken.Parse(await ApiWrapper.ConnectToCommonGetPeople(
-                client.NormalHttpClient, client.PlusBaseUrl, plusOneId, pushCount, client.AtValue))[0][1][1];
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToCommonGetPeople(client.NormalHttpClient, client.PlusBaseUrl, plusOneId, pushCount, client.AtValue)))[0][1][1];
             foreach (var item in json)
                 resLst.Add(new ProfileData(
                     (string)item[1], (string)item[0], ApiAccessorUtility.ConvertReplasableUrl((string)item[3]),
@@ -229,8 +238,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<ActivityData> GetActivityAsync(string activityId, IPlatformClient client)
         {
-            return ActivityFactory.Generate(
-                JToken.Parse(await ApiWrapper.ConnectToGetActivity(client.NormalHttpClient, client.PlusBaseUrl, activityId))[0][1],
+            return _activityFactory.Generate(
+                JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(await _apiWrapper.ConnectToGetActivity(client.NormalHttpClient, client.PlusBaseUrl, activityId)))[0][1],
                 ActivityUpdateApiFlag.GetActivity, client);
         }
         public async Task<Tuple<ActivityData[], string>> GetActivitiesAsync(string circleId, string profileId, string ctValue, int length, IPlatformClient client)
@@ -241,13 +250,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 var oneSetSize = Math.Min(length, 40);
                 var oneSetCount = 0;
-                var apiResult = JToken.Parse(await Primitive.ApiWrapper.ConnectToGetActivities(
-                    client.NormalHttpClient, client.PlusBaseUrl, client.AtValue, oneSetSize, circleId, profileId, ctValue))[0][1][1];
+                var apiResult = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                    await _apiWrapper.ConnectToGetActivities(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue, oneSetSize, circleId, profileId, ctValue)))[0][1][1];
                 ctValue = (string)apiResult[1];
                 foreach (var item in apiResult[0])
                 {
                     oneSetCount++;
-                    activities.Add(ActivityFactory.Generate(item, ActivityUpdateApiFlag.GetActivities, client));
+                    activities.Add(_activityFactory.Generate(item, ActivityUpdateApiFlag.GetActivities, client));
                     if (++i >= length)
                         break;
                 }
@@ -265,9 +274,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var latestReadedItemNotifiedDate = DateTime.MinValue;
             do
             {
-                var apiResponse = JToken.Parse(await ApiWrapper.ConnectToNotificationsFetch(
-                    client.NormalHttpClient, client.PlusBaseUrl, isFetchNewItemMode, client.AtValue,
-                    Math.Min(length, MAX_RESULT_LENGTH), continueToken))[0][1];
+                var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                    await _apiWrapper.ConnectToNotificationsFetch(client.NormalHttpClient, client.PlusBaseUrl, isFetchNewItemMode, client.AtValue, Math.Min(length, MAX_RESULT_LENGTH), continueToken)))[0][1];
                 continueToken = apiResponse[2].Type == JTokenType.Array ? (string)apiResponse[2][5] : null;
                 if (latestReadedItemNotifiedDate == DateTime.MinValue)
                     latestReadedItemNotifiedDate = ApiWrapper.GetDateTime((ulong)apiResponse[4] / 1000);
@@ -275,7 +283,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 {
                     try
                     {
-                        var data = NotificationFactory.Generate(item, client.PlusBaseUrl);
+                        var data = _notificationFactory.Generate(item, client.PlusBaseUrl);
                         notificationList.Add(data);
                         length--;
                     }
@@ -295,17 +303,19 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<int> GetUnreadNotificationCountAsync(IPlatformClient client)
         {
-            var json = JToken.Parse(await Primitive.ApiWrapper.ConnectToGsuc(client.NormalHttpClient, client.PlusBaseUrl));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToGsuc(client.NormalHttpClient, client.PlusBaseUrl)));
             return (int)json[0];
         }
         public async Task<AlbumData> GetAlbumAsync(string albumId, string profileId, IPlatformClient client)
         {
-            var json = JToken.Parse(await ApiWrapper.ConnectToPhotosAlbums(client.NormalHttpClient, client.PlusBaseUrl, profileId, albumId));
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToPhotosAlbums(client.NormalHttpClient, client.PlusBaseUrl, profileId, albumId)));
             return GenerateAlbumData(json[0][1][1], json[0][1][2], AlbumUpdateApiFlag.Full, client.PlusBaseUrl);
         }
         public async Task<AlbumData[]> GetAlbumsAsync(string profileId, IPlatformClient client)
         {
-            var json = JToken.Parse(await ApiWrapper.ConnectToPhotosAlbums(client.NormalHttpClient, client.PlusBaseUrl, profileId));
+            var json = JToken.Parse(await _apiWrapper.ConnectToPhotosAlbums(client.NormalHttpClient, client.PlusBaseUrl, profileId));
             var resultAlbums = new List<AlbumData>();
             foreach (var item in json[0][1][2])
                 resultAlbums.Add(GenerateAlbumData(item, null, AlbumUpdateApiFlag.Base, client.PlusBaseUrl));
@@ -313,7 +323,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public async Task<ImageData> GetImageAsync(string imageId, string profileId, IPlatformClient client)
         {
-            var json = JToken.Parse(await ApiWrapper.ConnectToPhotosLightbox(client.NormalHttpClient, client.PlusBaseUrl, profileId, imageId))[1][1];
+            var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToPhotosLightbox(client.NormalHttpClient, client.PlusBaseUrl, profileId, imageId)))[1][1];
             var tempJson = json[7];
             var owner = new ProfileData(
                 (string)tempJson[0], (string)tempJson[3], ApiAccessorUtility.ConvertReplasableUrl((string)tempJson[4]),
@@ -324,7 +335,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var imageUrl = (string)tempJson[0];
             var width = (int)tempJson[1];
             var height = (int)tempJson[2];
-            var isolateActivity = ActivityFactory.Generate(json[10], ActivityUpdateApiFlag.GetActivity, client);
+            var isolateActivity = _activityFactory.Generate(json[10], ActivityUpdateApiFlag.GetActivity, client);
             var tagArray = tempJson[6]
                 .Select(item =>
                     {
@@ -354,34 +365,48 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         }
         public IObservable<object> GetStreamAttacher(IPlatformClient client)
         {
-            return Primitive.ApiWrapper
+            return _apiWrapper
                 .ConnectToTalkGadgetBind(client.NormalHttpClient, client.StreamHttpClient, client.TalkBaseUrl, client.Cookies, client.PvtValue)
                 .Where(json => (string)json[1][0] == "c")
                 .Select(json => GenerateDataFromStreamingApi(json, client));
         }
         public async Task MarkAsReadAsync(NotificationData target, IPlatformClient client)
         {
-            await ApiWrapper.ConnectToSetReadStates(
+            await _apiWrapper.ConnectToSetReadStates(
                 client.NormalHttpClient, client.PlusBaseUrl, target.Id, target.RawNoticedDate, client.AtValue);
             if (target is ContentNotificationData)
-                await ApiWrapper.ConnectToMarkItemRead(
+                await _apiWrapper.ConnectToMarkItemRead(
                     client.NormalHttpClient, client.PlusBaseUrl,
                     ((ContentNotificationData)target).Target.Id, client.AtValue);
         }
+        public async Task<ActivityData> PostActivity(string content, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, bool isDisabledComment, bool isDisabledReshare, IPlatformClient client)
+        {
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(await _apiWrapper.ConnectToPost(
+                client.NormalHttpClient, client.PlusBaseUrl, DateTime.Now, 0, null, targetCircles, targetUsers, null, content, isDisabledComment, isDisabledReshare, client.AtValue)));
+            return _activityFactory.Generate(apiResponse, ActivityUpdateApiFlag.GetActivity, client);
+        }
         public async Task<CommentData> PostComment(string activityId, string content, IPlatformClient client)
         {
-            var apiResponse = JToken.Parse(
-                await ApiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue));
-            return CommentFactory.Generate(apiResponse[0][1][1]);
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, content, DateTime.Now, client.AtValue)));
+            return _commentFactory.Generate(apiResponse[0][1][1]);
         }
         public async Task<CommentData> EditComment(string activityId, string commentId, string content, IPlatformClient client)
         {
-            var apiResponse = JToken.Parse(
-                await ApiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue));
-            return CommentFactory.Generate(apiResponse[0][1][1]);
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue)));
+            return _commentFactory.Generate(apiResponse[0][1][1]);
         }
         public Task DeleteComment(string commentId, IPlatformClient client)
-        { return ApiWrapper.ConnectToDeleteComment(client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue); }
+        { return _apiWrapper.ConnectToDeleteComment(client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue); }
+        public Task MutateBlockUser(Tuple<string, string>[] userIdAndNames, AccountBlockType blockType, BlockActionType status, IPlatformClient client)
+        { return _apiWrapper.ConnectToMutateBlockUser(client.NormalHttpClient, client.PlusBaseUrl, userIdAndNames, blockType, status, client.AtValue); }
+
+        ProfileDataFactory IDataFactoryManager.ProfileFactory { get { return _profileFactory; } }
+        ActivityDataFactory IDataFactoryManager.ActivityFactory { get { return _activityFactory; } }
+        CommentDataFactory IDataFactoryManager.CommentFactory { get { return _commentFactory; } }
+        AttachedDataFactory IDataFactoryManager.AttachedFactory { get { return _attachedFactory; } }
+        NotificationDataFactory IDataFactoryManager.NotificationFactory { get { return _notificationFactory; } }
 
         static AlbumData GenerateAlbumData(JToken albumApiResponse, JToken imageApiResponse, AlbumUpdateApiFlag loadedApiTypes, Uri plusBaseUrl)
         {
@@ -451,13 +476,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             switch ((string)json[0])
             {
                 case "tu":
-                    var shrItm = JArray.Parse(Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
+                    var shrItm = JArray.Parse(ApiAccessorUtility.ConvertIntoValidJson((string)json[1]));
                     switch ((string)shrItm[0])
                     {
                         case "t.rtc":
-                            return CommentFactory.Generate(shrItm[1]);
+                            return _commentFactory.Generate(shrItm[1]);
                         case "t.rtu":
-                            return ActivityFactory.Generate(shrItm[1], ActivityUpdateApiFlag.GetActivities, client);
+                            return _activityFactory.Generate(shrItm[1], ActivityUpdateApiFlag.GetActivities, client);
                         case "t.rtd":
                             {
                                 if (shrItm.Count >= 3)
@@ -475,7 +500,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     }
                 case "gb":
                     var notificationItem = JArray.Parse(
-                        Primitive.ApiWrapper.ConvertIntoValidJson((string)json[1]));
+                        ApiAccessorUtility.ConvertIntoValidJson((string)json[1]));
                     switch ((string)notificationItem[0])
                     {
                         case "gb.n.rtn":
