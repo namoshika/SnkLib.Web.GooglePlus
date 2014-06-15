@@ -9,18 +9,23 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     public class DataBase
     {
-        protected static TResult Merge<T, TResult>(T baseData, T data, Func<T, TResult> accessor, bool enableAdd = false, bool precedeBaseData = false)
+        protected static TResult Merge<T, TResult>(T baseData, T data, Func<T, TResult> accessor, bool enableAdd = false)
         {
-            var notEqualerT = GenerateCalcFunc<T, bool>((pA, pB) => Expression.NotEqual(pA, pB));
-            var notEqualerTResult = GenerateCalcFunc<TResult, bool>((pA, pB) => Expression.NotEqual(pA, pB));
-            var adderTResult = enableAdd ? GenerateCalcFunc<TResult, TResult>((pA, pB) => Expression.Add(pA, pB)): null;
+            var val_baseData = baseData is ValueType == false && (object)baseData == null ? default(TResult) : accessor(baseData);
+            var val_data = data is ValueType == false && (object)data == null ? default(TResult) : accessor(data);
 
-            var val_baseData = notEqualerT(baseData, default(T)) ? accessor(baseData) : default(TResult);
-            var val_data = notEqualerT(data, default(T)) ? accessor(data) : default(TResult);
-
-            return enableAdd
-                ? adderTResult(val_baseData, val_data)
-                : notEqualerTResult(val_data, default(TResult)) && precedeBaseData == false ? val_data : val_baseData;
+            if(enableAdd)
+            {
+                var adderTResult = enableAdd ? GenerateCalcFunc<TResult, TResult>((pA, pB) => Expression.Add(pA, pB)) : null;
+                return adderTResult(val_baseData, val_data);
+            }
+            else
+            {
+                var val = val_data is ValueType && default(TResult).Equals(val_data) == false ? val_data
+                    : val_data is ValueType == false && (object)val_data != null ? val_data
+                    : val_baseData;
+                return val;
+            }
         }
         static Func<T, T, TResult> GenerateCalcFunc<T, TResult>(Func<ParameterExpression,ParameterExpression, BinaryExpression> op)
         {
