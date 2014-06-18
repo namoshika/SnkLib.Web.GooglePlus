@@ -10,12 +10,13 @@ namespace UnitTests.Web.GooglePlus
 {
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
+    using SunokoLibrary.Web.GooglePlus.Utility;
 
     [TestClass]
     public class DefaultAccessorTest
     {
         private TestContext testContextInstance;
-        static PlatformClientStab clientStabA;
+        static PlatformClientStub clientStabA;
 
         /// <summary>
         ///現在のテストの実行についての情報および機能を
@@ -30,7 +31,7 @@ namespace UnitTests.Web.GooglePlus
         [ClassInitialize]
         public static void PlatformClientInitialize(TestContext testContext)
         {
-            clientStabA = new PlatformClientStab(new System.Net.CookieContainer());
+            clientStabA = new PlatformClientStub(new System.Net.CookieContainer());
             clientStabA.AtValue = "initDt_AtValue";
             clientStabA.EjxValue = "initDt_EjxValue";
             clientStabA.PvtValue = "initDt_PvtValue";

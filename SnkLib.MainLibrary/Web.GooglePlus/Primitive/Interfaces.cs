@@ -8,13 +8,6 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public interface IPlatformClientBuilder
-    {
-        string Email { get; }
-        string Name { get; }
-        string IconUrl { get; }
-        Task<PlatformClient> Build(IApiAccessor[] accessors = null);
-    }
     public interface IPlatformClient
     {
         HttpClient NormalHttpClient { get; }

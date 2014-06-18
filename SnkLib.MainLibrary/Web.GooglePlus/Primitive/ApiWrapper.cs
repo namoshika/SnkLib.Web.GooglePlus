@@ -11,6 +11,7 @@ using System.Reactive.Linq;
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
     using Newtonsoft.Json.Linq;
+    using System.Xml.Linq;
 
     public class ApiWrapper
     {
@@ -72,8 +73,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public async Task<string> ConnectToInitialData(HttpClient client, Uri plusBaseUrl, int key, string atVal)
         {
             var url = new Uri(plusBaseUrl, string.Format("_/initialdata?key={0}&rt=j", key));
-            var jsonTxt = await PostStringAsync(
-                client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atVal }, }));
+            var jsonTxt = await PostStringAsync(client, url, new Dictionary<string, string>() { { "at", atVal }, });
             return jsonTxt;
         }
         public async Task<string> ConnectToGetIdentities(HttpClient client, Uri plusBaseUrl)
@@ -95,31 +95,30 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/socialgraph/lookup/people/?if=true&rt=j"),
-                new FormUrlEncodedContent(new Dictionary<string, string>()
+                new Dictionary<string, string>()
                     {
                         { "m", string.Format("[[[null,null,\"{0}\"]]]", plusId) },
                         { "at", atVal },
-                    }));
+                    });
             return jsonTxt;
         }
         public async Task<string> ConnectToLookupCircles(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var circlesUrl = new Uri(plusBaseUrl, "_/socialgraph/lookup/circles/?ct=2&m=true&rt=j");
-            var jsonTxt = await PostStringAsync(client, circlesUrl, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
+            var jsonTxt = await PostStringAsync(client, circlesUrl, new Dictionary<string, string>() { { "at", atValue } });
             return jsonTxt;
         }
         public async Task<string> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var url = new Uri(plusBaseUrl, "_/socialgraph/lookup/followers/?m=2500&rt=j");
             var jsonTxt = await PostStringAsync(
-                client, url, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
+                client, url, new Dictionary<string, string>() { { "at", atValue } });
             return jsonTxt;
         }
         public async Task<string> ConnectToLookupIgnore(HttpClient client, Uri plusBaseUrl, string atValue)
         {
             var ignoreUrl = new Uri(plusBaseUrl, "_/socialgraph/lookup/ignored/?m=5000&rt=j");
-            var jsonTxt = await PostStringAsync(
-                client, ignoreUrl, new FormUrlEncodedContent(new Dictionary<string, string>() { { "at", atValue } }));
+            var jsonTxt = await PostStringAsync(client, ignoreUrl, new Dictionary<string, string>() { { "at", atValue } });
             return jsonTxt;
         }
         public async Task<string> ConnectToLookupVisible(HttpClient client, Uri plusBaseUrl, string plusId, string atValue)
@@ -127,12 +126,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/socialgraph/lookup/visible/"),
-                new FormUrlEncodedContent(new Dictionary<string, string>()
+                new Dictionary<string, string>()
                     {
                         { "o", string.Format("[null,null,\"{0}\"]", plusId) },
                         { "rt", "j" },
                         { "at", atValue },
-                    }));
+                    });
             return jsonTxt;
         }
         public async Task<string> ConnectToLookupIncoming(HttpClient client, Uri plusBaseUrl, string plusId, int count, string atValue)
@@ -140,35 +139,34 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/socialgraph/lookup/incoming/"),
-                new FormUrlEncodedContent(new Dictionary<string, string>()
+                new Dictionary<string, string>()
                     {
                         { "o", string.Format("[null,null,\"{0}\"]", plusId) },
                         { "s", "true" },
                         { "n", count.ToString() },
                         { "rt", "j" },
                         { "at", atValue },
-                    }));
+                    });
             return jsonTxt;
         }
         public async Task<string> ConnectToGetActivities(HttpClient client, Uri plusBaseUrl, string atVal, int length = 20, string circleId = null, string plusId = null, string ct = null)
         {
             //query作成
-            var query = new FormUrlEncodedContent(
-                new Dictionary<string, string>()
+            var query = new Dictionary<string, string>()
+                {
+                    { "hl", "ja" },
                     {
-                        { "hl", "ja" },
-                        {
-                            "f.req",
-                            string.Format(
-                                "[[1,2,{0},{1},null,{2},null,\"social.google.com\",[],null,null,null,null,null,null,[]]{3}]",
-                                plusId == null ? "null" : string.Format("\"{0}\"", plusId),
-                                circleId == null ? "null" : string.Format("\"{0}\"", circleId),
-                                length,
-                                ct != null ? string.Format(",\"{0}\"", ct) : string.Empty
-                            )
-                        },
-                        { "at", atVal }
-                    });
+                        "f.req",
+                        string.Format(
+                            "[[1,2,{0},{1},null,{2},null,\"social.google.com\",[],null,null,null,null,null,null,[]]{3}]",
+                            plusId == null ? "null" : string.Format("\"{0}\"", plusId),
+                            circleId == null ? "null" : string.Format("\"{0}\"", circleId),
+                            length,
+                            ct != null ? string.Format(",\"{0}\"", ct) : string.Empty
+                        )
+                    },
+                    { "at", atVal }
+                };
 
             //download
             var resStr = await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/getactivities/?rt=j"), query);
@@ -250,11 +248,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 new object[]{ }
             };
             var sparJson = Newtonsoft.Json.JsonConvert.SerializeObject(sparObj);
-            var parameter = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var parameter = new Dictionary<string, string>()
                 {
                     { "spar", (string)sparJson },
                     { "at", atVal }
-                });
+                };
             var url = new Uri(plusBaseUrl, "_/sharebox/post/?spam=20&rt=j");
             var jsonTxt = await PostStringAsync(client, url, parameter);
             return jsonTxt;
@@ -262,63 +260,63 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public async Task<string> ConnectToComment(HttpClient client, Uri plusBaseUrl, string activityId, string content, DateTime postDate, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/comment/?rt=j");
-            var prmsStr = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var prmsStr = new Dictionary<string, string>()
                 {
                     { "itemId", activityId },
                     { "clientId", string.Format("os:{0}:{1}", activityId, postDate) },
                     { "text", content },
                     { "timestamp_msec", GetUnixTime(postDate).ToString() },
                     { "at", atVal },
-                });
+                };
             var jsonTxt = await PostStringAsync(client, url, prmsStr);
             return jsonTxt;
         }
         public async Task<string> ConnectToEditComment(HttpClient client, Uri plusBaseUrl, string activityId, string commentId, string content, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/editcomment/?rt=j");
-            var query = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var query = new Dictionary<string, string>()
                 {
                     { "itemId", activityId },
                     { "commentId", commentId },
                     { "text", content },
                     { "at", atVal },
-                });
+                };
             var jsonTxt = await PostStringAsync(client, url, query);
             return jsonTxt;
         }
         public async Task<string> ConnectToDeleteComment(HttpClient client, Uri plusBaseUrl, string commentId, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/stream/deletecomment/?rt=j");
-            var query = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var query = new Dictionary<string, string>()
                 {
                     { "commentId", commentId },
                     { "at", atVal },
-                });
+                };
             var jsonTxt = await PostStringAsync(client, url, query);
             return jsonTxt;
         }
         public async Task<string> ConnectToPlusOne(HttpClient client, Uri plusBaseUrl, string targetId, bool isPlusOned, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/plusone?rt=j");
-            var query = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var query = new Dictionary<string, string>()
                 {
                     { "itemId", targetId },
                     { "set", isPlusOned ? "true" : "false" },
                     { "at", atVal },
-                });
+                };
             var jsonTxt = await PostStringAsync(client, url, query);
             return jsonTxt;
         }
         public async Task<string> ConnectToCommonGetPeople(HttpClient client, Uri plusBaseUrl, string plusoneId, int length, string atVal)
         {
             var url = new Uri(plusBaseUrl, "_/common/getpeople/?rt=j");
-            var query = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var query = new Dictionary<string, string>()
                 {
                     { "plusoneId", plusoneId },
                     { "num", length.ToString() },
                     { "hl", "ja" },
                     { "at", atVal },
-                });
+                };
             var jsonTxt = await PostStringAsync(client, url, query);
             return jsonTxt;
         }
@@ -333,11 +331,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "avw", "str:1" },
                     { "rt","j" }
                 };
-            var paramArray = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var paramArray = new Dictionary<string, string>()
                 {
                     { "f.req", string.Format("[{0},[],6,null,[],null,null,[],null,{1},{2},null,null,null,null,null,[18],null,null,2]", type == NotificationsFilter.All ? "null" : ((int)type).ToString(), continueToken != null ? "\"" + continueToken + "\"" : "null", maxResults) },
                     { "at", atVal }
-                });
+                };
             var query = await MakeQuery(queryArray);
             var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/getnotificationsdata?" + query), paramArray);
             return jsonTxt;
@@ -353,11 +351,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "avw", "str:1" },
                     { "rt","j" },
                 };
-            var paramDict = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var paramDict = new Dictionary<string, string>()
                 {
                     { "f.req", string.Format("[[\"OGB\",[7]],[null,null,{0},[],[{1}],{2},\"GPLUS_APP\",[3]],[3]]", maxResults, isFetchNewItemMode ? "1" : "2", continueToken != null ? string.Format("\"{0}\"", continueToken) : "null") },
                     { "at", atVal }
-                });
+                };
             var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/fetch?" + await MakeQuery(queryDict)), paramDict);
             return jsonTxt;
         }
@@ -369,12 +367,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "avw", "str:1" },
                     { "rt","j" },
                 };
-            var paramDict = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var paramDict = new Dictionary<string, string>()
                 {
                     { "itemIds", activityIds },
                     { "netType", "4" },
                     { "at", atValue }
-                });
+                };
             var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/markitemread/?" + await MakeQuery(queryDict)), paramDict);
             return jsonTxt;
         }
@@ -387,11 +385,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     { "soc-platform","1" },
                     { "rt","j" },
                 };
-            var paramDict = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var paramDict = new Dictionary<string, string>()
                 {
                     {"f.req", string.Format("[[\"OGB\",[7]],[[[\"{0}\",null,\"{1}\"]],2]]", notificationIds, rawNoticedDate) },
                     {"at", atValue }
-                });
+                };
             var jsonTxt = await PostStringAsync(client, new Uri(plusBaseUrl, "_/notifications/setreadstates?" + await MakeQuery(queryDict)), paramDict);
             return jsonTxt;
         }
@@ -498,7 +496,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "prop", "homepage" },
                                     { "CVER", "1" },
                                     { "t", "1" },
-                                    { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
+                                    { "ec", "[\"ci:ec\",1,1,0,\"chat_wcs_20140612.120118_RC3\"]" },
                                 })));
                         var res = await PostStringAsync(normalClient, url, new Dictionary<string, string>() { { "count", "0" } }, tokenSource.Token);
                         var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(res.Substring(res.IndexOf("\n") + 1)));
@@ -524,7 +522,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "AID", aidVal.ToString() },
                                     { "t", "1" },
                                     { "zx", "7anb33bhfgp2" },
-                                    { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
+                                    { "ec", "[\"ci:ec\",1,1,0,\"chat_wcs_20140612.120118_RC3\"]" },
                                 })));
                         res = await PostStringAsync(
                             normalClient, url, new Dictionary<string, string>()
@@ -561,7 +559,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                                     { "TYPE", "xmlhttp" },
                                     { "zx", "p5guamwzkeiu" },
                                     { "t", "1" },
-                                    { "ec", "[1,1,0,\"chat_wcs_20140205.113053_RC2\"]" },
+                                    { "ec", "[\"ci:ec\",1,1,0,\"chat_wcs_20140612.120118_RC3\"]" },
                                 })));
                             using (var strm = await GetStreamAsync(streamClient, url, tokenSource.Token))
                             using (var reader = new System.IO.StreamReader(strm, Encoding.UTF8))
@@ -618,16 +616,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             keyword = keyword.Replace("\\", "\\\\");
             keyword = keyword.Replace("\"", "\\\"");
             var query = searchTicket == null
-                ? new FormUrlEncodedContent(new Dictionary<string, string>()
+                ? new Dictionary<string, string>()
                     {
                         { "at", atVal },
                         { "srchrp", string.Format("[[\"{0}\",{1},2,[{2}]]]", keyword, (int)target, (int)range) }
-                    })
-                : new FormUrlEncodedContent(new Dictionary<string, string>()
+                    }
+                : new Dictionary<string, string>()
                     {
                         { "at", atVal },
                         { "srchrp", string.Format("[[\"{0}\",{1},2,[{2}]],null,[\"{3}\"]]", keyword, (int)target, (int)range, searchTicket) }
-                    });
+                    };
             var jsonTxt = ApiAccessorUtility.ConvertIntoValidJson(
                 await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/query?rt=j"), query));
             var json = JToken.Parse(jsonTxt);
@@ -638,11 +636,11 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             keyword = keyword.Replace("\\", "\\\\");
             keyword = keyword.Replace("\"", "\\\"");
-            var query = new FormUrlEncodedContent(new Dictionary<string, string>()
+            var query = new Dictionary<string, string>()
                 {
                     { "at", atVal },
                     { "srchrp", string.Format("[[\"{0}\",3,2],null,[\"{1}\",false]]", keyword, searchTicket) }
-                });
+                };
             var jsonTxt = ApiAccessorUtility.ConvertIntoValidJson(
                 await PostStringAsync(client, new Uri(plusBaseUrl, "_/s/rt?rt=j"), query));
             var json = JToken.Parse(jsonTxt);
@@ -658,7 +656,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var postVals = new Dictionary<string, string>() { { "m", param }, { "at", atVal } };
             if (blockType == AccountBlockType.Ignore)
                 postVals.Add("i", "1");
-            await PostStringAsync(client, blockUrl, new FormUrlEncodedContent(postVals));
+            await PostStringAsync(client, blockUrl, postVals);
         }
         //htmlパース
         public async Task<Dictionary<string, JToken>> LoadNotifierClient(HttpClient client, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
@@ -774,11 +772,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 return content.ReadAsStringAsync();
         }
         //不本意ながらモック化を意図してpublic virtualで定義している。実際はprivate staticで十分
-        public virtual async Task<string> PostStringAsync(HttpClient client, Uri requestUrl, HttpContent content, System.Threading.CancellationToken? token = null)
+        public virtual async Task<string> PostStringAsync(HttpClient client, Uri requestUrl, Dictionary<string, string> content, System.Threading.CancellationToken? token = null)
         {
             try
             {
-                var res = await client.PostAsync(requestUrl, content, token ?? System.Threading.CancellationToken.None);
+                var htContent = new FormUrlEncodedContent(content);
+                var res = await client.PostAsync(requestUrl, htContent, token ?? System.Threading.CancellationToken.None);
                 if (res.IsSuccessStatusCode)
                     return await res.Content.ReadAsStringAsync();
                 else
@@ -786,20 +785,20 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     switch (res.StatusCode)
                     {
                         case HttpStatusCode.Forbidden:
-                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。" + res.StatusCode, ErrorType.SessionError, requestUrl, content, res, null);
+                            throw new ApiErrorException("G+API参照に失敗。ログインセッションが失効しています。" + res.StatusCode, ErrorType.SessionError, requestUrl, null, res, null);
                         case HttpStatusCode.NotFound:
-                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。" + res.StatusCode, ErrorType.ParameterError, requestUrl, content, res, null);
+                            throw new ApiErrorException("G+API参照に失敗。参照された内容は存在しません。" + res.StatusCode, ErrorType.ParameterError, requestUrl, null, res, null);
                         default:
-                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。" + res.StatusCode, ErrorType.UnknownError, requestUrl, content, res, null);
+                            throw new ApiErrorException("G+API参照に失敗。G+側に何らかの障害が発生しています。" + res.StatusCode, ErrorType.UnknownError, requestUrl, null, res, null);
                     }
                 }
             }
             catch (HttpRequestException e)
             {
                 if (e.InnerException is WebException)
-                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, requestUrl, content, null, e);
+                    throw new ApiErrorException("G+API参照に失敗。通信中に接続が切断されました。", ErrorType.NetworkError, requestUrl, null, null, e);
                 else
-                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, content, null, e);
+                    throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, null, null, e);
             }
         }
         public virtual async Task<string> GetStringAsync(HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
@@ -860,15 +859,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     throw new ApiErrorException("G+API参照に失敗。想定していないエラーが発生しました。", ErrorType.NetworkError, requestUrl, null, null, e);
             }
         }
-        Task<string> PostStringAsync(HttpClient client, Uri requestUrl, Dictionary<string, string> content, System.Threading.CancellationToken? token = null)
-        { return PostStringAsync(client, requestUrl, new FormUrlEncodedContent(content), token); }
     }
-    public enum NotificationsFilter { All = -1, Mension = 0, PostIntoYou = 1, OtherPost = 2, CircleIn = 3, Game = 4, TaggedImage = 6, }
-    public enum AccountBlockType { Ignore, Block, }
-    public enum BlockActionType { Remove, Add, }
-    public enum SearchTarget { All = 1, Profile = 2, Activity = 3, Sparks = 4, Hangout = 5 }
-    public enum SearchRange { Full = 1, YourCircle = 2, Me = 5 }
-    public enum ContentType { Album, Image, Link, InteractiveLink, YouTube, Reshare }
 
     class OutsideException : Exception
     { public OutsideException(string message, Exception innerException) : base(message, innerException) { } }

@@ -191,4 +191,69 @@ namespace SunokoLibrary.Web.GooglePlus
             }
         }
     }
+
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay_TypeName,nq}")]
+    public class ServiceType
+    {
+        public ServiceType(string id)
+        {
+            Id = id;
+            if (id != null)
+                Segments = id.Split(':');
+        }
+        public ServiceType(string id, params string[] segments)
+        {
+            Id = id;
+            Segments = segments ?? new string[] { };
+        }
+        public readonly string Id;
+        public readonly string[] Segments;
+        public override bool Equals(object obj)
+        {
+            var tmp = obj as ServiceType;
+            return obj != null && tmp != null ? Id == tmp.Id : false;
+        }
+        public override int GetHashCode()
+        { return Id.GetHashCode(); }
+
+        static ServiceType()
+        {
+            Desktop = new ServiceType("s:updates:esshare", "s", "updates", "esshare");
+            Mobile = new ServiceType("s:updatesmobile:esshare", "s", "updates", "esshare");
+            Checkins = new ServiceType("s:updatesmobile:checkins", "s", "updatesmobile", "checkins");
+            Hangout = new ServiceType("s:talk:gcomm", "s", "talk", "gcomm");
+            Unknown = new ServiceType(null);
+        }
+        public readonly static ServiceType Desktop;
+        public readonly static ServiceType Mobile;
+        public readonly static ServiceType Checkins;
+        public readonly static ServiceType Hangout;
+        public readonly static ServiceType Unknown;
+
+        public static bool operator ==(ServiceType valueA, ServiceType valueB)
+        { return (object)valueA != null && !valueA.Equals(valueB) || (object)valueA == null && (object)valueB == null; }
+        public static bool operator !=(ServiceType valueA, ServiceType valueB)
+        { return !(valueA == valueB); }
+
+        string DebuggerDisplay_TypeName
+        {
+            get
+            {
+                string tmp;
+                if (Id == ServiceType.Desktop.Id)
+                    tmp = "Desktop";
+                else if (Id == ServiceType.Mobile.Id)
+                    tmp = "Mobile";
+                else if (Id == ServiceType.Checkins.Id)
+                    tmp = "Checkins";
+                else if (Id == ServiceType.Hangout.Id)
+                    tmp = "Hangout";
+                else
+                    tmp = "ServiceType.Unknown";
+                return string.Format("({1}){{Id = {0}}}", Id, tmp);
+            }
+        }
+    }
+    public enum ActivityUpdateApiFlag { Unloaded, Notification, GetActivities, GetActivity }
+    public enum PostStatusType { Removed, First, Edited }
 }

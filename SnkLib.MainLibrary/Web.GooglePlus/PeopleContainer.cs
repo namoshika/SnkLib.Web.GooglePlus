@@ -23,9 +23,9 @@ namespace SunokoLibrary.Web.GooglePlus
             _profileCache = profileCacheStorage;
             _followerCircle = new GroupContainer(client, "Follower");
             _blockCircle = new EditableGroupContainer(client, "blocked", null, (opType, infos) => Client.ServiceApi
-                .MutateBlockUser(infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(), Primitive.AccountBlockType.Block, opType, client));
+                .MutateBlockUser(infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(), AccountBlockType.Block, opType, client));
             _ignoreCircle = new EditableGroupContainer(client, "ignored", null, (opType, infos) => Client.ServiceApi
-                .MutateBlockUser(infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(), Primitive.AccountBlockType.Ignore, opType, client));
+                .MutateBlockUser(infos.Select(a => Tuple.Create(a.Id, a.Name)).ToArray(), AccountBlockType.Ignore, opType, client));
             CirclesAndBlockStatus = CircleUpdateLevel.Unloaded;
             IsUpdatedIgnore = false;
             PublicCircle = new PostRange(Client, "anyone", "全員");

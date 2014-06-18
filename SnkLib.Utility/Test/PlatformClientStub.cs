@@ -1,19 +1,18 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UnitTests.Web.GooglePlus
+namespace SunokoLibrary.Web.GooglePlus.Utility
 {
     using SunokoLibrary.Threading;
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
 
-    public class PlatformClientStab : IPlatformClient
+    public class PlatformClientStub : IPlatformClient
     {
-        public PlatformClientStab(System.Net.CookieContainer cookie)
+        public PlatformClientStub(System.Net.CookieContainer cookie)
         {
             var handler = new System.Net.Http.HttpClientHandler() { CookieContainer = cookie };
             PlusBaseUrl = new Uri("https://plus.google.com/u/0/");

@@ -89,10 +89,8 @@
     <Compile Include="StubGenerator.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Web.GooglePlus\ApiWrapperStub.cs" />
-    <Compile Include="Web.GooglePlus\DefaultAccessorStab.cs" />
     <Compile Include="Web.GooglePlus\DefaultAccessorTest.cs" />
     <Compile Include="Web.GooglePlus\WebApiCheck.cs" />
-    <Compile Include="Web.GooglePlus\PlatformClientStab.cs" />
     <Compile Include="Web.GooglePlus\PlatformClientTest.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -114,11 +112,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TestResponses\https_3A_2F_2Fplus.google.com_2Fu_2F0_2F__2Fsocialgraph_2Flookup_2Fcircles.txt" />
     <None Include="TestResponses\readme.md" />
-    <Content Include="TestResponses\https_3A_2F_2Fplus.google.com_2Fu_2F0_2F.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SunokoLibrary.Web.GooglePlus.Primitive
+namespace SunokoLibrary.Web.GooglePlus
 {
     public class AttachedInteractiveLink : AttachedLink
     {

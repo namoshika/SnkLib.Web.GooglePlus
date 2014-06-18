@@ -118,4 +118,11 @@ namespace SunokoLibrary.Web.GooglePlus
         public static readonly Uri PlusBaseUrl = new Uri("https://plus.google.com/");
         public static readonly Uri TalkBaseUrl = new Uri("https://talkgadget.google.com/");
     }
+
+    public enum NotificationsFilter { All = -1, Mension = 0, PostIntoYou = 1, OtherPost = 2, CircleIn = 3, Game = 4, TaggedImage = 6, }
+    public enum AccountBlockType { Ignore, Block, }
+    public enum BlockActionType { Remove, Add, }
+    public enum SearchTarget { All = 1, Profile = 2, Activity = 3, Sparks = 4, Hangout = 5 }
+    public enum SearchRange { Full = 1, YourCircle = 2, Me = 5 }
+    public enum ContentType { Album, Image, Link, InteractiveLink, YouTube, Reshare }
 }

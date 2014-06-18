@@ -10,18 +10,19 @@ namespace UnitTests.Web.GooglePlus
 {
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
+    using SunokoLibrary.Web.GooglePlus.Utility;
 
     [TestClass]
     public class WebApiCheck
     {
         static DefaultAccessor target = new DefaultAccessor();
-        static PlatformClientStab clientStabA;
+        static PlatformClientStub clientStabA;
 
         [ClassInitialize]
         public static void PlatformClientInitialize(TestContext testContext)
         {
             var cookies = PlatformClientFactoryEx.ImportCookiesFromIE();
-            clientStabA = new PlatformClientStab(cookies);
+            clientStabA = new PlatformClientStub(cookies);
             var initDt = target.GetInitDataAsync(clientStabA).Result;
             clientStabA.AtValue = initDt.AtValue;
             clientStabA.EjxValue = initDt.EjxValue;

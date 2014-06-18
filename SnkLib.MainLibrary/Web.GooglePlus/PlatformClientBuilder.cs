@@ -28,4 +28,11 @@ namespace SunokoLibrary.Web.GooglePlus
         public Task<PlatformClient> Build(IApiAccessor[] accessors = null)
         { return PlatformClient.Factory.Create(_cookies, AccountIndex, accessors); }
     }
+    public interface IPlatformClientBuilder
+    {
+        string Email { get; }
+        string Name { get; }
+        string IconUrl { get; }
+        Task<PlatformClient> Build(IApiAccessor[] accessors = null);
+    }
 }

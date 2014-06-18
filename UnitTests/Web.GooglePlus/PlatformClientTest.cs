@@ -10,6 +10,7 @@ namespace UnitTests.Web.GooglePlus
     using SunokoLibrary.Collections.Generic;
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
+    using SunokoLibrary.Web.GooglePlus.Utility;
 
     [TestClass]
     public class PlatformClientTest

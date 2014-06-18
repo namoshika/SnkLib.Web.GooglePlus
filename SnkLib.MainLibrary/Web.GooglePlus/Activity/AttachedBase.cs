@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SunokoLibrary.Web.GooglePlus.Primitive
+namespace SunokoLibrary.Web.GooglePlus
 {
     public abstract class AttachedBase : IAttachable
     {
