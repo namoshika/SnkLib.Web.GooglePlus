@@ -31,9 +31,9 @@ namespace SunokoLibrary.Web.GooglePlus
             var newDatas = ((SocialNotificationData)data).LogItems;
             var oldItemInfo = _actionLogs;
             var updatedDatas = (from nwItm in newDatas
-                     join oldItm in oldItemInfo on nwItm.RawData equals oldItm.RawData into nwOldPair
-                     from kpdItm in nwOldPair.DefaultIfEmpty()
-                     select new { NewItemData = nwItm, OldItemInfo = kpdItm }).ToArray();
+                                join oldItm in oldItemInfo on nwItm.RawData equals oldItm.RawData into nwOldPair
+                                from kpdItm in nwOldPair.DefaultIfEmpty()
+                                select new { NewItemData = nwItm, OldItemInfo = kpdItm }).ToArray();
             foreach (var item in updatedDatas.Select((obj, idx) => new { Index = idx, Result = obj }))
                 if (item.Result.OldItemInfo == null)
                     _actionLogs.Insert(item.Index, new NotificationItemInfo(item.Result.NewItemData, Client));

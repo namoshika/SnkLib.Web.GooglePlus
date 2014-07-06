@@ -979,83 +979,73 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 type |= ConvertFlags(typeTxt);
 
             NotificationData data;
-            switch ((string)source[7])
+            if (type.HasFlag(NotificationFlag.CircleAddBack)
+                || type.HasFlag(NotificationFlag.CircleIn)
+                || type.HasFlag(NotificationFlag.InviteCommunitiy))
+                data = new SocialNotificationData(
+                    type, id, rawNoticedDate, title, summary,
+                    ParseActors(source, plusBaseUrl, type), noticedDate);
+            else if (type.HasFlag(NotificationFlag.DirectMessage)
+                || type.HasFlag(NotificationFlag.Followup)
+                || type.HasFlag(NotificationFlag.Mension)
+                || type.HasFlag(NotificationFlag.SubscriptionCommunitiy)
+                || type.HasFlag(NotificationFlag.PlusOne)
+                || type.HasFlag(NotificationFlag.Reshare)
+                || type.HasFlag(NotificationFlag.Response))
+                data = new ContentNotificationData(
+                    type, id, rawNoticedDate, title, summary,
+                    ParseActivity(source, plusBaseUrl, type),
+                    ParseActors(source, plusBaseUrl, type), noticedDate);
+            else if (type.HasFlag(NotificationFlag.CameraSyncUploaded)
+                || type.HasFlag(NotificationFlag.TaggedImage)
+                || type.HasFlag(NotificationFlag.NewPhotosAdded))
             {
-                case "gplus_circles":
-                    data = new SocialNotificationData(
-                        type, id, rawNoticedDate, title, summary,
-                        ParseActors(source, plusBaseUrl, type), noticedDate);
-                    break;
-                case "gplus_communities":
-                    //true: 招待通知であり、それ以外のフラグが立っていない場合、
-                    //false: 招待通知ではなく、購読フラグが立っている場合、
-                    //これらに該当しないデータが存在している場合は完全に予想外。
-                    if (type == NotificationFlag.InviteCommunitiy)
-                        data = new SocialNotificationData(
-                            type, id, rawNoticedDate, title, summary,
-                            ParseActors(source, plusBaseUrl, type), noticedDate);
-                    else if (type.HasFlag(NotificationFlag.InviteCommunitiy) == false && type.HasFlag(NotificationFlag.SubscriptionCommunitiy))
-                        data = new ContentNotificationData(
-                            type, id, rawNoticedDate, title, summary,
-                            ParseActivity(source, plusBaseUrl, type),
-                            ParseActors(source, plusBaseUrl, type), noticedDate);
-                    else
-                        throw new InvalidDataException("未知の通知データを検出。", source, null);
-                    break;
-                case "gplus_hangout":
-                    Uri hangoutLinkUrl;
-                    ProfileData hangoutInviter;
-                    ParseHangout(source, plusBaseUrl, type, out hangoutLinkUrl, out hangoutInviter);
-                    data = new HangoutNotificationData(
-                        type, id, rawNoticedDate, title, summary, hangoutLinkUrl, hangoutInviter, noticedDate);
-                    break;
-                case "gplus_stream":
-                    data = new ContentNotificationData(
-                        type, id, rawNoticedDate, title, summary,
-                        ParseActivity(source, plusBaseUrl, type),
-                        ParseActors(source, plusBaseUrl, type), noticedDate);
-                    break;
-                case "gplus_photos":
-                    Uri albumLinkUrl;
-                    string[] imageUrls;
-                    ParsePhoto(source, plusBaseUrl, type, out albumLinkUrl, out imageUrls);
-                    data = new PhotoNotificationData(
-                        type, id, rawNoticedDate, title, summary, albumLinkUrl, imageUrls, noticedDate);
-                    break;
-                default:
-                    throw new InvalidDataException("未知の通知データを検出。", source, null);
+                Uri albumLinkUrl;
+                string[] imageUrls;
+                ParsePhoto(source, plusBaseUrl, type, out albumLinkUrl, out imageUrls);
+                data = new PhotoNotificationData(
+                    type, id, rawNoticedDate, title, summary, albumLinkUrl, imageUrls, noticedDate);
             }
+            else if (type.HasFlag(NotificationFlag.InviteHangout))
+            {
+                Uri hangoutLinkUrl;
+                ProfileData hangoutInviter;
+                ParseHangout(source, plusBaseUrl, type, out hangoutLinkUrl, out hangoutInviter);
+                data = new HangoutNotificationData(
+                    type, id, rawNoticedDate, title, summary, hangoutLinkUrl, hangoutInviter, noticedDate);
+            }
+            else
+                data = new NotificationData(NotificationFlag.Unknown, id, rawNoticedDate, title, summary, noticedDate);
             return data;
         }
 
         static NotificationItemData[] ParseActors(JToken source, Uri plusBaseUrl, NotificationFlag type)
         {
             var details = new List<NotificationItemData>();
-            switch (type == NotificationFlag.CircleAddBack ? 1
-                : type == NotificationFlag.InviteCommunitiy ? 0
-                : (int)source[2])
+            JToken tmpJson;
+            switch (type)
             {
-                case 0:
-                case 2:
-                    var detailDatas = source[4][1][1];
-                    foreach (var item in detailDatas
+                case NotificationFlag.CircleAddBack:
+                    tmpJson = source[4][1][0][3];
+                    details.Add(new NotificationItemData(new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl(
+                        (string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)source[4][0][1]));
+                    break;
+                case NotificationFlag.InviteCommunitiy:
+                    foreach (var item in source[4][1][1]
                         .Select((item, idx) => new { Type = (string)source[5][idx][0], Detail = item }))
                     {
-                        var tmpJson = item.Detail[0][1][0];
-                        details.Add(new NotificationItemData(
-                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)tmpJson[1]));
+                        tmpJson = item.Detail[0][1][0];
+                        details.Add(new NotificationItemData(new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl(
+                            (string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)item.Detail[1]));
                     }
                     break;
-                case 1:
-                    {
-                        var tmpJson = source[4][1][0][3];
-                        details.Add(new NotificationItemData(
-                            new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl((string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)tmpJson[1]));
-                        break;
-                    }
+                case NotificationFlag.SubscriptionCommunitiy:
+                    goto case NotificationFlag.InviteCommunitiy;
                 default:
-                    System.Diagnostics.Debug.WriteLine("通知JSONで未確認の値を確認(source[2]: {0})。", (int)source[2]);
-                    break;
+                    if ((int)source[2] == 0)
+                        goto case NotificationFlag.CircleAddBack;
+                    else
+                        goto case NotificationFlag.InviteCommunitiy;
             }
             return details.ToArray();
         }

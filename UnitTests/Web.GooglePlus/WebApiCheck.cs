@@ -15,7 +15,7 @@ namespace UnitTests.Web.GooglePlus
     [TestClass]
     public class WebApiCheck
     {
-        static DefaultAccessor target = new DefaultAccessor();
+        static DefaultAccessor target = new DefaultAccessor(new ApiWrapperWithLogger());
         static PlatformClientStub clientStabA;
 
         [ClassInitialize]

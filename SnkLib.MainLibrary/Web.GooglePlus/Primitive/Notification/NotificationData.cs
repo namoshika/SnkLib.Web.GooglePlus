@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
-    public abstract class NotificationData
+    public class NotificationData
     {
         public NotificationData(
             NotificationFlag type, string id, string rawNoticedDate, string title, string summary, DateTime noticedDate)

@@ -61,5 +61,6 @@ namespace SunokoLibrary.Web.GooglePlus
         Reshare = 0x00000800,
         Response = 0x00001000,
         TaggedImage = 0x00002000,
+        Unknown = 0x40000000,
     }
 }
