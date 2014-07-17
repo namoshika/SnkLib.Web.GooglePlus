@@ -10,7 +10,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
     public class InitData : CoreData
     {
         public InitData(string atValue, string pvtValue, string ejxValue, string buildLevel,
-            string lang, string afsid, CircleData[] circleInfos, ActivityData[] latestActivities)
+            string lang, string afsid, string tok, CircleData[] circleInfos, ActivityData[] latestActivities)
         {
             AtValue = atValue;
             PvtValue = pvtValue;
@@ -18,6 +18,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             BuildLevel = buildLevel;
             Lang = lang;
             Afsid = afsid;
+            Tok = tok;
             CircleInfos = circleInfos;
             LatestActivities = latestActivities;
         }
@@ -27,6 +28,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public readonly string BuildLevel;
         public readonly string Lang;
         public readonly string Afsid;
+        public readonly string Tok;
         public readonly CircleData[] CircleInfos;
         public readonly ActivityData[] LatestActivities;
     }

@@ -21,6 +21,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         string EjxValue { get; }
         string Lang { get; }
         string PvtValue { get; }
+        string Tok { get; }
     }
     public interface IApiAccessor
     {

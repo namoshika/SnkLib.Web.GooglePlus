@@ -57,7 +57,8 @@ namespace SunokoLibrary.Web.GooglePlus
         { get { return AccessorBase.CheckFlag(() => _data.Lang, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public string PvtValue
         { get { return AccessorBase.CheckFlag(() => _data.PvtValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
-
+        public string Tok
+        { get { return AccessorBase.CheckFlag(() => _data.Tok, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public PeopleContainer People { get; private set; }
         public ActivityContainer Activity { get; private set; }
         public NotificationContainer Notification { get; private set; }

@@ -92,6 +92,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 var atVal = (string)hmIntDt[1][15];
                 var pvtVal = (string)hmIntDt[1][28];
                 var eJxVal = (string)hmIntDt[161][1][1];
+                var tok = (string)hmIntDt[1][9];
                 var circleInfos = hmIntDt[12][0]
                     .Select(item => new CircleData((string)item[0][0], (string)item[1][0], null))
                     .ToArray();
@@ -99,7 +100,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     .Where(item => (string)item[0] == "1002")
                     .Select(jsonItem => _activityFactory.Generate(jsonItem[6]["33558957"], ActivityUpdateApiFlag.GetActivities, client))
                     .ToArray();
-                return new InitData(atVal, pvtVal, eJxVal, buildLabel, lang, afsid, circleInfos, latestActivities); ;
+                return new InitData(atVal, pvtVal, eJxVal, buildLabel, lang, afsid, tok, circleInfos, latestActivities); ;
             }
             catch (KeyNotFoundException e)
             { throw new ApiErrorException("トップページのパラメータ取得に失敗。ログインセッションが失効しています。", ErrorType.SessionError, new Uri("https://plus.google.com"), null, null, e); }
@@ -387,6 +388,16 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
                 await _apiWrapper.ConnectToEditComment(client.NormalHttpClient, client.PlusBaseUrl, activityId, commentId, content, client.AtValue)));
             return _commentFactory.Generate(apiResponse[0][1][1]);
+        }
+        public async Task<ProfileData[]> GetProfileSuggest(string searchText, IPlatformClient client)
+        {
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
+                await _apiWrapper.ConnectToCompleteSearch(client.NormalHttpClient, client.PlusBaseUrl, client.Tok, searchText)));
+            var res = new List<ProfileData>();
+            foreach(var item in apiResponse[1])
+                res.Add(new ProfileData((string)item[3]["a"], (string)item[0],
+                    ApiAccessorUtility.ConvertReplasableUrl((string)item[3]["b"])));
+            return res.ToArray();
         }
         public Task DeleteComment(string commentId, IPlatformClient client)
         { return _apiWrapper.ConnectToDeleteComment(client.NormalHttpClient, client.PlusBaseUrl, commentId, client.AtValue); }

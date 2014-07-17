@@ -30,6 +30,7 @@ namespace UnitTests.Web.GooglePlus
             clientStabA.EjxValue = initDt.EjxValue;
             clientStabA.Lang = initDt.Lang;
             clientStabA.PvtValue = initDt.PvtValue;
+            clientStabA.Tok = initDt.Tok;
         }
 
         //[TestMethod, TestCategory("DefaultAccessor")]
@@ -53,6 +54,7 @@ namespace UnitTests.Web.GooglePlus
             Assert.IsNotNull(initDt.EjxValue);
             Assert.IsNotNull(initDt.LatestActivities);
             Assert.IsNotNull(initDt.PvtValue);
+            Assert.IsNotNull(initDt.Tok);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDataFullTest()
@@ -212,6 +214,11 @@ namespace UnitTests.Web.GooglePlus
         public async Task GetNotificationDatasTest()
         {
             var result = await target.GetNotificationsAsync(false, 10, null, clientStabA);
+        }
+        [TestMethod, TestCategory("DefaultAccessor")]
+        public async Task GetProfileSuggestTest()
+        {
+            var result = await target.GetProfileSuggest("cot", clientStabA);
         }
         //[TestMethod, TestCategory("DefaultAccessor")]
         //public async Task GetStreamAttacherTest()

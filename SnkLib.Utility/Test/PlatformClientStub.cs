@@ -33,6 +33,7 @@ namespace SunokoLibrary.Web.GooglePlus.Utility
         public string EjxValue { get; set; }
         public string Lang { get; set; }
         public string PvtValue { get; set; }
+        public string Tok { get; set; }
         public Uri PlusBaseUrl { get; private set; }
         public Uri TalkBaseUrl { get; private set; }
         public System.Net.Http.HttpClient NormalHttpClient { get; private set; }

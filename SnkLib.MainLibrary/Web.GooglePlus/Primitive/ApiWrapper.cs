@@ -450,6 +450,21 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             jsonTxt = jsonTxt.Substring(0, jsonTxt.Length - 9);
             return jsonTxt;
         }
+        public async Task<string> ConnectToCompleteSearch(HttpClient client, Uri plusBaseUrl, string tok, string searchQuery)
+        {
+            var authUser = plusBaseUrl.Segments[2].TrimEnd('/');
+            plusBaseUrl = new Uri(plusBaseUrl.AbsoluteUri.Substring(0, plusBaseUrl.AbsoluteUri.Length - plusBaseUrl.AbsolutePath.Length) + '/');
+            var query = await MakeQuery(new Dictionary<string, string>(){
+                { "client", "es-sharebox-search" },
+                { "tok", tok },
+                { "authuser", authUser },
+                { "xhr", "t" },
+                { "q", searchQuery },
+            });
+            var url = new Uri(plusBaseUrl, string.Format("complete/search?{0}", query));
+            var jsonTxt = await client.GetStringAsync(url);
+            return jsonTxt;
+        }
         public IObservable<JToken> ConnectToTalkGadgetBind(HttpClient normalClient, HttpClient streamClient, Uri talkBaseUrl, CookieContainer checkTargetCookies, string pvtVal)
         {
             var observable = Observable.Create<JToken>(subject =>

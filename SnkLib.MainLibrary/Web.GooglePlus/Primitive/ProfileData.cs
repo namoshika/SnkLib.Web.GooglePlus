@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace SunokoLibrary.Web.GooglePlus.Primitive
 {
+    [System.Diagnostics.DebuggerDisplay("{Id,nq}({Name}), {Status}")]
     public class ProfileData : CoreData
     {
         public ProfileData(
