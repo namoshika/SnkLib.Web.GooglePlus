@@ -27,9 +27,12 @@ namespace SunokoLibrary.Web.GooglePlus.Utility
                 "user-agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.63 Safari/537.36");
         }
 
+        public string Afsid { get; set; }
         public string AtValue { get; set; }
-        public string PvtValue { get; set; }
+        public string BuildLevel { get; set; }
         public string EjxValue { get; set; }
+        public string Lang { get; set; }
+        public string PvtValue { get; set; }
         public Uri PlusBaseUrl { get; private set; }
         public Uri TalkBaseUrl { get; private set; }
         public System.Net.Http.HttpClient NormalHttpClient { get; private set; }

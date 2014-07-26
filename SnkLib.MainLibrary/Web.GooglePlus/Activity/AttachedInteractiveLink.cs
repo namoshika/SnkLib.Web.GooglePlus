@@ -10,19 +10,17 @@ namespace SunokoLibrary.Web.GooglePlus
     public class AttachedInteractiveLink : AttachedLink
     {
         public AttachedInteractiveLink(ContentType type,
-            string title, string summary, Uri linkUrl, string providerName, Uri providerUrl, Uri providerLogoUrl,
+            string title, string summary, Uri linkUrl, string providerName, Uri providerLogoUrl,
             Uri actionUrl, LabelType label, Uri faviconUrl, Uri originalThumbnailUrl, string thumbnailUrl,
             int thumbnailWidth, int thumbnailHeight, Uri plusBaseUrl)
             : base(type, title, summary, linkUrl, faviconUrl, originalThumbnailUrl, thumbnailUrl, thumbnailWidth, thumbnailHeight)
         {
             ProviderName = providerName;
-            ProviderUrl = providerUrl;
             ProviderLogoUrl = providerLogoUrl;
             ActionUrl = actionUrl;
             Label = label;
         }
         public readonly string ProviderName;
-        public readonly Uri ProviderUrl;
         public readonly Uri ProviderLogoUrl;
         public readonly Uri ActionUrl;
         public readonly LabelType Label;

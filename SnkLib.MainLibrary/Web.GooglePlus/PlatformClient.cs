@@ -45,12 +45,19 @@ namespace SunokoLibrary.Web.GooglePlus
         public System.Net.Http.HttpClient StreamHttpClient { get; private set; }
         public System.Net.CookieContainer Cookies { get; private set; }
         public IApiAccessor ServiceApi { get; private set; }
+        public string Afsid
+        { get { return AccessorBase.CheckFlag(() => _data.Afsid, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public string AtValue
         { get { return AccessorBase.CheckFlag(() => _data.AtValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
-        public string PvtValue
-        { get { return AccessorBase.CheckFlag(() => _data.PvtValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
+        public string BuildLevel
+        { get { return AccessorBase.CheckFlag(() => _data.BuildLevel, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
         public string EjxValue
         { get { return AccessorBase.CheckFlag(() => _data.EjxValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
+        public string Lang
+        { get { return AccessorBase.CheckFlag(() => _data.Lang, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
+        public string PvtValue
+        { get { return AccessorBase.CheckFlag(() => _data.PvtValue, () => IsLoadedHomeInitData, () => IsLoadedHomeInitData, "trueでない"); } }
+
         public PeopleContainer People { get; private set; }
         public ActivityContainer Activity { get; private set; }
         public NotificationContainer Notification { get; private set; }

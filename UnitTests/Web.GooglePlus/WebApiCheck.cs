@@ -24,8 +24,11 @@ namespace UnitTests.Web.GooglePlus
             var cookies = PlatformClientFactoryEx.ImportCookiesFromIE();
             clientStabA = new PlatformClientStub(cookies);
             var initDt = target.GetInitDataAsync(clientStabA).Result;
+            clientStabA.Afsid = initDt.Afsid;
             clientStabA.AtValue = initDt.AtValue;
+            clientStabA.BuildLevel = initDt.BuildLevel;
             clientStabA.EjxValue = initDt.EjxValue;
+            clientStabA.Lang = initDt.Lang;
             clientStabA.PvtValue = initDt.PvtValue;
         }
 
@@ -151,11 +154,11 @@ namespace UnitTests.Web.GooglePlus
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDataLiteTest()
         {
-            var result = await target.GetProfileLiteAsync("114365312488191371601", clientStabA);
-            Assert.AreEqual("114365312488191371601", result.Id);
-            Assert.AreEqual("Hiroki Saito", result.Name);
-            Assert.AreEqual("ゾウさんが好きです。でもパンダも良い", result.GreetingText);
-            Assert.AreEqual("https://lh6.googleusercontent.com/-0zOCgk_an80/AAAAAAAAAAI/AAAAAAAAASI/q_HCz9fhnCA/$SIZE_SEGMENT/photo.jpg", result.IconImageUrl);
+            var result = await target.GetProfileLiteAsync("114508593546569263679", clientStabA);
+            Assert.AreEqual("114508593546569263679", result.Id);
+            Assert.AreEqual("Hideki Nishimura", result.Name);
+            Assert.AreEqual("test_catch-phrase", result.GreetingText);
+            Assert.AreEqual("https://ssl.gstatic.com/s2/profiles/images/silhouette$SIZE_NUM.png", result.IconImageUrl);
         }
         [TestMethod, TestCategory("DefaultAccessor")]
         public async Task GetProfileDataAboutMeTest()

@@ -15,9 +15,12 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         CookieContainer Cookies { get; }
         Uri PlusBaseUrl { get; }
         Uri TalkBaseUrl { get; }
+        string Afsid { get; }
         string AtValue { get; }
-        string PvtValue { get; }
+        string BuildLevel { get; }
         string EjxValue { get; }
+        string Lang { get; }
+        string PvtValue { get; }
     }
     public interface IApiAccessor
     {

@@ -90,14 +90,14 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = await GetStringAsync(client, url);
             return jsonTxt;
         }
-        public async Task<string> ConnectToLookupPeople(HttpClient client, Uri plusBaseUrl, string plusId, string atVal)
+        public async Task<string> ConnectToLookupPeople(HttpClient client, Uri plusBaseUrl, string[] plusIds, string atVal)
         {
             var jsonTxt = await PostStringAsync(
                 client,
                 new Uri(plusBaseUrl, "_/socialgraph/lookup/people/?if=true&rt=j"),
                 new Dictionary<string, string>()
                     {
-                        { "m", string.Format("[[[null,null,\"{0}\"]]]", plusId) },
+                        { "m", "[[" + string.Join(",", plusIds.Select(id => string.Format("[null,null,\"{0}\"]", id))) + "]]" },
                         { "at", atVal },
                     });
             return jsonTxt;
@@ -108,11 +108,26 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var jsonTxt = await PostStringAsync(client, circlesUrl, new Dictionary<string, string>() { { "at", atValue } });
             return jsonTxt;
         }
-        public async Task<string> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string atValue)
+        public async Task<string> ConnectToLookupFollowers(HttpClient client, Uri plusBaseUrl, string ozBuildLevel, string ozSid, string ozLang, string atValue)
         {
-            var url = new Uri(plusBaseUrl, "_/socialgraph/lookup/followers/?m=2500&rt=j");
-            var jsonTxt = await PostStringAsync(
-                client, url, new Dictionary<string, string>() { { "at", atValue } });
+            ;
+            var url = new Uri(plusBaseUrl, string.Format("_/people/haveyou?{0}", await MakeQuery(new Dictionary<string, string>()
+                {
+                    { "soc-app", "1" },
+                    { "cid", "0" },
+                    { "soc-platform", "1" },
+                    { "hl", ozLang },
+                    { "ozv", ozBuildLevel },
+                    { "avw", "pv:1" },
+                    { "f.sid", ozSid },
+                    { "_reqid", "953042" },
+                    { "rt","j" }
+                })));
+            var jsonTxt = await PostStringAsync(client, url, new Dictionary<string, string>()
+                {
+                    { "at", atValue },
+                    { "f.req", "[\"ppv.dr\",[[\"ppv.drp\",9]]]" },
+                });
             return jsonTxt;
         }
         public async Task<string> ConnectToLookupIgnore(HttpClient client, Uri plusBaseUrl, string atValue)
@@ -172,10 +187,17 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var resStr = await PostStringAsync(client, new Uri(plusBaseUrl, "_/stream/getactivities/?rt=j"), query);
             return resStr;
         }
-        public async Task<string> ConnectToGetActivity(HttpClient client, Uri plusBaseUrl, string id)
+        public async Task<string> ConnectToGetActivity(HttpClient client, Uri plusBaseUrl, string id, string ozLang, string ozBuildLabel, string ozSid)
         {
-            var resStr = await GetStringAsync(
-                client, new Uri(plusBaseUrl, string.Format("_/stream/getactivity/?updateId={0}", id)));
+            var resStr = await GetStringAsync(client, new Uri(plusBaseUrl, string.Format("_/stream/getactivity/?{0}", await MakeQuery(new Dictionary<string,string>()
+                {
+                    { "updateId", id },
+                    { "hl", ozLang },
+                    { "ozv", ozBuildLabel },
+                    { "avw", "str:1" },
+                    { "f.sid", ozSid },
+                    { "rt", "j" },
+                }))));
             return resStr;
         }
         public async Task<string> ConnectToPost(HttpClient client, Uri plusBaseUrl, DateTime postDate, int postCount, string plusId, Dictionary<string, string> targetCircles, Dictionary<string, string> targetUsers, ContentType? attachedContentType, string content, bool isDisabledComment, bool isDisabledReshare, string atVal)
