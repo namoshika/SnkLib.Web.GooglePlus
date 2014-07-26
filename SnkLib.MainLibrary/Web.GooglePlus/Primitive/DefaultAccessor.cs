@@ -281,20 +281,15 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     latestReadedItemNotifiedDate = ApiWrapper.GetDateTime((ulong)apiResponse[4] / 1000);
                 foreach (var item in apiResponse[1])
                 {
-                    try
-                    {
-                        var data = _notificationFactory.Generate(item, client.PlusBaseUrl);
-                        notificationList.Add(data);
-                        length--;
-                    }
-                    //処理の特性上、変なデータには何時でも遭遇し得る。
-                    //そのため、想定外のデータとの遭遇は想定するエラーとして黙殺する。
-                    catch (InvalidDataException)
+                    var data = _notificationFactory.Generate(item, client.PlusBaseUrl);
+                    notificationList.Add(data);
+                    length--;
+                    //一応、未知の通知に気付けるようにする
+                    if (data.Type == NotificationFlag.Unknown)
                     {
                         if (System.Diagnostics.Debugger.IsAttached)
                             System.Diagnostics.Debugger.Break();
                         System.Diagnostics.Debug.WriteLine("未知のデータを取得: {0}", item);
-                        continue;
                     }
                 }
             }
@@ -974,7 +969,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var summary = (string)source[4][0][0][3];
             var rawNoticedDate = ((ulong)source[9]).ToString();
             var noticedDate = ApiWrapper.GetDateTime((ulong)source[9] / 1000);
-            var type = default(NotificationFlag);
+            var type = NotificationFlag.Unknown;
             foreach (string typeTxt in source[8])
                 type |= ConvertFlags(typeTxt);
 
@@ -1015,7 +1010,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     type, id, rawNoticedDate, title, summary, hangoutLinkUrl, hangoutInviter, noticedDate);
             }
             else
-                data = new NotificationData(NotificationFlag.Unknown, id, rawNoticedDate, title, summary, noticedDate);
+                data = new NotificationData(type, id, rawNoticedDate, title, summary, noticedDate);
             return data;
         }
 
@@ -1101,6 +1096,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 case "CIRCLE_RECIPROCATING_ADD":
                     type = NotificationFlag.CircleAddBack;
                     break;
+                case "EVENTS_INVITE":
+                    type = NotificationFlag.InviteEvent;
+                    break;
                 case "HANGOUT_INVITE":
                     type = NotificationFlag.InviteHangout;
                     break;
@@ -1137,7 +1135,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     type = NotificationFlag.NewPhotosAdded;
                     break;
                 default:
-                    throw new InvalidDataException("未知の通知データを検出。", typeTxt, null);
+                    type = NotificationFlag.Unknown;
+                    break;
             }
             return type;
         }

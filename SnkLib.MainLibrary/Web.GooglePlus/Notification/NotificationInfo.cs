@@ -45,22 +45,23 @@ namespace SunokoLibrary.Web.GooglePlus
         }
     }
     [Flags]
-    public enum NotificationFlag
+    public enum NotificationFlag : uint
     {
+        Unknown = 0x00000000,
         CameraSyncUploaded = 0x00000001,
         CircleAddBack = 0x00000002,
         CircleIn = 0x00000004,
         DirectMessage = 0x00000008,
         Followup = 0x00000010,
-        InviteHangout = 0x00000020,
-        InviteCommunitiy = 0x00000040,
-        Mension = 0x00000080,
-        NewPhotosAdded = 0x00000100,
-        SubscriptionCommunitiy = 0x00000200,
-        PlusOne = 0x00000400,
-        Reshare = 0x00000800,
-        Response = 0x00001000,
-        TaggedImage = 0x00002000,
-        Unknown = 0x40000000,
+        InviteEvent = 0x00000020,
+        InviteHangout = 0x00000040,
+        InviteCommunitiy = 0x00000080,
+        Mension = 0x00000100,
+        NewPhotosAdded = 0x00000200,
+        SubscriptionCommunitiy = 0x00000400,
+        PlusOne = 0x00000800,
+        Reshare = 0x00001000,
+        Response = 0x00002000,
+        TaggedImage = 0x00004000,
     }
 }
