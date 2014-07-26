@@ -12,6 +12,19 @@ namespace SunokoLibrary.Web.GooglePlus.Utility
 
     public class ApiWrapperWithLogger : ApiWrapper
     {
+        static ApiWrapperWithLogger()
+        {
+            exeDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            logDir = new System.IO.DirectoryInfo(exeDir + "\\NetworkLogs");
+            if (logDir.Exists == false)
+                logDir.Create();
+            else
+                foreach (var item in logDir.EnumerateFiles())
+                    item.Delete();
+        }
+        readonly static string exeDir;
+        readonly static System.IO.DirectoryInfo logDir;
+
         System.Collections.Concurrent.ConcurrentQueue<string> _paths = new System.Collections.Concurrent.ConcurrentQueue<string>();
         public override async Task<string> GetStringAsync(System.Net.Http.HttpClient client, Uri requestUrl, System.Threading.CancellationToken? token = null)
         {
@@ -40,9 +53,9 @@ namespace SunokoLibrary.Web.GooglePlus.Utility
         [DataContract]
         public class ResponseLog
         {
-            static DataContractSerializer _seri
+            readonly static DataContractSerializer _seri
                 = new DataContractSerializer(typeof(ResponseLog));
-            static System.Security.Cryptography.MD5 _hashGen
+            readonly static System.Security.Cryptography.MD5 _hashGen
                 = new System.Security.Cryptography.MD5CryptoServiceProvider();
 
             [DataMember]
@@ -64,11 +77,9 @@ namespace SunokoLibrary.Web.GooglePlus.Utility
                             Parameters = parameters,
                             Response = response,
                         };
-                        var exeDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                        var logDir = new System.IO.DirectoryInfo(exeDir + "\\NetworkLogs");
                         if (logDir.Exists == false)
                             logDir.Create();
-                        var path = string.Format("{0}\\{1}_{2}.xml", logDir.FullName, DateTime.Now.ToString("yyMMdd_HHmmss"), GetHash(logObj.Method, logObj.RequestUrl, logObj.Parameters));
+                        var path = string.Format("{0}\\{1}.xml", logDir.FullName, GetHash(logObj.Method, logObj.RequestUrl, logObj.Parameters));
                         using (var fileStrm = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write))
                             _seri.WriteObject(fileStrm, logObj);
                         return path;
