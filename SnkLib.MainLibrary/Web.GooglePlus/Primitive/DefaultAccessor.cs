@@ -287,11 +287,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     length--;
                     //一応、未知の通知に気付けるようにする
                     if (data.Type == NotificationFlag.Unknown)
-                    {
-                        if (System.Diagnostics.Debugger.IsAttached)
-                            System.Diagnostics.Debugger.Break();
                         System.Diagnostics.Debug.WriteLine("未知のデータを取得: {0}", item);
-                    }
                 }
             }
             while (length > 0 && continueToken != null);
@@ -966,13 +962,13 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
 
             NotificationData data;
             if (type.HasFlag(NotificationFlag.CircleAddBack)
-                || type.HasFlag(NotificationFlag.CircleIn)
-                || type.HasFlag(NotificationFlag.InviteCommunitiy))
+                || type.HasFlag(NotificationFlag.CircleIn))
                 data = new SocialNotificationData(
                     type, id, rawNoticedDate, title, summary,
                     ParseActors(source, plusBaseUrl, type), noticedDate);
             else if (type.HasFlag(NotificationFlag.DirectMessage)
                 || type.HasFlag(NotificationFlag.Followup)
+                || type.HasFlag(NotificationFlag.InviteCommunitiy)
                 || type.HasFlag(NotificationFlag.Mension)
                 || type.HasFlag(NotificationFlag.SubscriptionCommunitiy)
                 || type.HasFlag(NotificationFlag.PlusOne)
@@ -988,7 +984,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 Uri albumLinkUrl;
                 string[] imageUrls;
-                ParsePhoto(source, plusBaseUrl, type, out albumLinkUrl, out imageUrls);
+                ParsePhoto(source, plusBaseUrl, out albumLinkUrl, out imageUrls);
                 data = new PhotoNotificationData(
                     type, id, rawNoticedDate, title, summary, albumLinkUrl, imageUrls, noticedDate);
             }
@@ -996,7 +992,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             {
                 Uri hangoutLinkUrl;
                 ProfileData hangoutInviter;
-                ParseHangout(source, plusBaseUrl, type, out hangoutLinkUrl, out hangoutInviter);
+                ParseHangout(source, plusBaseUrl, out hangoutLinkUrl, out hangoutInviter);
                 data = new HangoutNotificationData(
                     type, id, rawNoticedDate, title, summary, hangoutLinkUrl, hangoutInviter, noticedDate);
             }
@@ -1008,30 +1004,22 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         static NotificationItemData[] ParseActors(JToken source, Uri plusBaseUrl, NotificationFlag type)
         {
             var details = new List<NotificationItemData>();
-            JToken tmpJson;
-            switch (type)
+            JToken tmpJson = source[4][1];
+            if (((JArray)tmpJson[1]).Count == 0)
             {
-                case NotificationFlag.CircleAddBack:
-                    tmpJson = source[4][1][0][3];
+                tmpJson = tmpJson[0][3];
+                details.Add(new NotificationItemData(new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl(
+                    (string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)source[4][0][1]));
+            }
+            else
+            {
+                foreach (var item in tmpJson[1]
+                    .Select((item, idx) => new { Type = (string)source[5][idx][0], Detail = item }))
+                {
+                    tmpJson = item.Detail[0][1][0];
                     details.Add(new NotificationItemData(new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl(
-                        (string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)source[4][0][1]));
-                    break;
-                case NotificationFlag.InviteCommunitiy:
-                    foreach (var item in source[4][1][1]
-                        .Select((item, idx) => new { Type = (string)source[5][idx][0], Detail = item }))
-                    {
-                        tmpJson = item.Detail[0][1][0];
-                        details.Add(new NotificationItemData(new ProfileData((string)tmpJson[1], (string)tmpJson[2], ApiAccessorUtility.ConvertReplasableUrl(
-                            (string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)item.Detail[1]));
-                    }
-                    break;
-                case NotificationFlag.SubscriptionCommunitiy:
-                    goto case NotificationFlag.InviteCommunitiy;
-                default:
-                    if ((int)source[2] == 0)
-                        goto case NotificationFlag.CircleAddBack;
-                    else
-                        goto case NotificationFlag.InviteCommunitiy;
+                        (string)tmpJson[0]), AccountStatus.Active, loadedApiTypes: ProfileUpdateApiFlag.Base), type, (string)item.Detail[1]));
+                }
             }
             return details.ToArray();
         }
@@ -1041,8 +1029,9 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var activityJson = source[4][1][0];
             var activityId = (string)source[6].First(token => (int)token[0] == 1)[1];
 
-            //コミュ新着通知の場合はActivity本体の情報がほとんど含まれない
-            if (type.HasFlag(NotificationFlag.SubscriptionCommunitiy))
+            //コミュ新着と招待の通知の場合はActivity本体の情報がほとんど含まれない
+            if (type.HasFlag(NotificationFlag.SubscriptionCommunitiy)
+                || type.HasFlag(NotificationFlag.InviteCommunitiy))
                 return new ActivityData(activityId);
             else
             {
@@ -1057,7 +1046,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     updaterTypes: ActivityUpdateApiFlag.Notification);
             }
         }
-        static void ParsePhoto(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags, out Uri linkUrl, out string[] imagesUrl)
+        static void ParsePhoto(JToken source, Uri plusBaseUrl, out Uri linkUrl, out string[] imagesUrl)
         {
             var imgUrls = new List<string>();
             var tmp = source[4][1][0];
@@ -1067,7 +1056,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 imgUrls.Add(ApiAccessorUtility.ConvertReplasableUrl((string)item[0][0]));
             imagesUrl = imgUrls.ToArray();
         }
-        static void ParseHangout(JToken source, Uri plusBaseUrl, NotificationFlag typeFlags, out Uri linkUrl, out ProfileData actor)
+        static void ParseHangout(JToken source, Uri plusBaseUrl, out Uri linkUrl, out ProfileData actor)
         {
             var tmp = source[4][0];
             linkUrl = new Uri((string)tmp[2][2]);
