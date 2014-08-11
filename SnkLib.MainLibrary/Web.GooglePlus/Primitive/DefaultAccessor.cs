@@ -467,25 +467,42 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var json = rawItem[1][1][1];
             switch ((string)json[0])
             {
-                case "tu":
+                case "rtu":
                     var shrItm = JArray.Parse(ApiAccessorUtility.ConvertIntoValidJson((string)json[1]));
-                    switch ((string)shrItm[0])
+                    if ((string)shrItm[0] != "t.rtnr")
                     {
-                        case "t.rtc":
-                            return _commentFactory.Generate(shrItm[1]);
-                        case "t.rtu":
-                            return _activityFactory.Generate(shrItm[1], ActivityUpdateApiFlag.GetActivities, client);
-                        case "t.rtd":
+                        System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");
+                        return rawItem;
+                    }
+                    PostStatusType status;
+                    switch ((int)shrItm[2])
+                    {
+                        case 1: status = PostStatusType.First; break;
+                        case 2: status = PostStatusType.Edited; break;
+                        case 3: status = PostStatusType.Removed; break;
+                        default:
+                            System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。PostStatusType用の(int)shrItm[2]に未知の値が入っています。");
+                            return rawItem;
+                    }
+                    switch ((int)shrItm[1])
+                    {
+                        case 2:
+                            if (status != PostStatusType.Removed)
+                                return _commentFactory.Generate(shrItm[6]);
+                            else
                             {
-                                if (shrItm.Count >= 3)
-                                {
-                                    var cid = (string)shrItm[2];
-                                    var aid = cid.Substring(0, cid.LastIndexOf('#'));
-                                    return (object)new CommentData(cid, aid, null, DateTime.MinValue, DateTime.MinValue, null, PostStatusType.Removed);
-                                }
-                                else
-                                    return (object)new ActivityData((string)shrItm[1], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivities);
+                                var cid = (string)shrItm[4];
+                                var aid = (string)shrItm[3];
+                                return new CommentData(cid, aid, null, DateTime.MinValue, DateTime.MinValue, null, PostStatusType.Removed);
                             }
+                        case 1:
+                            if (status != PostStatusType.Removed)
+                                return new ActivityData(
+                                    (string)shrItm[3],
+                                    status: PostStatusType.First, owner: new ProfileData((string)shrItm[7]),
+                                    updaterTypes: ActivityUpdateApiFlag.Base);
+                            else
+                                return new ActivityData((string)shrItm[3], status: PostStatusType.Removed, updaterTypes: ActivityUpdateApiFlag.GetActivities);
                         default:
                             System.Diagnostics.Debug.Assert(false, "talkgadgetBindに想定外のjsonが入ってきました。");
                             return rawItem;
@@ -865,7 +882,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var thumbJson = json[5].Type == JTokenType.Array ? (JArray)json[5] : null;
             if (thumbJson == null)
                 return null;
-            return new Uri((string)json[1]);
+            Uri tmp;
+            return Uri.TryCreate((string)json[1], UriKind.Absolute, out tmp) ? tmp : null;
         }
         static string ParseThumbnailUrl(JArray json)
         {
@@ -1043,7 +1061,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     loadedApiTypes: ProfileUpdateApiFlag.Base);
                 return new ActivityData(
                     activityId, null, activityText, null, status: PostStatusType.First, owner: activityActor,
-                    updaterTypes: ActivityUpdateApiFlag.Notification);
+                    updaterTypes: ActivityUpdateApiFlag.Base);
             }
         }
         static void ParsePhoto(JToken source, Uri plusBaseUrl, out Uri linkUrl, out string[] imagesUrl)
