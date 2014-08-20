@@ -285,9 +285,6 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                     var data = _notificationFactory.Generate(item, client.PlusBaseUrl);
                     notificationList.Add(data);
                     length--;
-                    //一応、未知の通知に気付けるようにする
-                    if (data.Type == NotificationFlag.Unknown)
-                        System.Diagnostics.Debug.WriteLine("未知のデータを取得: {0}", item);
                 }
             }
             while (length > 0 && continueToken != null);
