@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
+using SunokoLibrary.Application;
+using SunokoLibrary.Application.Browsers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +8,6 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Hal.CookieGetterSharp;
 
 namespace SunokoLibrary.Web.GooglePlus
 {
@@ -25,7 +26,7 @@ namespace SunokoLibrary.Web.GooglePlus
                     return await accessor.GetAccountListAsync(ImportCookiesFromIE());
                 });
         }
-        public static Task<IPlatformClientBuilder[]> ImportFrom(this PlatformClientFactory factory, ICookieGetter source, IApiAccessor accessor = null)
+        public static Task<IPlatformClientBuilder[]> ImportFrom(this PlatformClientFactory factory, ICookieImporter source, IApiAccessor accessor = null)
         {
             return Task.Run(async () =>
                 {
@@ -54,18 +55,15 @@ namespace SunokoLibrary.Web.GooglePlus
 
             return cookie;
         }
-        public static CookieContainer ImportCookiesFrom(ICookieGetter source)
+        public static CookieContainer ImportCookiesFrom(ICookieImporter source)
         {
             var cookie = new CookieContainer();
             Uri targetUrl;
-            CookieCollection plusCookie;
-
             foreach (var target in new[] {
                 "https://plus.google.com", "https://accounts.google.com", "https://talkgadget.google.com" })
             {
                 targetUrl = new Uri(target);
-                plusCookie = source.GetCookieCollection(targetUrl);
-                cookie.Add(plusCookie);
+                source.GetCookies(targetUrl, cookie);
             }
             return cookie;
         }

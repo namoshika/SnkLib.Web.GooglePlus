@@ -64,9 +64,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CookieGetterSharp\CookieGetterSharp\CookieGetterSharp.csproj">
-      <Project>{acb84f0e-b482-46b0-8c29-1fac6c85d622}</Project>
-      <Name>CookieGetterSharp</Name>
+    <ProjectReference Include="..\CookieGetterSharp\SnkLib.App.CookieGetter\SnkLib.App.CookieGetter.csproj">
+      <Project>{bb3f3039-e8c2-4cb8-9257-59b92f03a87c}</Project>
+      <Name>SnkLib.App.CookieGetter</Name>
     </ProjectReference>
     <ProjectReference Include="..\SnkLib.MainLibrary\SnkLib.MainLibrary.csproj">
       <Project>{a19c98e5-7048-43e2-98f0-689a3ffe2a82}</Project>

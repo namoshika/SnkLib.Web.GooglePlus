@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SunokoLibrary.Application;
+using SunokoLibrary.Application.Browsers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -13,17 +15,18 @@ namespace Sample
     using System.Reactive.Linq;
     using SunokoLibrary.Web.GooglePlus;
     using SunokoLibrary.Web.GooglePlus.Primitive;
-    using Hal.CookieGetterSharp;
 
     class Program
     {
         static void Main(string[] args)
         {
             var url = new Uri("https://plus.google.com/");
-            var getterA = CookieGetter.CreateInstance(BrowserType.GoogleChrome);
-            var getterB = CookieGetter.CreateInstance(BrowserType.IESafemode);
-            var cookieA = getterA.GetCookieCollection(url);
-            var cookieB = getterB.GetCookieCollection(url);
+            var getterA = new GoogleChromeBrowserManager().CreateCookieImporters().First();
+            var getterB = new IEBrowserManager().CreateIEPMCookieGetter();
+            var cookieA = new CookieContainer();
+            var cookieB = new CookieContainer();
+            getterA.GetCookies(url, cookieA);
+            getterB.GetCookies(url, cookieA);
 
             var platform = PlatformClient.Factory.ImportFrom(getterA).Result[0].Build(null).Result;
             var atVal = platform.AtValue;
