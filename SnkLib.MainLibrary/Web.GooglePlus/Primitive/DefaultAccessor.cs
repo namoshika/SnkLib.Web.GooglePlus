@@ -109,7 +109,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var lookupedProfiles = new List<ProfileData>();
             var circles = new Dictionary<string, Tuple<string, List<ProfileData>>>();
             var apiResponseTxt = await _apiWrapper.ConnectToLookupCircles(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue);
-            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt))[0][1];
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
+            apiResponse = apiResponse[0][0];
             var lastUpdateDate = DateTime.UtcNow;
 
             //サークル一覧生成。List<ProfileInfo>の初期化と一緒にサークル名も
@@ -152,31 +153,30 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var apiResponseTxt = await _apiWrapper.ConnectToLookupPeople(client.NormalHttpClient, client.PlusBaseUrl, new[]{ profileId }, client.AtValue);
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
             var lastUpdateDate = DateTime.UtcNow;
-            return _profileFactory.Generate(apiResponse[0][1][2][0], lastUpdateDate, ProfileUpdateApiFlag.LookupProfile);
+            return _profileFactory.Generate(apiResponse[0][0][2][0], lastUpdateDate, ProfileUpdateApiFlag.LookupProfile);
         }
         public async Task<ProfileData> GetProfileFullAsync(string profileId, IPlatformClient client)
         {
             var apiResponseTxt = await _apiWrapper.ConnectToProfileGet(client.NormalHttpClient, client.PlusBaseUrl, profileId);
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
             var lastUpdateDate = DateTime.UtcNow;
-            return _profileFactory.Generate(apiResponse[0][1][1][2], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
+            return _profileFactory.Generate(apiResponse[0][0][1][2], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData> GetProfileAboutMeAsync(IPlatformClient client)
         {
             var json = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(
                 await _apiWrapper.ConnectToGetIdentities(client.NormalHttpClient, client.PlusBaseUrl)));
-            var id = (string)json[0][0][1];
             var lastUpdateDate = DateTime.UtcNow;
-            if (id == null)
+            if (json[0][0][1].Type != JTokenType.Array)
                 throw new ApiErrorException("自身のPlusID取得に失敗しました。ログインされていない可能性があります。", ErrorType.SessionError, null, null, null, null);
-            return _profileFactory.Generate(json[0][1][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
+            return _profileFactory.Generate(json[0][0][1][0], lastUpdateDate, ProfileUpdateApiFlag.ProfileGet);
         }
         public async Task<ProfileData[]> GetFollowingProfilesAsync(string profileId, IPlatformClient client)
         {
             var results = new List<ProfileData>();
             var apiResponseTxt = await _apiWrapper.ConnectToLookupVisible(client.NormalHttpClient, client.PlusBaseUrl, profileId, client.AtValue);
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
-            foreach (var item in apiResponse[0][1][2])
+            foreach (var item in apiResponse[0][0][2])
                 results.Add(new ProfileData(
                     (string)item[0][2], (string)item[2][0], ApiAccessorUtility.ConvertReplasableUrl((string)item[2][8]),
                     greetingText: (string)item[2][21], loadedApiTypes: ProfileUpdateApiFlag.Base));
@@ -187,7 +187,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var results = new List<ProfileData>();
             var apiResponseTxt = await _apiWrapper.ConnectToLookupIncoming(client.NormalHttpClient, client.PlusBaseUrl, profileId, count, client.AtValue);
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
-            foreach (var item in apiResponse[0][1][2])
+            foreach (var item in apiResponse[0][0][2])
             {
                 var iconUrl = item[2][8].Type != JTokenType.Null ? (string)item[2][8] : null;
                 results.Add(new ProfileData(
@@ -201,7 +201,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             var apiResponseTxt = await _apiWrapper.ConnectToLookupIgnore(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue);
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
             var ignoreLst = new List<ProfileData>();
-            foreach (var item in apiResponse[0][1][2])
+            foreach (var item in apiResponse[0][0][2])
             {
                 var profileId = (string)item[0].ElementAtOrDefault(2);
                 var iconUrl = ApiAccessorUtility.ConvertReplasableUrl((string)item[2][8]);
@@ -213,7 +213,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         public async Task<ProfileData[]> GetFollowingMeProfilesAsync(IPlatformClient client)
         {
             var apiResponseTxt = await _apiWrapper.ConnectToLookupFollowers(client.NormalHttpClient, client.PlusBaseUrl, client.BuildLevel, client.Afsid, client.Lang, client.AtValue);
-            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt))[0][1][1][0][1];
+            var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt))[0][0][1][0][1];
             var followersLst = new List<ProfileData>();
             foreach (var item in apiResponse)
             {
@@ -241,7 +241,7 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
         {
             var apiResponseTxt = await _apiWrapper.ConnectToGetActivity(client.NormalHttpClient, client.PlusBaseUrl, activityId, client.Lang, client.BuildLevel, client.Afsid);
             var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
-            return _activityFactory.Generate(apiResponse[0][1][1], ActivityUpdateApiFlag.GetActivity, client);
+            return _activityFactory.Generate(apiResponse[0][0][1], ActivityUpdateApiFlag.GetActivity, client);
         }
         public async Task<Tuple<ActivityData[], string>> GetActivitiesAsync(string circleId, string profileId, string ctValue, int length, IPlatformClient client)
         {
@@ -252,7 +252,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
                 var oneSetSize = Math.Min(length, 40);
                 var oneSetCount = 0;
                 var apiResponseTxt = await _apiWrapper.ConnectToGetActivities(client.NormalHttpClient, client.PlusBaseUrl, client.AtValue, oneSetSize, circleId, profileId, ctValue);
-                var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt))[0][1][1];
+                var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
+                apiResponse = apiResponse[0][0][1];
                 ctValue = (string)apiResponse[1];
                 foreach (var item in apiResponse[0])
                 {
@@ -276,7 +277,8 @@ namespace SunokoLibrary.Web.GooglePlus.Primitive
             do
             {
                 var apiResponseTxt = await _apiWrapper.ConnectToNotificationsFetch(client.NormalHttpClient, client.PlusBaseUrl, isFetchNewItemMode, client.AtValue, Math.Min(length, MAX_RESULT_LENGTH), continueToken);
-                var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt))[0][1];
+                var apiResponse = JToken.Parse(ApiAccessorUtility.ConvertIntoValidJson(apiResponseTxt));
+                apiResponse = apiResponse[0][0];
                 continueToken = apiResponse[2].Type == JTokenType.Array ? (string)apiResponse[2][5] : null;
                 if (latestReadedItemNotifiedDate == DateTime.MinValue)
                     latestReadedItemNotifiedDate = ApiWrapper.GetDateTime((ulong)apiResponse[4] / 1000);
